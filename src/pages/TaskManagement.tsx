@@ -1,25 +1,9 @@
 import { useState } from "react";
-import { Plus, FilePlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Layout/Header";
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { TaskForm } from "@/components/TaskManagement/TaskForm";
-import { ColumnManager } from "@/components/TaskManagement/ColumnManager";
-import { ViewManager } from "@/components/TaskManagement/ViewManager";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { TaskList } from "@/components/TaskManagement/TaskList";
+import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
 import { toast } from "sonner";
 
 interface Task {
@@ -63,6 +47,7 @@ export default function TaskManagement() {
 
   const handleSubmit = (values: Omit<Task, "id">) => {
     setTasks([...tasks, { ...values, id: crypto.randomUUID() }]);
+    setIsFormOpen(false);
   };
 
   const handleColumnVisibilityChange = (columnId: string) => {
@@ -97,30 +82,6 @@ export default function TaskManagement() {
     console.log("Import spreadsheet clicked");
   };
 
-  const getPriorityColor = (priority: Task["priority"]) => {
-    switch (priority) {
-      case "low":
-        return "text-green-600";
-      case "medium":
-        return "text-yellow-600";
-      case "high":
-        return "text-orange-600";
-      case "urgent":
-        return "text-red-600";
-    }
-  };
-
-  const getStatusColor = (status: Task["status"]) => {
-    switch (status) {
-      case "backlog":
-        return "bg-gray-100";
-      case "in_progress":
-        return "bg-blue-100";
-      case "done":
-        return "bg-green-100";
-    }
-  };
-
   return (
     <div className="flex h-screen bg-gray-100">
       <AppSidebar />
@@ -130,85 +91,18 @@ export default function TaskManagement() {
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold">Gestão de Tarefas</h1>
-              <div className="flex items-center gap-4">
-                <ColumnManager
-                  columns={columns}
-                  onColumnVisibilityChange={handleColumnVisibilityChange}
-                />
-                <ViewManager
-                  onSaveView={handleSaveView}
-                  onLoadView={handleLoadView}
-                  savedViews={savedViews}
-                />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Adicionar Tarefa
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
-                    <DropdownMenuItem onClick={() => setIsFormOpen(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Nova Tarefa
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleImportSpreadsheet}>
-                      <FilePlus className="mr-2 h-4 w-4" />
-                      Importar Planilha
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <ActionButtons
+                columns={columns}
+                savedViews={savedViews}
+                onColumnVisibilityChange={handleColumnVisibilityChange}
+                onSaveView={handleSaveView}
+                onLoadView={handleLoadView}
+                onNewAttribute={() => setIsFormOpen(true)}
+                onImportSpreadsheet={handleImportSpreadsheet}
+              />
             </div>
 
-            <div className="bg-white rounded-lg shadow">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {columns
-                      .filter(col => col.visible)
-                      .map(column => (
-                        <TableHead key={column.id}>{column.label}</TableHead>
-                      ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tasks.map((task) => (
-                    <TableRow key={task.id}>
-                      {columns
-                        .filter(col => col.visible)
-                        .map(column => (
-                          <TableCell key={`${task.id}-${column.id}`}>
-                            {column.id === "priority" ? (
-                              <span className={getPriorityColor(task.priority)}>
-                                {task.priority === "low" && "Baixa"}
-                                {task.priority === "medium" && "Média"}
-                                {task.priority === "high" && "Alta"}
-                                {task.priority === "urgent" && "Urgente"}
-                              </span>
-                            ) : column.id === "status" ? (
-                              <span className={`px-2 py-1 rounded-full text-sm ${getStatusColor(task.status)}`}>
-                                {task.status === "backlog" && "Backlog"}
-                                {task.status === "in_progress" && "Em Andamento"}
-                                {task.status === "done" && "Concluído"}
-                              </span>
-                            ) : (
-                              task[column.id as keyof Task]
-                            )}
-                          </TableCell>
-                        ))}
-                    </TableRow>
-                  ))}
-                  {tasks.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={columns.filter(col => col.visible).length} className="text-center py-4 text-gray-500">
-                        Nenhuma tarefa cadastrada
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            <TaskList tasks={tasks} columns={columns} />
           </div>
         </main>
       </div>
