@@ -33,17 +33,18 @@ export function ProjectsPieChart() {
             fill="#8884d8"
             paddingAngle={5}
             dataKey="value"
+            nameKey="name"
           >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <ChartTooltip content={<ChartTooltipContent />} />
+          <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
           <ChartLegend 
             verticalAlign="middle" 
             align="right"
             layout="vertical"
-            content={<ChartLegendContent />} 
+            content={<ChartLegendContent nameKey="name" />}
           />
         </PieChart>
       </ChartContainer>
