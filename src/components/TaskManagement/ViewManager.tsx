@@ -4,9 +4,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Database, Save } from "lucide-react";
+import { Eye } from "lucide-react";
+import { toast } from "sonner";
 
 interface View {
   id: string;
@@ -21,31 +23,40 @@ interface ViewManagerProps {
 }
 
 export function ViewManager({ onSaveView, onLoadView, savedViews }: ViewManagerProps) {
-  return (
-    <div className="flex gap-2">
-      <Button variant="outline" size="sm" onClick={onSaveView}>
-        <Save className="mr-2 h-4 w-4" />
-        Salvar Visualização
-      </Button>
+  const handleSaveView = () => {
+    if (savedViews.length >= 5) {
+      toast.error("Limite máximo de 5 visualizações atingido. Remova uma visualização antes de adicionar outra.");
+      return;
+    }
+    onSaveView();
+  };
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            <Database className="mr-2 h-4 w-4" />
-            Carregar Visualização
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {savedViews.map((view) => (
-            <DropdownMenuItem
-              key={view.id}
-              onClick={() => onLoadView(view)}
-            >
-              {view.name}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Eye className="mr-2 h-4 w-4" />
+          Visualização
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
+        <DropdownMenuItem onClick={handleSaveView}>
+          Salvar Visualização Atual
+        </DropdownMenuItem>
+        {savedViews.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            {savedViews.map((view) => (
+              <DropdownMenuItem
+                key={view.id}
+                onClick={() => onLoadView(view)}
+              >
+                {view.name}
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

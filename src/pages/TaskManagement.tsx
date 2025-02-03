@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface Task {
   id: string;
@@ -71,12 +72,17 @@ export default function TaskManagement() {
   };
 
   const handleSaveView = () => {
+    if (savedViews.length >= 5) {
+      toast.error("Limite máximo de 5 visualizações atingido");
+      return;
+    }
     const newView = {
       id: crypto.randomUUID(),
       name: `Visualização ${savedViews.length + 1}`,
       columns: columns.filter(col => col.visible).map(col => col.id),
     };
     setSavedViews([...savedViews, newView]);
+    toast.success("Visualização salva com sucesso");
   };
 
   const handleLoadView = (view: View) => {
@@ -141,7 +147,7 @@ export default function TaskManagement() {
                       Adicionar Tarefa
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
+                  <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
                     <DropdownMenuItem onClick={() => setIsFormOpen(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       Nova Tarefa
