@@ -127,21 +127,15 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">📊 Gráfico de Burndown</h3>
-                <div className="flex justify-center items-center w-full">
-                  <div className="w-[800px]">
-                    <BurndownChart />
-                  </div>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-4">📊 Gráfico de Burndown</h3>
+                  <BurndownChart />
                 </div>
-              </div>
 
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">📈 Burnup Chart</h3>
-                <div className="flex justify-center items-center w-full">
-                  <div className="w-[800px]">
-                    <BurnupChart />
-                  </div>
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-4">📈 Burnup Chart</h3>
+                  <BurnupChart />
                 </div>
               </div>
 
