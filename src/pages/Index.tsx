@@ -77,6 +77,27 @@ const Index = () => {
           <Header />
           <main className="p-6 bg-gray-50 min-h-[calc(100vh-73px)]">
             <div className="grid gap-6">
+              <div className="flex justify-end">
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger className="w-[280px]">
+                    <SelectValue placeholder="Selecione um projeto para filtrar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={undefined}>Todos os projetos</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.title} value={project.title}>
+                        {project.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Distribuição de Horas por Projeto</h3>
+                <ProjectsPieChart />
+              </div>
+
               <div className="grid gap-4 md:grid-cols-4">
                 <StatsCard
                   title="Total de Projetos"
@@ -100,30 +121,14 @@ const Index = () => {
                 />
               </div>
 
-              <div className="flex justify-end">
-                <Select value={selectedProject} onValueChange={setSelectedProject}>
-                  <SelectTrigger className="w-[280px]">
-                    <SelectValue placeholder="Selecione um projeto para filtrar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={undefined}>Todos os projetos</SelectItem>
-                    {projects.map((project) => (
-                      <SelectItem key={project.title} value={project.title}>
-                        {project.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="grid gap-6 md:grid-cols-2">
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-4">Distribuição de Horas por Projeto</h3>
-                  <ProjectsPieChart />
-                </div>
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-lg font-semibold mb-4">Gráfico de Burndown</h3>
                   <BurndownChart />
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-4">Cronograma do Dia</h3>
+                  <GanttChart tasks={filteredTasks} />
                 </div>
               </div>
 
