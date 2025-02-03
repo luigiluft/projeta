@@ -11,9 +11,9 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
 
 export function ProjectsPieChart() {
   return (
-    <div className="w-full h-[300px]">
+    <div className="w-full h-[300px] flex justify-center items-center">
       <ChartContainer
-        className="h-full"
+        className="h-full w-full max-w-[800px]"
         config={{
           pie: {
             theme: {
