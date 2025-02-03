@@ -77,6 +77,29 @@ const Index = () => {
           <Header />
           <main className="p-6 bg-gray-50 min-h-[calc(100vh-73px)]">
             <div className="grid gap-6">
+              <div className="grid gap-4 md:grid-cols-4">
+                <StatsCard
+                  title="Total de Projetos"
+                  value="12"
+                  icon={Target}
+                />
+                <StatsCard
+                  title="Tarefas Ativas"
+                  value="48"
+                  icon={Activity}
+                />
+                <StatsCard
+                  title="Membros do Time"
+                  value="8"
+                  icon={Users}
+                />
+                <StatsCard
+                  title="Horas Registradas"
+                  value="164"
+                  icon={Clock}
+                />
+              </div>
+
               <div className="flex justify-end">
                 <Select value={selectedProject} onValueChange={setSelectedProject}>
                   <SelectTrigger className="w-[280px]">
@@ -100,29 +123,6 @@ const Index = () => {
                     <ProjectsPieChart />
                   </div>
                 </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-4">
-                <StatsCard
-                  title="Total de Projetos"
-                  value="12"
-                  icon={Target}
-                />
-                <StatsCard
-                  title="Tarefas Ativas"
-                  value="48"
-                  icon={Activity}
-                />
-                <StatsCard
-                  title="Membros do Time"
-                  value="8"
-                  icon={Users}
-                />
-                <StatsCard
-                  title="Horas Registradas"
-                  value="164"
-                  icon={Clock}
-                />
               </div>
 
               <div className="bg-white p-6 rounded-lg shadow">
