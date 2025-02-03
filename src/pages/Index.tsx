@@ -10,22 +10,22 @@ import { DailyTasks } from "@/components/Dashboard/DailyTasks";
 
 const projects = [
   {
-    title: "Website Redesign",
+    title: "Redesenho do Website",
     progress: 75,
-    team: "Design Team",
-    dueDate: "Dec 20",
+    team: "Time de Design",
+    dueDate: "20 Dez",
   },
   {
-    title: "Mobile App Development",
+    title: "Desenvolvimento App Mobile",
     progress: 45,
-    team: "Dev Team",
-    dueDate: "Jan 15",
+    team: "Time de Dev",
+    dueDate: "15 Jan",
   },
   {
-    title: "Marketing Campaign",
+    title: "Campanha de Marketing",
     progress: 90,
     team: "Marketing",
-    dueDate: "Dec 10",
+    dueDate: "10 Dez",
   },
 ];
 
@@ -40,22 +40,22 @@ const Index = () => {
             <div className="grid gap-6">
               <div className="grid gap-4 md:grid-cols-4">
                 <StatsCard
-                  title="Total Projects"
+                  title="Total de Projetos"
                   value="12"
                   icon={Target}
                 />
                 <StatsCard
-                  title="Active Tasks"
+                  title="Tarefas Ativas"
                   value="48"
                   icon={Activity}
                 />
                 <StatsCard
-                  title="Team Members"
+                  title="Membros do Time"
                   value="8"
                   icon={Users}
                 />
                 <StatsCard
-                  title="Hours Tracked"
+                  title="Horas Registradas"
                   value="164"
                   icon={Clock}
                 />
@@ -68,7 +68,7 @@ const Index = () => {
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Burndown Chart</h3>
+                    <h3 className="text-lg font-semibold">Gráfico de Burndown</h3>
                     <Select>
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Selecione o projeto" />

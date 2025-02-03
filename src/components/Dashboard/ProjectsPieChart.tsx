@@ -1,10 +1,10 @@
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { Cell, Pie, PieChart } from "recharts";
 
 const data = [
-  { name: "Website Redesign", value: 75 },
-  { name: "Mobile App", value: 45 },
-  { name: "Marketing Campaign", value: 90 },
+  { name: "Redesenho do Website", value: 75 },
+  { name: "App Mobile", value: 45 },
+  { name: "Campanha de Marketing", value: 90 },
 ];
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
@@ -39,6 +39,7 @@ export function ProjectsPieChart() {
             ))}
           </Pie>
           <ChartTooltip content={<ChartTooltipContent />} />
+          <ChartLegend content={<ChartLegendContent />} />
         </PieChart>
       </ChartContainer>
     </div>

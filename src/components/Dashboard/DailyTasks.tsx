@@ -11,25 +11,25 @@ interface Task {
 const tasks: Task[] = [
   {
     id: "1",
-    title: "Review website design mockups",
+    title: "Revisar mockups do design do site",
     dueTime: "14:00",
     completed: false,
   },
   {
     id: "2",
-    title: "Team daily standup",
+    title: "Daily do time",
     dueTime: "10:00",
     completed: true,
   },
   {
     id: "3",
-    title: "Update project documentation",
+    title: "Atualizar documentação do projeto",
     dueTime: "16:30",
     completed: false,
   },
   {
     id: "4",
-    title: "Client meeting - Mobile App",
+    title: "Reunião com cliente - App Mobile",
     dueTime: "11:30",
     completed: true,
   },
@@ -41,7 +41,7 @@ export function DailyTasks() {
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          Today's Tasks
+          Tarefas do Dia
         </CardTitle>
       </CardHeader>
       <CardContent>
