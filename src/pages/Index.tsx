@@ -10,6 +10,7 @@ import { ProjectsPieChart } from "@/components/Dashboard/ProjectsPieChart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DailyTasks } from "@/components/Dashboard/DailyTasks";
 import { GanttChart } from "@/components/Dashboard/GanttChart";
+import { AllocationChart } from "@/components/Dashboard/AllocationChart";
 import { useState } from "react";
 
 const projects = [
@@ -64,8 +65,16 @@ const tasks = [
   },
 ];
 
+const timeRanges = [
+  { value: "7d", label: "Últimos 7 dias" },
+  { value: "15d", label: "Últimos 15 dias" },
+  { value: "30d", label: "Últimos 30 dias" },
+  { value: "90d", label: "Últimos 90 dias" },
+];
+
 const Index = () => {
   const [selectedProject, setSelectedProject] = useState<string | undefined>();
+  const [selectedTimeRange, setSelectedTimeRange] = useState<string>("7d");
 
   const filteredTasks = selectedProject
     ? tasks.filter((task) => task.project === selectedProject)
@@ -102,7 +111,7 @@ const Index = () => {
                 />
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-4">
                 <Select value={selectedProject} onValueChange={setSelectedProject}>
                   <SelectTrigger className="w-[280px]">
                     <SelectValue placeholder="Selecione um projeto para filtrar" />
@@ -116,6 +125,19 @@ const Index = () => {
                     ))}
                   </SelectContent>
                 </Select>
+
+                <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Selecione o período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeRanges.map((range) => (
+                      <SelectItem key={range.value} value={range.value}>
+                        {range.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="bg-white p-6 rounded-lg shadow">
@@ -125,6 +147,11 @@ const Index = () => {
                     <ProjectsPieChart />
                   </div>
                 </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Alocação de Horas por Funcionário</h3>
+                <AllocationChart />
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
