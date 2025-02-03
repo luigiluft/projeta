@@ -94,8 +94,10 @@ const Index = () => {
               </div>
 
               <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">Distribuição de Horas por Projeto</h3>
-                <ProjectsPieChart />
+                <h3 className="text-lg font-semibold mb-4 text-center">Distribuição de Horas por Projeto</h3>
+                <div className="flex justify-center">
+                  <ProjectsPieChart />
+                </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-4">
@@ -132,14 +134,8 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="bg-white rounded-lg shadow">
-                  <DailyTasks tasks={filteredTasks} />
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-4">Cronograma do Dia</h3>
-                  <GanttChart tasks={filteredTasks} />
-                </div>
+              <div className="bg-white rounded-lg shadow">
+                <DailyTasks tasks={filteredTasks} />
               </div>
             </div>
           </main>
