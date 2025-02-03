@@ -33,19 +33,17 @@ const formSchema = z.object({
   defaultValue: z.string().optional(),
 });
 
-type Attribute = {
+type FormValues = z.infer<typeof formSchema>;
+
+type Attribute = FormValues & {
   id: string;
-  name: string;
-  unit: string;
-  type: string;
-  defaultValue?: string;
 };
 
 export default function ProjectAttributes() {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -55,7 +53,7 @@ export default function ProjectAttributes() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: FormValues) {
     if (editingId) {
       setAttributes(attributes.map(attr => 
         attr.id === editingId ? { ...values, id: editingId } : attr
@@ -66,7 +64,7 @@ export default function ProjectAttributes() {
         description: "As alterações foram salvas com sucesso.",
       });
     } else {
-      const newAttribute = {
+      const newAttribute: Attribute = {
         ...values,
         id: Math.random().toString(36).substr(2, 9),
       };
@@ -81,7 +79,12 @@ export default function ProjectAttributes() {
 
   const handleEdit = (attribute: Attribute) => {
     setEditingId(attribute.id);
-    form.reset(attribute);
+    form.reset({
+      name: attribute.name,
+      unit: attribute.unit,
+      type: attribute.type,
+      defaultValue: attribute.defaultValue,
+    });
   };
 
   const handleDelete = (id: string) => {
