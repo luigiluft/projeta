@@ -4,6 +4,8 @@ import { Header } from "@/components/Layout/Header";
 import { StatsCard } from "@/components/Dashboard/StatsCard";
 import { Activity, Clock, Target, Users } from "lucide-react";
 import { BurndownChart } from "@/components/Dashboard/BurndownChart";
+import { BurnupChart } from "@/components/Dashboard/BurnupChart";
+import { CumulativeFlowChart } from "@/components/Dashboard/CumulativeFlowChart";
 import { ProjectsPieChart } from "@/components/Dashboard/ProjectsPieChart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DailyTasks } from "@/components/Dashboard/DailyTasks";
@@ -126,10 +128,28 @@ const Index = () => {
               </div>
 
               <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">Gráfico de Burndown</h3>
+                <h3 className="text-lg font-semibold mb-4">📊 Gráfico de Burndown</h3>
                 <div className="flex justify-center items-center w-full">
                   <div className="w-[800px]">
                     <BurndownChart />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">📈 Burnup Chart</h3>
+                <div className="flex justify-center items-center w-full">
+                  <div className="w-[800px]">
+                    <BurnupChart />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">📉 Cumulative Flow Diagram (CFD)</h3>
+                <div className="flex justify-center items-center w-full">
+                  <div className="w-[800px]">
+                    <CumulativeFlowChart />
                   </div>
                 </div>
               </div>
