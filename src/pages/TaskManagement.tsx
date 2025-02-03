@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, FilePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Layout/Header";
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { TaskForm } from "@/components/TaskManagement/TaskForm";
+import { ColumnManager } from "@/components/TaskManagement/ColumnManager";
+import { ViewManager } from "@/components/TaskManagement/ViewManager";
 import {
   Table,
   TableBody,
@@ -12,6 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Task {
   id: string;
@@ -25,12 +33,62 @@ interface Task {
   timeMax: string;
 }
 
+interface Column {
+  id: string;
+  label: string;
+  visible: boolean;
+}
+
+interface View {
+  id: string;
+  name: string;
+  columns: string[];
+}
+
 export default function TaskManagement() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [columns, setColumns] = useState<Column[]>([
+    { id: "name", label: "Nome", visible: true },
+    { id: "type", label: "Tipo", visible: true },
+    { id: "priority", label: "Prioridade", visible: true },
+    { id: "status", label: "Status", visible: true },
+    { id: "responsible", label: "Responsável", visible: true },
+    { id: "timeMin", label: "Tempo Min.", visible: true },
+    { id: "timeMed", label: "Tempo Méd.", visible: true },
+    { id: "timeMax", label: "Tempo Máx.", visible: true },
+  ]);
+  const [savedViews, setSavedViews] = useState<View[]>([]);
 
   const handleSubmit = (values: Omit<Task, "id">) => {
     setTasks([...tasks, { ...values, id: crypto.randomUUID() }]);
+  };
+
+  const handleColumnVisibilityChange = (columnId: string) => {
+    setColumns(columns.map(col => 
+      col.id === columnId ? { ...col, visible: !col.visible } : col
+    ));
+  };
+
+  const handleSaveView = () => {
+    const newView = {
+      id: crypto.randomUUID(),
+      name: `Visualização ${savedViews.length + 1}`,
+      columns: columns.filter(col => col.visible).map(col => col.id),
+    };
+    setSavedViews([...savedViews, newView]);
+  };
+
+  const handleLoadView = (view: View) => {
+    setColumns(columns.map(col => ({
+      ...col,
+      visible: view.columns.includes(col.id),
+    })));
+  };
+
+  const handleImportSpreadsheet = () => {
+    // Implement spreadsheet import logic here
+    console.log("Import spreadsheet clicked");
   };
 
   const getPriorityColor = (priority: Task["priority"]) => {
@@ -66,55 +124,78 @@ export default function TaskManagement() {
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold">Gestão de Tarefas</h1>
-              <Button onClick={() => setIsFormOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Tarefa
-              </Button>
+              <div className="flex items-center gap-4">
+                <ColumnManager
+                  columns={columns}
+                  onColumnVisibilityChange={handleColumnVisibilityChange}
+                />
+                <ViewManager
+                  onSaveView={handleSaveView}
+                  onLoadView={handleLoadView}
+                  savedViews={savedViews}
+                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar Tarefa
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => setIsFormOpen(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Nova Tarefa
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleImportSpreadsheet}>
+                      <FilePlus className="mr-2 h-4 w-4" />
+                      Importar Planilha
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
 
             <div className="bg-white rounded-lg shadow">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Prioridade</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Responsável</TableHead>
-                    <TableHead>Tempo Min.</TableHead>
-                    <TableHead>Tempo Méd.</TableHead>
-                    <TableHead>Tempo Máx.</TableHead>
+                    {columns
+                      .filter(col => col.visible)
+                      .map(column => (
+                        <TableHead key={column.id}>{column.label}</TableHead>
+                      ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {tasks.map((task) => (
                     <TableRow key={task.id}>
-                      <TableCell>{task.name}</TableCell>
-                      <TableCell className="capitalize">{task.type}</TableCell>
-                      <TableCell>
-                        <span className={getPriorityColor(task.priority)}>
-                          {task.priority === "low" && "Baixa"}
-                          {task.priority === "medium" && "Média"}
-                          {task.priority === "high" && "Alta"}
-                          {task.priority === "urgent" && "Urgente"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-sm ${getStatusColor(task.status)}`}>
-                          {task.status === "backlog" && "Backlog"}
-                          {task.status === "in_progress" && "Em Andamento"}
-                          {task.status === "done" && "Concluído"}
-                        </span>
-                      </TableCell>
-                      <TableCell>{task.responsible}</TableCell>
-                      <TableCell>{task.timeMin}h</TableCell>
-                      <TableCell>{task.timeMed}h</TableCell>
-                      <TableCell>{task.timeMax}h</TableCell>
+                      {columns
+                        .filter(col => col.visible)
+                        .map(column => (
+                          <TableCell key={`${task.id}-${column.id}`}>
+                            {column.id === "priority" ? (
+                              <span className={getPriorityColor(task.priority)}>
+                                {task.priority === "low" && "Baixa"}
+                                {task.priority === "medium" && "Média"}
+                                {task.priority === "high" && "Alta"}
+                                {task.priority === "urgent" && "Urgente"}
+                              </span>
+                            ) : column.id === "status" ? (
+                              <span className={`px-2 py-1 rounded-full text-sm ${getStatusColor(task.status)}`}>
+                                {task.status === "backlog" && "Backlog"}
+                                {task.status === "in_progress" && "Em Andamento"}
+                                {task.status === "done" && "Concluído"}
+                              </span>
+                            ) : (
+                              task[column.id as keyof Task]
+                            )}
+                          </TableCell>
+                        ))}
                     </TableRow>
                   ))}
                   {tasks.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-4 text-gray-500">
+                      <TableCell colSpan={columns.filter(col => col.visible).length} className="text-center py-4 text-gray-500">
                         Nenhuma tarefa cadastrada
                       </TableCell>
                     </TableRow>
