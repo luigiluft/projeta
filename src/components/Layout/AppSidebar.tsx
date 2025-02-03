@@ -8,14 +8,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { BarChart2, Calendar, ClipboardList, Settings, Users } from "lucide-react";
+import { BarChart2, Calendar, ClipboardList, Settings, Users, ListTodo, Variable } from "lucide-react";
 
 const menuItems = [
   { title: "Dashboard", icon: BarChart2, url: "/" },
-  { title: "Projects", icon: ClipboardList, url: "/projects" },
-  { title: "Team", icon: Users, url: "/team" },
-  { title: "Calendar", icon: Calendar, url: "/calendar" },
-  { title: "Settings", icon: Settings, url: "/settings" },
+  { title: "Projetos", icon: ClipboardList, url: "/projects" },
+  { title: "Time", icon: Users, url: "/team" },
+  { title: "Calendário", icon: Calendar, url: "/calendar" },
+  { title: "Gestão de Tarefas", icon: ListTodo, url: "/task-management" },
+  { title: "Atributos do Projeto", icon: Variable, url: "/project-attributes" },
+  { title: "Configurações", icon: Settings, url: "/settings" },
 ];
 
 export function AppSidebar() {
