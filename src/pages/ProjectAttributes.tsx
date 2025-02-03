@@ -22,7 +22,15 @@ import {
 import { Header } from "@/components/Layout/Header";
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { toast } from "@/components/ui/use-toast";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Plus, FilePlus } from "lucide-react";
+import { ColumnManager } from "@/components/ProjectAttributes/ColumnManager";
+import { ViewManager } from "@/components/ProjectAttributes/ViewManager";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -39,9 +47,28 @@ type Attribute = FormValues & {
   id: string;
 };
 
+interface Column {
+  id: string;
+  label: string;
+  visible: boolean;
+}
+
+interface View {
+  id: string;
+  name: string;
+  columns: string[];
+}
+
 export default function ProjectAttributes() {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [columns, setColumns] = useState<Column[]>([
+    { id: "name", label: "Nome", visible: true },
+    { id: "unit", label: "Unidade", visible: true },
+    { id: "type", label: "Tipo", visible: true },
+    { id: "defaultValue", label: "Valor Padrão", visible: true },
+  ]);
+  const [savedViews, setSavedViews] = useState<View[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -95,6 +122,38 @@ export default function ProjectAttributes() {
     });
   };
 
+  const handleColumnVisibilityChange = (columnId: string) => {
+    setColumns(columns.map(col => 
+      col.id === columnId ? { ...col, visible: !col.visible } : col
+    ));
+  };
+
+  const handleSaveView = () => {
+    if (savedViews.length >= 5) {
+      toast.error("Limite máximo de 5 visualizações atingido");
+      return;
+    }
+    const newView = {
+      id: crypto.randomUUID(),
+      name: `Visualização ${savedViews.length + 1}`,
+      columns: columns.filter(col => col.visible).map(col => col.id),
+    };
+    setSavedViews([...savedViews, newView]);
+    toast.success("Visualização salva com sucesso");
+  };
+
+  const handleLoadView = (view: View) => {
+    setColumns(columns.map(col => ({
+      ...col,
+      visible: view.columns.includes(col.id),
+    })));
+  };
+
+  const handleImportSpreadsheet = () => {
+    // Implement spreadsheet import logic here
+    console.log("Import spreadsheet clicked");
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       <AppSidebar />
@@ -102,7 +161,38 @@ export default function ProjectAttributes() {
         <Header />
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6">Gestão de Atributos do Projeto</h1>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-2xl font-bold">Gestão de Atributos do Projeto</h1>
+              <div className="flex items-center gap-4">
+                <ColumnManager
+                  columns={columns}
+                  onColumnVisibilityChange={handleColumnVisibilityChange}
+                />
+                <ViewManager
+                  onSaveView={handleSaveView}
+                  onLoadView={handleLoadView}
+                  savedViews={savedViews}
+                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Adicionar Atributo
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
+                    <DropdownMenuItem onClick={() => form.reset()}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Novo Atributo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleImportSpreadsheet}>
+                      <FilePlus className="mr-2 h-4 w-4" />
+                      Importar Planilha
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
             
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
@@ -198,10 +288,14 @@ export default function ProjectAttributes() {
                       className="flex items-center justify-between p-4 border rounded-lg"
                     >
                       <div>
-                        <h3 className="font-medium">{attribute.name}</h3>
+                        {columns.find(col => col.id === "name")?.visible && (
+                          <h3 className="font-medium">{attribute.name}</h3>
+                        )}
                         <p className="text-sm text-gray-500">
-                          {attribute.type} | {attribute.unit}
-                          {attribute.defaultValue && ` | Padrão: ${attribute.defaultValue}`}
+                          {columns.find(col => col.id === "type")?.visible && attribute.type}
+                          {columns.find(col => col.id === "unit")?.visible && ` | ${attribute.unit}`}
+                          {columns.find(col => col.id === "defaultValue")?.visible && 
+                            attribute.defaultValue && ` | Padrão: ${attribute.defaultValue}`}
                         </p>
                       </div>
                       <div className="flex gap-2">
