@@ -26,7 +26,7 @@ export function ProjectsPieChart() {
         <PieChart>
           <Pie
             data={data}
-            cx="50%"
+            cx="40%"
             cy="50%"
             innerRadius={60}
             outerRadius={80}
@@ -39,7 +39,12 @@ export function ProjectsPieChart() {
             ))}
           </Pie>
           <ChartTooltip content={<ChartTooltipContent />} />
-          <ChartLegend content={<ChartLegendContent />} />
+          <ChartLegend 
+            verticalAlign="middle" 
+            align="right"
+            layout="vertical"
+            content={<ChartLegendContent />} 
+          />
         </PieChart>
       </ChartContainer>
     </div>
