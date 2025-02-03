@@ -26,12 +26,23 @@ export function GanttChart({ tasks }: GanttChartProps) {
       start: startTime.getHours(),
       duration: 1,
       completed: task.completed,
+      fill: task.completed ? "#22c55e" : "#3b82f6"
     };
   });
 
   return (
     <div className="w-full h-[300px]">
-      <ChartContainer className="h-full">
+      <ChartContainer 
+        className="h-full"
+        config={{
+          bar: {
+            theme: {
+              light: "var(--primary)",
+              dark: "var(--primary)",
+            },
+          },
+        }}
+      >
         <BarChart
           data={data}
           layout="vertical"
@@ -45,7 +56,7 @@ export function GanttChart({ tasks }: GanttChartProps) {
           <Bar
             dataKey="duration"
             stackId="a"
-            fill={(entry) => (entry.completed ? "#22c55e" : "#3b82f6")}
+            fill="#3b82f6"
             background={{ fill: "#f3f4f6" }}
           />
         </BarChart>
