@@ -95,8 +95,10 @@ const Index = () => {
 
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="text-lg font-semibold mb-4 text-center">Distribuição de Horas por Projeto</h3>
-                <div className="flex justify-center">
-                  <ProjectsPieChart />
+                <div className="flex justify-center items-center w-full">
+                  <div className="w-[400px]">
+                    <ProjectsPieChart />
+                  </div>
                 </div>
               </div>
 
