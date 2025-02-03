@@ -29,6 +29,7 @@ interface View {
 export default function ProjectAttributes() {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [columns, setColumns] = useState<Column[]>([
     { id: "name", label: "Nome", visible: true },
     { id: "unit", label: "Unidade", visible: true },
@@ -52,10 +53,12 @@ export default function ProjectAttributes() {
       setAttributes([...attributes, newAttribute]);
       toast.success("Atributo criado com sucesso!");
     }
+    setShowForm(false);
   };
 
   const handleEdit = (attribute: Attribute) => {
     setEditingId(attribute.id);
+    setShowForm(true);
   };
 
   const handleDelete = (id: string) => {
@@ -95,6 +98,11 @@ export default function ProjectAttributes() {
     console.log("Import spreadsheet clicked");
   };
 
+  const handleNewAttribute = () => {
+    setEditingId(null);
+    setShowForm(true);
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       <AppSidebar />
@@ -110,16 +118,18 @@ export default function ProjectAttributes() {
                 onColumnVisibilityChange={handleColumnVisibilityChange}
                 onSaveView={handleSaveView}
                 onLoadView={handleLoadView}
-                onNewAttribute={() => setEditingId(null)}
+                onNewAttribute={handleNewAttribute}
                 onImportSpreadsheet={handleImportSpreadsheet}
               />
             </div>
             
-            <AttributeForm
-              editingId={editingId}
-              onSubmit={handleSubmit}
-              initialValues={attributes.find(attr => attr.id === editingId)}
-            />
+            {showForm && (
+              <AttributeForm
+                editingId={editingId}
+                onSubmit={handleSubmit}
+                initialValues={attributes.find(attr => attr.id === editingId)}
+              />
+            )}
 
             <AttributeList
               attributes={attributes}
