@@ -1,12 +1,12 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { Header } from "@/components/Layout/Header";
-import { ProjectCard } from "@/components/Dashboard/ProjectCard";
 import { StatsCard } from "@/components/Dashboard/StatsCard";
 import { Activity, Clock, Target, Users } from "lucide-react";
 import { BurndownChart } from "@/components/Dashboard/BurndownChart";
 import { ProjectsPieChart } from "@/components/Dashboard/ProjectsPieChart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DailyTasks } from "@/components/Dashboard/DailyTasks";
 
 const projects = [
   {
@@ -86,11 +86,10 @@ const Index = () => {
                 </div>
               </div>
 
-              <h2 className="text-2xl font-bold">Active Projects</h2>
-              <div className="grid gap-6 md:grid-cols-3">
-                {projects.map((project) => (
-                  <ProjectCard key={project.title} {...project} />
-                ))}
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="bg-white rounded-lg shadow">
+                  <DailyTasks />
+                </div>
               </div>
             </div>
           </main>
