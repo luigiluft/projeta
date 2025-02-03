@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/select";
 import { Header } from "@/components/Layout/Header";
 import { AppSidebar } from "@/components/Layout/AppSidebar";
-import { toast } from "@/components/ui/use-toast";
 import { Pencil, Trash2, Plus, FilePlus } from "lucide-react";
 import { ColumnManager } from "@/components/ProjectAttributes/ColumnManager";
 import { ViewManager } from "@/components/ProjectAttributes/ViewManager";
@@ -31,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -86,20 +86,14 @@ export default function ProjectAttributes() {
         attr.id === editingId ? { ...values, id: editingId } : attr
       ));
       setEditingId(null);
-      toast({
-        title: "Atributo atualizado!",
-        description: "As alterações foram salvas com sucesso.",
-      });
+      toast.success("Atributo atualizado com sucesso!");
     } else {
       const newAttribute: Attribute = {
         ...values,
         id: Math.random().toString(36).substr(2, 9),
       };
       setAttributes([...attributes, newAttribute]);
-      toast({
-        title: "Atributo criado!",
-        description: "O novo atributo foi adicionado com sucesso.",
-      });
+      toast.success("Atributo criado com sucesso!");
     }
     form.reset();
   }
@@ -116,10 +110,7 @@ export default function ProjectAttributes() {
 
   const handleDelete = (id: string) => {
     setAttributes(attributes.filter(attr => attr.id !== id));
-    toast({
-      title: "Atributo removido!",
-      description: "O atributo foi removido com sucesso.",
-    });
+    toast.success("Atributo removido com sucesso!");
   };
 
   const handleColumnVisibilityChange = (columnId: string) => {
