@@ -1,4 +1,3 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { Header } from "@/components/Layout/Header";
 import { StatsCard } from "@/components/Dashboard/StatsCard";
@@ -81,114 +80,112 @@ const Index = () => {
     : tasks;
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <div className="flex-1">
-          <Header />
-          <main className="p-6 bg-gray-50 min-h-[calc(100vh-73px)]">
-            <div className="grid gap-6">
-              <div className="grid gap-4 md:grid-cols-4">
-                <StatsCard
-                  title="Total de Projetos"
-                  value="12"
-                  icon={Target}
-                />
-                <StatsCard
-                  title="Tarefas Ativas"
-                  value="48"
-                  icon={Activity}
-                />
-                <StatsCard
-                  title="Membros do Time"
-                  value="8"
-                  icon={Users}
-                />
-                <StatsCard
-                  title="Horas Registradas"
-                  value="164"
-                  icon={Clock}
-                />
-              </div>
+    <div className="min-h-screen flex w-full">
+      <AppSidebar />
+      <div className="flex-1">
+        <Header />
+        <main className="p-6 bg-gray-50 min-h-[calc(100vh-73px)]">
+          <div className="grid gap-6">
+            <div className="grid gap-4 md:grid-cols-4">
+              <StatsCard
+                title="Total de Projetos"
+                value="12"
+                icon={Target}
+              />
+              <StatsCard
+                title="Tarefas Ativas"
+                value="48"
+                icon={Activity}
+              />
+              <StatsCard
+                title="Membros do Time"
+                value="8"
+                icon={Users}
+              />
+              <StatsCard
+                title="Horas Registradas"
+                value="164"
+                icon={Clock}
+              />
+            </div>
 
-              <div className="flex justify-end gap-4">
-                <Select value={selectedProject} onValueChange={setSelectedProject}>
-                  <SelectTrigger className="w-[280px]">
-                    <SelectValue placeholder="Selecione um projeto para filtrar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={undefined}>Todos os projetos</SelectItem>
-                    {projects.map((project) => (
-                      <SelectItem key={project.title} value={project.title}>
-                        {project.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="flex justify-end gap-4">
+              <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <SelectTrigger className="w-[280px]">
+                  <SelectValue placeholder="Selecione um projeto para filtrar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={undefined}>Todos os projetos</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.title} value={project.title}>
+                      {project.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-                <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Selecione o período" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeRanges.map((range) => (
-                      <SelectItem key={range.value} value={range.value}>
-                        {range.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Selecione o período" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeRanges.map((range) => (
+                    <SelectItem key={range.value} value={range.value}>
+                      {range.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4 text-center">Distribuição de Horas por Projeto</h3>
-                <div className="flex justify-center items-center w-full">
-                  <div className="w-[400px]">
-                    <ProjectsPieChart />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">Alocação de Horas por Funcionário</h3>
-                <AllocationChart />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-4">📊 Gráfico de Burndown</h3>
-                  <BurndownChart />
-                </div>
-
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-4">📈 Burnup Chart</h3>
-                  <BurnupChart />
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">📉 Cumulative Flow Diagram (CFD)</h3>
-                <div className="flex justify-center items-center w-full">
-                  <div className="w-[800px]">
-                    <CumulativeFlowChart />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-4">Cronograma do Dia</h3>
-                  <GanttChart tasks={filteredTasks} />
-                </div>
-                <div className="bg-white rounded-lg shadow">
-                  <DailyTasks tasks={filteredTasks} />
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4 text-center">Distribuição de Horas por Projeto</h3>
+              <div className="flex justify-center items-center w-full">
+                <div className="w-[400px]">
+                  <ProjectsPieChart />
                 </div>
               </div>
             </div>
-          </main>
-        </div>
+
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">Alocação de Horas por Funcionário</h3>
+              <AllocationChart />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">📊 Gráfico de Burndown</h3>
+                <BurndownChart />
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">📈 Burnup Chart</h3>
+                <BurnupChart />
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">📉 Cumulative Flow Diagram (CFD)</h3>
+              <div className="flex justify-center items-center w-full">
+                <div className="w-[800px]">
+                  <CumulativeFlowChart />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Cronograma do Dia</h3>
+                <GanttChart tasks={filteredTasks} />
+              </div>
+              <div className="bg-white rounded-lg shadow">
+                <DailyTasks tasks={filteredTasks} />
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
