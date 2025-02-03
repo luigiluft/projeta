@@ -7,6 +7,8 @@ import { BurndownChart } from "@/components/Dashboard/BurndownChart";
 import { ProjectsPieChart } from "@/components/Dashboard/ProjectsPieChart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DailyTasks } from "@/components/Dashboard/DailyTasks";
+import { GanttChart } from "@/components/Dashboard/GanttChart";
+import { useState } from "react";
 
 const projects = [
   {
@@ -29,7 +31,44 @@ const projects = [
   },
 ];
 
+const tasks = [
+  {
+    id: "1",
+    title: "Revisar mockups do design do site",
+    dueTime: "14:00",
+    completed: false,
+    project: "Redesenho do Website",
+  },
+  {
+    id: "2",
+    title: "Daily do time",
+    dueTime: "10:00",
+    completed: true,
+    project: "Desenvolvimento App Mobile",
+  },
+  {
+    id: "3",
+    title: "Atualizar documentação do projeto",
+    dueTime: "16:30",
+    completed: false,
+    project: "Desenvolvimento App Mobile",
+  },
+  {
+    id: "4",
+    title: "Reunião com cliente - App Mobile",
+    dueTime: "11:30",
+    completed: true,
+    project: "Desenvolvimento App Mobile",
+  },
+];
+
 const Index = () => {
+  const [selectedProject, setSelectedProject] = useState<string | undefined>();
+
+  const filteredTasks = selectedProject
+    ? tasks.filter((task) => task.project === selectedProject)
+    : tasks;
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -61,34 +100,40 @@ const Index = () => {
                 />
               </div>
 
+              <div className="flex justify-end">
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger className="w-[280px]">
+                    <SelectValue placeholder="Selecione um projeto para filtrar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={undefined}>Todos os projetos</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.title} value={project.title}>
+                        {project.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-lg font-semibold mb-4">Distribuição de Horas por Projeto</h3>
                   <ProjectsPieChart />
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Gráfico de Burndown</h3>
-                    <Select>
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Selecione o projeto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project.title} value={project.title}>
-                            {project.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <h3 className="text-lg font-semibold mb-4">Gráfico de Burndown</h3>
                   <BurndownChart />
                 </div>
               </div>
 
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="bg-white rounded-lg shadow">
-                  <DailyTasks />
+                  <DailyTasks tasks={filteredTasks} />
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-4">Cronograma do Dia</h3>
+                  <GanttChart tasks={filteredTasks} />
                 </div>
               </div>
             </div>

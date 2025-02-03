@@ -8,34 +8,11 @@ interface Task {
   completed: boolean;
 }
 
-const tasks: Task[] = [
-  {
-    id: "1",
-    title: "Revisar mockups do design do site",
-    dueTime: "14:00",
-    completed: false,
-  },
-  {
-    id: "2",
-    title: "Daily do time",
-    dueTime: "10:00",
-    completed: true,
-  },
-  {
-    id: "3",
-    title: "Atualizar documentação do projeto",
-    dueTime: "16:30",
-    completed: false,
-  },
-  {
-    id: "4",
-    title: "Reunião com cliente - App Mobile",
-    dueTime: "11:30",
-    completed: true,
-  },
-];
+interface DailyTasksProps {
+  tasks: Task[];
+}
 
-export function DailyTasks() {
+export function DailyTasks({ tasks }: DailyTasksProps) {
   return (
     <Card>
       <CardHeader>
