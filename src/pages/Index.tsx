@@ -125,19 +125,23 @@ const Index = () => {
                 />
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-semibold mb-4">Gráfico de Burndown</h3>
-                  <BurndownChart />
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-4">Gráfico de Burndown</h3>
+                <div className="flex justify-center items-center w-full">
+                  <div className="w-[800px]">
+                    <BurndownChart />
+                  </div>
                 </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-lg font-semibold mb-4">Cronograma do Dia</h3>
                   <GanttChart tasks={filteredTasks} />
                 </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow">
-                <DailyTasks tasks={filteredTasks} />
+                <div className="bg-white rounded-lg shadow">
+                  <DailyTasks tasks={filteredTasks} />
+                </div>
               </div>
             </div>
           </main>
