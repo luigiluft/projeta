@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import TaskManagement from "./pages/TaskManagement";
 import ProjectAttributes from "./pages/ProjectAttributes";
+import Team from "./pages/Team";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/task-management" element={<TaskManagement />} />
             <Route path="/project-attributes" element={<ProjectAttributes />} />
+            <Route path="/team" element={<Team />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
