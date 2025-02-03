@@ -4,6 +4,9 @@ import { Header } from "@/components/Layout/Header";
 import { ProjectCard } from "@/components/Dashboard/ProjectCard";
 import { StatsCard } from "@/components/Dashboard/StatsCard";
 import { Activity, Clock, Target, Users } from "lucide-react";
+import { BurndownChart } from "@/components/Dashboard/BurndownChart";
+import { ProjectsPieChart } from "@/components/Dashboard/ProjectsPieChart";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const projects = [
   {
@@ -57,6 +60,32 @@ const Index = () => {
                   icon={Clock}
                 />
               </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-lg font-semibold mb-4">Distribuição de Horas por Projeto</h3>
+                  <ProjectsPieChart />
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Burndown Chart</h3>
+                    <Select>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Selecione o projeto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project.title} value={project.title}>
+                            {project.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <BurndownChart />
+                </div>
+              </div>
+
               <h2 className="text-2xl font-bold">Active Projects</h2>
               <div className="grid gap-6 md:grid-cols-3">
                 {projects.map((project) => (
