@@ -52,6 +52,19 @@ export function ActionButtons({
     exportToCSV(data, exportFilename);
   };
 
+  const getActionText = (buttonText: string) => {
+    switch (buttonText) {
+      case "Adicionar Projeto":
+        return "Cadastrar Projeto";
+      case "Novo Membro":
+        return "Cadastrar Membro";
+      case "Nova Tarefa":
+        return "Cadastrar Tarefa";
+      default:
+        return "Cadastrar Atributo";
+    }
+  };
+
   return (
     <div className="flex items-center gap-4">
       <ColumnManager
@@ -77,7 +90,7 @@ export function ActionButtons({
         <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
           <DropdownMenuItem onClick={onNewAttribute}>
             <Plus className="mr-2 h-4 w-4" />
-            Cadastrar Atributo
+            {getActionText(newButtonText)}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onImportSpreadsheet}>
             <FilePlus className="mr-2 h-4 w-4" />
