@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Plus, FilePlus, Download } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +29,6 @@ interface ActionButtonsProps {
   onColumnVisibilityChange: (columnId: string) => void;
   onSaveView: () => void;
   onLoadView: (view: View) => void;
-  onNewAttribute: () => void;
   onImportSpreadsheet: () => void;
   newButtonText?: string;
   data?: any[];
@@ -41,12 +41,13 @@ export function ActionButtons({
   onColumnVisibilityChange,
   onSaveView,
   onLoadView,
-  onNewAttribute,
   onImportSpreadsheet,
   newButtonText = "Adicionar Atributo",
   data = [],
   exportFilename = "export",
 }: ActionButtonsProps) {
+  const navigate = useNavigate();
+
   const handleExport = () => {
     if (data.length === 0) return;
     exportToCSV(data, exportFilename);
@@ -62,6 +63,19 @@ export function ActionButtons({
         return "Cadastrar Tarefa";
       default:
         return "Cadastrar Atributo";
+    }
+  };
+
+  const getNavigationPath = () => {
+    switch (newButtonText) {
+      case "Adicionar Projeto":
+        return "/projects/new";
+      case "Novo Membro":
+        return "/team/new";
+      case "Nova Tarefa":
+        return "/task-management/new";
+      default:
+        return "/project-attributes/new";
     }
   };
 
@@ -88,7 +102,7 @@ export function ActionButtons({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
-          <DropdownMenuItem onClick={onNewAttribute}>
+          <DropdownMenuItem onClick={() => navigate(getNavigationPath())}>
             <Plus className="mr-2 h-4 w-4" />
             {getActionText(newButtonText)}
           </DropdownMenuItem>
