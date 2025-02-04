@@ -31,9 +31,27 @@ export default function UserApproval() {
   const { data: profiles, isLoading, refetch } = useQuery({
     queryKey: ["profiles"],
     queryFn: async () => {
+      // First check if current user is admin
+      const { data: currentUserProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role, approved")
+        .eq("id", (await supabase.auth.getUser()).data.user?.id || '')
+        .single();
+
+      if (profileError) {
+        console.error("Error checking user role:", profileError);
+        throw profileError;
+      }
+
+      if (currentUserProfile?.role !== 'admin' || !currentUserProfile?.approved) {
+        throw new Error("Unauthorized access");
+      }
+
+      // If admin, fetch all profiles
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("*");
+        .select("*")
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error("Error fetching profiles:", error);
@@ -69,7 +87,6 @@ export default function UserApproval() {
   };
 
   const handleEdit = async (userId: string) => {
-    // Implement edit functionality
     toast({
       title: "Info",
       description: "Funcionalidade de edição será implementada em breve.",
