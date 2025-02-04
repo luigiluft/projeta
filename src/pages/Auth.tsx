@@ -98,6 +98,7 @@ export default function Auth() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Starting signup process...");
     
     if (!signupData.email || !signupData.password || !signupData.firstName || !signupData.lastName) {
       toast({
@@ -128,7 +129,13 @@ export default function Auth() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log("Attempting to sign up user with data:", {
+        email: signupData.email,
+        firstName: signupData.firstName,
+        lastName: signupData.lastName
+      });
+
+      const { data, error } = await supabase.auth.signUp({
         email: signupData.email.trim().toLowerCase(),
         password: signupData.password,
         options: {
@@ -139,10 +146,15 @@ export default function Auth() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Signup error:", error);
+        throw error;
+      }
+
+      console.log("Signup successful:", data);
 
       toast({
-        title: "Cadastro recebido com sucesso!",
+        title: "Cadastro realizado com sucesso!",
         description: "Seu cadastro será analisado e aprovado nos próximos dias. Você receberá um email quando estiver pronto para acessar.",
       });
       
@@ -153,6 +165,7 @@ export default function Auth() {
         lastName: "",
       });
     } catch (error: any) {
+      console.error("Error in signup process:", error);
       handleAuthError(error);
     } finally {
       setLoading(false);
