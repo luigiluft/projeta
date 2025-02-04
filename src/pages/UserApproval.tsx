@@ -17,7 +17,8 @@ interface PendingUser {
   role: string;
   created_at: string;
   user_id: string;
-  email?: string;
+  first_name?: string | null;
+  last_name?: string | null;
 }
 
 export default function UserApproval() {
@@ -35,19 +36,20 @@ export default function UserApproval() {
 
       if (rolesError) throw rolesError;
 
-      // Then fetch user emails for those roles
+      // Then fetch user profiles for those roles
       const userIds = userRoles?.map(role => role.user_id) || [];
-      const { data: users, error: usersError } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, email")
+        .select("id, first_name, last_name")
         .in("id", userIds);
 
-      if (usersError) throw usersError;
+      if (profilesError) throw profilesError;
 
       // Combine the data
       return userRoles?.map(role => ({
         ...role,
-        email: users?.find(u => u.id === role.user_id)?.email
+        first_name: profiles?.find(p => p.id === role.user_id)?.first_name,
+        last_name: profiles?.find(p => p.id === role.user_id)?.last_name
       })) as PendingUser[];
     },
   });
@@ -85,7 +87,7 @@ export default function UserApproval() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Email</TableHead>
+              <TableHead>Nome</TableHead>
               <TableHead>Função</TableHead>
               <TableHead>Data de Cadastro</TableHead>
               <TableHead>Ações</TableHead>
@@ -94,7 +96,9 @@ export default function UserApproval() {
           <TableBody>
             {pendingUsers?.map((user) => (
               <TableRow key={user.id}>
-                <TableCell>{user.email}</TableCell>
+                <TableCell>
+                  {user.first_name} {user.last_name}
+                </TableCell>
                 <TableCell>{user.role}</TableCell>
                 <TableCell>
                   {new Date(user.created_at).toLocaleDateString()}
