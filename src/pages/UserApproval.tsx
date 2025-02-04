@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
+import { Check, Pencil, Trash2 } from "lucide-react";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -67,6 +68,38 @@ export default function UserApproval() {
     }
   };
 
+  const handleEdit = async (userId: string) => {
+    // Implement edit functionality
+    toast({
+      title: "Info",
+      description: "Funcionalidade de edição será implementada em breve.",
+    });
+  };
+
+  const handleDelete = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Usuário excluído com sucesso!",
+      });
+
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir usuário: " + error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return <div>Carregando...</div>;
   }
@@ -80,7 +113,7 @@ export default function UserApproval() {
             <TableHead>Nome</TableHead>
             <TableHead>Função</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Ações</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -91,17 +124,45 @@ export default function UserApproval() {
               </TableCell>
               <TableCell>{user.role}</TableCell>
               <TableCell>
-                {user.approved ? "Aprovado" : "Pendente"}
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    user.approved
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}
+                >
+                  {user.approved ? "Aprovado" : "Pendente"}
+                </span>
               </TableCell>
               <TableCell>
-                {!user.approved && (
+                <div className="flex justify-end gap-2">
+                  {!user.approved && (
+                    <Button
+                      onClick={() => handleApprove(user.id)}
+                      variant="ghost"
+                      size="icon"
+                      title="Aprovar"
+                    >
+                      <Check className="h-4 w-4 text-green-600" />
+                    </Button>
+                  )}
                   <Button
-                    onClick={() => handleApprove(user.id)}
-                    size="sm"
+                    onClick={() => handleEdit(user.id)}
+                    variant="ghost"
+                    size="icon"
+                    title="Editar"
                   >
-                    Aprovar
+                    <Pencil className="h-4 w-4" />
                   </Button>
-                )}
+                  <Button
+                    onClick={() => handleDelete(user.id)}
+                    variant="ghost"
+                    size="icon"
+                    title="Excluir"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
