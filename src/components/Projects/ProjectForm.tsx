@@ -127,8 +127,8 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
           />
         ))}
 
-        <Button type="submit" className="w-full">
-          {editingId ? "Atualizar Projeto" : "Criar Novo Projeto"}
+        <Button type="submit">
+          Salvar
         </Button>
       </form>
     </Form>
