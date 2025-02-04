@@ -88,7 +88,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     {
       id: "1",
       name: "Epic 1: Core Features",
-      type: "epic",
+      type: "epic" as const,
       priority: "high" as const,
       status: "in_progress" as const,
       responsible: "John Doe",
@@ -99,7 +99,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     {
       id: "2",
       name: "Story 1.1: User Authentication",
-      type: "story",
+      type: "story" as const,
       priority: "medium" as const,
       status: "backlog" as const,
       responsible: "Jane Smith",
@@ -110,7 +110,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     {
       id: "3",
       name: "Task 1.1.1: Implement Login Form",
-      type: "task",
+      type: "task" as const,
       priority: "low" as const,
       status: "done" as const,
       responsible: "Bob Wilson",
