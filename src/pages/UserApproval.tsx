@@ -1,7 +1,4 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Table,
@@ -11,134 +8,131 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PendingUser {
   id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
   role: string;
-  created_at: string;
-  user_id: string;
-  first_name?: string | null;
-  last_name?: string | null;
+  approved: boolean;
 }
 
 export default function UserApproval() {
   const { toast } = useToast();
-  const [loading, setLoading] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
-  const { data: pendingUsers, refetch } = useQuery({
-    queryKey: ["pending-users"],
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserEmail(user?.email || null);
+    };
+    getCurrentUser();
+  }, []);
+
+  const { data: pendingUsers, isLoading, refetch } = useQuery({
+    queryKey: ["pendingUsers"],
     queryFn: async () => {
       console.log("Fetching pending users...");
-      // First get pending user roles
-      const { data: userRoles, error: rolesError } = await supabase
+      const { data: userRoles, error: userRolesError } = await supabase
         .from("user_roles")
-        .select("*")
-        .eq("approved", false);
+        .select(`
+          id,
+          role,
+          approved,
+          supervisor_email,
+          user_id,
+          profiles:profiles(first_name, last_name),
+          users:auth.users(email)
+        `)
+        .eq('supervisor_email', currentUserEmail);
 
-      if (rolesError) {
-        console.error("Error fetching roles:", rolesError);
-        throw rolesError;
+      if (userRolesError) {
+        console.error("Error fetching user roles:", userRolesError);
+        throw userRolesError;
       }
 
-      console.log("Found user roles:", userRoles);
-
-      if (!userRoles || userRoles.length === 0) {
-        return [];
-      }
-
-      // Then fetch user profiles for those roles
-      const userIds = userRoles.map(role => role.user_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name")
-        .in("id", userIds);
-
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError);
-        throw profilesError;
-      }
-
-      console.log("Found profiles:", profiles);
-
-      // Combine the data
-      return userRoles.map(role => ({
-        ...role,
-        first_name: profiles?.find(p => p.id === role.user_id)?.first_name,
-        last_name: profiles?.find(p => p.id === role.user_id)?.last_name
-      })) as PendingUser[];
+      return userRoles.map((userRole: any) => ({
+        id: userRole.id,
+        email: userRole.users?.email,
+        first_name: userRole.profiles?.first_name,
+        last_name: userRole.profiles?.last_name,
+        role: userRole.role,
+        approved: userRole.approved,
+      }));
     },
+    enabled: !!currentUserEmail,
   });
 
-  const handleApprove = async (userId: string, roleId: string) => {
+  const handleApprove = async (userId: string) => {
     try {
-      setLoading(userId);
       const { error } = await supabase
         .from("user_roles")
         .update({ approved: true })
-        .eq("id", roleId);
+        .eq("id", userId);
 
       if (error) throw error;
 
       toast({
-        title: "Usuário aprovado com sucesso!",
-        description: "O usuário agora pode acessar a plataforma.",
+        title: "Sucesso",
+        description: "Usuário aprovado com sucesso!",
       });
+
       refetch();
     } catch (error: any) {
-      console.error("Error approving user:", error);
       toast({
-        title: "Erro ao aprovar usuário",
-        description: error.message,
+        title: "Erro",
+        description: "Erro ao aprovar usuário: " + error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(null);
     }
   };
 
+  if (isLoading) {
+    return <div>Carregando...</div>;
+  }
+
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <h1 className="text-2xl font-bold">Aprovação de Usuários</h1>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Função</TableHead>
-              <TableHead>Data de Cadastro</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pendingUsers?.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>
-                  {user.first_name} {user.last_name}
-                </TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell>
-                  {new Date(user.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
+    <div className="container mx-auto py-10">
+      <h1 className="text-2xl font-bold mb-6">Aprovação de Usuários</h1>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Função</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {pendingUsers?.map((user: PendingUser) => (
+            <TableRow key={user.id}>
+              <TableCell>
+                {user.first_name} {user.last_name}
+              </TableCell>
+              <TableCell>{user.email}</TableCell>
+              <TableCell>{user.role}</TableCell>
+              <TableCell>
+                {user.approved ? "Aprovado" : "Pendente"}
+              </TableCell>
+              <TableCell>
+                {!user.approved && (
                   <Button
-                    onClick={() => handleApprove(user.user_id, user.id)}
-                    disabled={loading === user.user_id}
+                    onClick={() => handleApprove(user.id)}
+                    size="sm"
                   >
-                    {loading === user.user_id ? "Aprovando..." : "Aprovar"}
+                    Aprovar
                   </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {(!pendingUsers || pendingUsers.length === 0) && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  Nenhum usuário pendente de aprovação
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

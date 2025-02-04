@@ -22,6 +22,7 @@ export default function Auth() {
     password: "",
     firstName: "",
     lastName: "",
+    supervisorEmail: "",
   });
 
   const validateEmail = (email: string) => {
@@ -100,7 +101,8 @@ export default function Auth() {
     e.preventDefault();
     console.log("Starting signup process...");
     
-    if (!signupData.email || !signupData.password || !signupData.firstName || !signupData.lastName) {
+    if (!signupData.email || !signupData.password || !signupData.firstName || 
+        !signupData.lastName || !signupData.supervisorEmail) {
       toast({
         title: "Erro",
         description: "Por favor, preencha todos os campos",
@@ -109,10 +111,10 @@ export default function Auth() {
       return;
     }
 
-    if (!validateEmail(signupData.email)) {
+    if (!validateEmail(signupData.email) || !validateEmail(signupData.supervisorEmail)) {
       toast({
         title: "Erro",
-        description: "Por favor, insira um email válido",
+        description: "Por favor, insira emails válidos",
         variant: "destructive",
       });
       return;
@@ -132,7 +134,8 @@ export default function Auth() {
       console.log("Attempting to sign up user with data:", {
         email: signupData.email,
         firstName: signupData.firstName,
-        lastName: signupData.lastName
+        lastName: signupData.lastName,
+        supervisorEmail: signupData.supervisorEmail
       });
 
       const { data, error } = await supabase.auth.signUp({
@@ -142,6 +145,7 @@ export default function Auth() {
           data: {
             first_name: signupData.firstName.trim(),
             last_name: signupData.lastName.trim(),
+            supervisor_email: signupData.supervisorEmail.trim().toLowerCase(),
           },
         },
       });
@@ -153,9 +157,20 @@ export default function Auth() {
 
       console.log("Signup successful:", data);
 
+      // Update user_roles table with supervisor email
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({ supervisor_email: signupData.supervisorEmail.trim().toLowerCase() })
+        .eq('user_id', data.user?.id);
+
+      if (roleError) {
+        console.error("Error updating user role:", roleError);
+        throw roleError;
+      }
+
       toast({
         title: "Cadastro realizado com sucesso!",
-        description: "Seu cadastro será analisado e aprovado nos próximos dias. Você receberá um email quando estiver pronto para acessar.",
+        description: "Seu cadastro será analisado e aprovado pelo seu supervisor. Você receberá um email quando estiver pronto para acessar.",
       });
       
       setSignupData({
@@ -163,6 +178,7 @@ export default function Auth() {
         password: "",
         firstName: "",
         lastName: "",
+        supervisorEmail: "",
       });
     } catch (error: any) {
       console.error("Error in signup process:", error);
@@ -244,6 +260,17 @@ export default function Auth() {
                     value={signupData.email}
                     onChange={(e) =>
                       setSignupData({ ...signupData, email: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div>
+                  <Input
+                    type="email"
+                    placeholder="Email do Supervisor"
+                    value={signupData.supervisorEmail}
+                    onChange={(e) =>
+                      setSignupData({ ...signupData, supervisorEmail: e.target.value })
                     }
                     required
                   />
