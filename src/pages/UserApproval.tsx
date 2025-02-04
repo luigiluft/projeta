@@ -34,19 +34,29 @@ export default function UserApproval() {
         .select("*")
         .eq("approved", false);
 
-      if (rolesError) throw rolesError;
+      if (rolesError) {
+        console.error("Error fetching roles:", rolesError);
+        throw rolesError;
+      }
+
+      if (!userRoles || userRoles.length === 0) {
+        return [];
+      }
 
       // Then fetch user profiles for those roles
-      const userIds = userRoles?.map(role => role.user_id) || [];
+      const userIds = userRoles.map(role => role.user_id);
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("id, first_name, last_name")
         .in("id", userIds);
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
+      }
 
       // Combine the data
-      return userRoles?.map(role => ({
+      return userRoles.map(role => ({
         ...role,
         first_name: profiles?.find(p => p.id === role.user_id)?.first_name,
         last_name: profiles?.find(p => p.id === role.user_id)?.last_name
@@ -70,6 +80,7 @@ export default function UserApproval() {
       });
       refetch();
     } catch (error: any) {
+      console.error("Error approving user:", error);
       toast({
         title: "Erro ao aprovar usuário",
         description: error.message,
@@ -108,12 +119,12 @@ export default function UserApproval() {
                     onClick={() => handleApprove(user.user_id, user.id)}
                     disabled={loading === user.user_id}
                   >
-                    Aprovar
+                    {loading === user.user_id ? "Aprovando..." : "Aprovar"}
                   </Button>
                 </TableCell>
               </TableRow>
             ))}
-            {!pendingUsers?.length && (
+            {(!pendingUsers || pendingUsers.length === 0) && (
               <TableRow>
                 <TableCell colSpan={4} className="text-center text-muted-foreground">
                   Nenhum usuário pendente de aprovação
