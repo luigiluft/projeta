@@ -20,7 +20,7 @@ interface ColumnManagerProps {
 
 export function ColumnManager({ columns, onColumnVisibilityChange }: ColumnManagerProps) {
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm">
           <Filter className="mr-2 h-4 w-4" />
@@ -33,6 +33,7 @@ export function ColumnManager({ columns, onColumnVisibilityChange }: ColumnManag
             key={column.id}
             checked={column.visible}
             onCheckedChange={() => onColumnVisibilityChange(column.id)}
+            onSelect={(e) => e.preventDefault()}
           >
             {column.label}
           </DropdownMenuCheckboxItem>
