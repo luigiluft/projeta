@@ -6,6 +6,11 @@ import { TaskForm } from "@/components/TaskManagement/TaskForm";
 export default function NewTask() {
   const navigate = useNavigate();
 
+  const handleSubmit = (values: any) => {
+    console.log(values);
+    navigate("/task-management");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -15,7 +20,7 @@ export default function NewTask() {
         </Button>
         <h1 className="text-2xl font-bold">Cadastrar Tarefa</h1>
       </div>
-      <TaskForm open={true} onOpenChange={() => navigate("/task-management")} />
+      <TaskForm onSubmit={handleSubmit} />
     </div>
   );
 }
