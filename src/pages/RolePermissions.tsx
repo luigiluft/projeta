@@ -13,7 +13,7 @@ interface Permission {
   name: string;
   description: string | null;
   module: string;
-  enabled: boolean;
+  enabled: boolean | null;
 }
 
 export default function RolePermissions() {
@@ -25,30 +25,14 @@ export default function RolePermissions() {
     queryFn: async () => {
       if (!role) throw new Error("Role is required");
 
-      // Get all permissions
-      const { data: allPermissions, error: permissionsError } = await supabase
+      const { data: allPermissions, error } = await supabase
         .from("permissions")
         .select("*")
         .order("module");
 
-      if (permissionsError) throw permissionsError;
+      if (error) throw error;
 
-      // Get enabled permissions for this role
-      const { data: enabledPermissions, error: enabledError } = await supabase
-        .from("permissions")
-        .select("id")
-        .eq("enabled", true)
-        .eq("module", role);
-
-      if (enabledError) throw enabledError;
-
-      const enabledIds = enabledPermissions?.map(p => p.id) || [];
-
-      // Combine the data
-      return allPermissions?.map((permission) => ({
-        ...permission,
-        enabled: enabledIds.includes(permission.id),
-      })) || [];
+      return allPermissions || [];
     },
   });
 
@@ -58,9 +42,8 @@ export default function RolePermissions() {
     try {
       const { error } = await supabase
         .from("permissions")
-        .update({ enabled: enabled })
-        .eq("id", permissionId)
-        .eq("module", role);
+        .update({ enabled })
+        .eq("id", permissionId);
 
       if (error) throw error;
 
@@ -107,7 +90,7 @@ export default function RolePermissions() {
                 <td className="p-4">{permission.description}</td>
                 <td className="p-4">
                   <Checkbox
-                    checked={permission.enabled}
+                    checked={permission.enabled || false}
                     onCheckedChange={(checked) =>
                       handlePermissionToggle(permission.id, checked as boolean)
                     }
