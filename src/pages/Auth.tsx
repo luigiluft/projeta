@@ -158,6 +158,27 @@ export default function Auth() {
         throw error;
       }
 
+      if (!data.user) {
+        throw new Error("No user data returned from signup");
+      }
+
+      // Insert into user_roles table
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert([
+          {
+            user_id: data.user.id,
+            role: 'user',
+            supervisor_email: signupData.supervisorEmail.trim().toLowerCase(),
+            approved: false
+          }
+        ]);
+
+      if (roleError) {
+        console.error("Error creating user role:", roleError);
+        throw roleError;
+      }
+
       console.log("Signup successful:", data);
 
       toast({
