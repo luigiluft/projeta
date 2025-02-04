@@ -8,11 +8,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, ClipboardList, Settings, Users, ListTodo, Variable, Calendar } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Settings, Users, ListTodo, Variable, Calendar, Home } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/" },
+  { title: "Dashboard Home", icon: Home, url: "/" },
   { title: "Projetos", icon: ClipboardList, url: "/projects" },
   { title: "Time", icon: Users, url: "/team" },
   { title: "Calendário", icon: Calendar, url: "/calendar" },
