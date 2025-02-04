@@ -6,6 +6,7 @@ import ProjectAttributes from "@/pages/ProjectAttributes";
 import TaskManagement from "@/pages/TaskManagement";
 import Team from "@/pages/Team";
 import Projects from "@/pages/Projects";
+import Calendar from "@/pages/Calendar";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="project-attributes" element={<ProjectAttributes />} />
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="team" element={<Team />} />
+          <Route path="calendar" element={<Calendar />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
