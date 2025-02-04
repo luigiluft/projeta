@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
 
 interface PendingUser {
   id: string;
@@ -40,10 +39,20 @@ export default function UserApproval() {
     queryFn: async () => {
       if (!currentUserEmail) return [];
 
-      // First, get the user roles
+      // Get user roles and related profiles
       const { data: userRoles, error: userRolesError } = await supabase
         .from("user_roles")
-        .select("id, role, approved, supervisor_email, user_id")
+        .select(`
+          id,
+          role,
+          approved,
+          user_id,
+          profiles:user_id (
+            first_name,
+            last_name,
+            id
+          )
+        `)
         .eq('supervisor_email', currentUserEmail);
 
       if (userRolesError) {
@@ -51,46 +60,27 @@ export default function UserApproval() {
         throw userRolesError;
       }
 
-      // Then, get the profiles and auth data for these users
-      const usersWithProfiles = await Promise.all(
-        userRoles.map(async (role) => {
-          // Get profile data
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('first_name, last_name')
-            .eq('id', role.user_id)
-            .single();
+      // Get auth users data for emails
+      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+      if (authError) {
+        console.error("Error fetching auth users:", authError);
+        return [];
+      }
 
-          if (profileError) {
-            console.error("Error fetching profile:", profileError);
-          }
-
-          // Get auth user data - using the correct parameters
-          const { data, error: authError } = await supabase.auth.admin.listUsers({
-            page: 1,
-            perPage: 1
-          });
-
-          if (authError) {
-            console.error("Error fetching auth user:", authError);
-          }
-
-          // Find the matching user from the returned users array
-          const authUser = (data?.users as User[])?.find(u => u.id === role.user_id);
-
-          return {
-            id: role.id,
-            email: authUser?.email || "Unknown",
-            display_name: authUser?.user_metadata?.name || null,
-            first_name: profile?.first_name || null,
-            last_name: profile?.last_name || null,
-            role: role.role,
-            approved: role.approved,
-          };
-        })
-      );
-
-      return usersWithProfiles;
+      return userRoles.map((role) => {
+        const profile = role.profiles;
+        const authUser = authData?.users?.find(u => u.id === role.user_id);
+        
+        return {
+          id: role.id,
+          email: authUser?.email || "Unknown",
+          display_name: authUser?.user_metadata?.name || null,
+          first_name: profile?.first_name || null,
+          last_name: profile?.last_name || null,
+          role: role.role,
+          approved: role.approved,
+        };
+      });
     },
     enabled: !!currentUserEmail,
   });
