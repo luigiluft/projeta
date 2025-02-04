@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -28,6 +28,7 @@ export default function UserApproval() {
   const { data: pendingUsers, refetch } = useQuery({
     queryKey: ["pending-users"],
     queryFn: async () => {
+      console.log("Fetching pending users...");
       // First get pending user roles
       const { data: userRoles, error: rolesError } = await supabase
         .from("user_roles")
@@ -38,6 +39,8 @@ export default function UserApproval() {
         console.error("Error fetching roles:", rolesError);
         throw rolesError;
       }
+
+      console.log("Found user roles:", userRoles);
 
       if (!userRoles || userRoles.length === 0) {
         return [];
@@ -54,6 +57,8 @@ export default function UserApproval() {
         console.error("Error fetching profiles:", profilesError);
         throw profilesError;
       }
+
+      console.log("Found profiles:", profiles);
 
       // Combine the data
       return userRoles.map(role => ({
