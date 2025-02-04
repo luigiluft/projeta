@@ -13,12 +13,9 @@ import { Link } from "react-router-dom";
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/" },
-  { title: "Projetos", icon: ClipboardList, url: "/projects" },
   { title: "Time", icon: Users, url: "/team" },
-  { title: "Calendário", icon: Calendar, url: "/calendar" },
   { title: "Gestão de Tarefas", icon: ListTodo, url: "/task-management" },
   { title: "Atributos do Projeto", icon: Variable, url: "/project-attributes" },
-  { title: "Configurações", icon: Settings, url: "/settings" },
 ];
 
 export function AppSidebar() {
