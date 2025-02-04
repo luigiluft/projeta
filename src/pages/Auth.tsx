@@ -142,8 +142,8 @@ export default function Auth() {
       if (error) throw error;
 
       toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Verifique seu email para confirmar o cadastro.",
+        title: "Cadastro recebido com sucesso!",
+        description: "Seu cadastro será analisado e aprovado nos próximos dias. Você receberá um email quando estiver pronto para acessar.",
       });
       
       setSignupData({
