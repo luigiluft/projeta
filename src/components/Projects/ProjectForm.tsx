@@ -24,19 +24,18 @@ interface Attribute {
 interface Project {
   id: string;
   name: string;
-  attributes: {
-    [key: string]: string | number;
-  };
+  attributes: Record<string, string | number>;
 }
 
 interface ProjectFormProps {
   editingId: string | null;
   attributes: Attribute[];
-  onSubmit: (values: any) => void;
+  onSubmit: (values: Project) => void;
   initialValues?: Project;
 }
 
 export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: ProjectFormProps) {
+  // Create a dynamic schema based on attributes
   const formSchema = z.object({
     name: z.string().min(2, {
       message: "O nome deve ter pelo menos 2 caracteres.",
@@ -51,18 +50,36 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     ),
   });
 
-  const form = useForm({
+  type FormValues = z.infer<typeof formSchema>;
+
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialValues || {
-      name: "",
+    defaultValues: {
+      name: initialValues?.name || "",
       ...Object.fromEntries(
-        attributes.map((attr) => [attr.id, attr.defaultValue || ""])
+        attributes.map((attr) => [
+          attr.id,
+          initialValues?.attributes[attr.id] || attr.defaultValue || ""
+        ])
       ),
     },
   });
 
-  const handleSubmit = (values: any) => {
-    onSubmit(values);
+  const handleSubmit = (values: FormValues) => {
+    const projectData: Project = {
+      id: editingId || crypto.randomUUID(),
+      name: values.name,
+      attributes: Object.fromEntries(
+        attributes.map((attr) => [
+          attr.id,
+          attr.type === "number"
+            ? Number(values[attr.id]) || 0
+            : String(values[attr.id]) || ""
+        ])
+      ),
+    };
+    
+    onSubmit(projectData);
     toast.success(editingId ? "Projeto atualizado com sucesso!" : "Projeto criado com sucesso!");
   };
 
@@ -87,7 +104,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
           <FormField
             key={attribute.id}
             control={form.control}
-            name={attribute.id}
+            name={attribute.id as keyof FormValues}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>{attribute.name}</FormLabel>
@@ -96,13 +113,12 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
                     type={attribute.type === "number" ? "number" : "text"}
                     placeholder={`Digite ${attribute.name.toLowerCase()}`}
                     {...field}
-                    onChange={(e) =>
-                      field.onChange(
-                        attribute.type === "number"
-                          ? Number(e.target.value)
-                          : e.target.value
-                      )
-                    }
+                    onChange={(e) => {
+                      const value = attribute.type === "number"
+                        ? e.target.value === "" ? "" : Number(e.target.value)
+                        : e.target.value;
+                      field.onChange(value);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
