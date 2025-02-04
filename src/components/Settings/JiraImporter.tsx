@@ -20,7 +20,7 @@ export function JiraImporter({ onImport }: { onImport: (projects: Project[]) => 
       try {
         const text = e.target?.result as string;
         const lines = text.split('\n');
-        const headers = lines[0].split(',');
+        const headers = lines[0].split(',').map(header => header.trim());
 
         const projects: Project[] = [];
         
@@ -28,19 +28,50 @@ export function JiraImporter({ onImport }: { onImport: (projects: Project[]) => 
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
           
-          const values = lines[i].split(',');
+          const values = lines[i].split(',').map(value => value.trim());
+          
           const project: Project = {
             id: crypto.randomUUID(),
-            name: values[headers.indexOf('Project Name')]?.trim() || `Project ${i}`,
-            attributes: {},
-          };
-
-          // Map other Jira fields to project attributes
-          project.attributes = {
-            ordersPerMonth: "0",
-            averageTicket: "0",
-            skuCount: "0",
-            // ... default values for other required attributes
+            name: values[headers.indexOf('Resumo')] || `Projeto ${i}`,
+            attributes: {
+              ordersPerMonth: "0",
+              averageTicket: "0",
+              skuCount: "0",
+            },
+            jiraFields: {
+              itemType: values[headers.indexOf('Tipo de item')] || '',
+              itemKey: values[headers.indexOf('Chave da item')] || '',
+              itemId: parseInt(values[headers.indexOf('ID da item')]) || 0,
+              summary: values[headers.indexOf('Resumo')] || '',
+              assignee: values[headers.indexOf('Responsável')] || '',
+              assigneeId: values[headers.indexOf('ID do responsável')] || '',
+              reporter: values[headers.indexOf('Relator')] || '',
+              reporterId: values[headers.indexOf('ID do relator')] || '',
+              priority: values[headers.indexOf('Prioridade')] || '',
+              status: values[headers.indexOf('Status')] || '',
+              resolution: values[headers.indexOf('Resolução')] || '',
+              created: values[headers.indexOf('Criado')] || '',
+              updated: values[headers.indexOf('Atualizado')] || '',
+              resolved: values[headers.indexOf('Resolvido')] || '',
+              components: values[headers.indexOf('Componentes')] || '',
+              affectedVersion: values[headers.indexOf('Versão Afetada')] || '',
+              fixVersion: values[headers.indexOf('Versão de Correção')] || '',
+              sprints: values[headers.indexOf('Sprints')] || '',
+              timeTracking: values[headers.indexOf('Histórico de Tempo')] || '',
+              internalLinks: [
+                values[headers.indexOf('Link de item interno (Cloners)')] || '',
+                values[headers.indexOf('Link de item interno (Cloners).1')] || '',
+                values[headers.indexOf('Link de item interno (Cloners).2')] || '',
+              ].filter(Boolean),
+              externalLinks: values[headers.indexOf('Link externo de item (Cloners)')] || '',
+              originalEstimate: parseFloat(values[headers.indexOf('Campo personalizado (Original estimate)')]) || 0,
+              parentId: parseInt(values[headers.indexOf('Pai')]) || 0,
+              parentSummary: values[headers.indexOf('Parent summary')] || '',
+              startDate: values[headers.indexOf('Campo personalizado (Start date)')] || '',
+              totalOriginalEstimate: parseFloat(values[headers.indexOf('Σ da Estimativa Original')]) || 0,
+              totalTimeSpent: parseFloat(values[headers.indexOf('Σ de Tempo Gasto')]) || 0,
+              remainingEstimate: parseFloat(values[headers.indexOf('Σ Estimativa de trabalho restante')]) || 0,
+            }
           };
 
           projects.push(project);
@@ -69,7 +100,7 @@ export function JiraImporter({ onImport }: { onImport: (projects: Project[]) => 
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
           Faça upload de um arquivo CSV exportado do Jira para importar projetos.
-          O arquivo deve conter pelo menos uma coluna "Project Name".
+          O arquivo deve conter os campos necessários como Tipo de item, Chave da item, etc.
         </p>
         <div className="flex items-center gap-4">
           <Input
