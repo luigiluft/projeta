@@ -155,7 +155,7 @@ export default function Projects() {
                 onLoadView={handleLoadView}
                 onNewAttribute={handleNewProject}
                 onImportSpreadsheet={handleImportSpreadsheet}
-                newButtonText="Cadastrar Projeto"
+                newButtonText="Adicionar Projeto"
               />
             </div>
 
