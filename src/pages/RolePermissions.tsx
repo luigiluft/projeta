@@ -4,14 +4,19 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 export default function RolePermissions() {
-  const { role } = useParams();
+  const { role } = useParams<{ role: AppRole }>();
   const { toast } = useToast();
 
   const { data: permissions, refetch } = useQuery({
     queryKey: ["permissions", role],
     queryFn: async () => {
+      if (!role) throw new Error("Role is required");
+
       // Get all permissions
       const { data: allPermissions, error: permissionsError } = await supabase
         .from("permissions")
@@ -24,7 +29,7 @@ export default function RolePermissions() {
       const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
         .select("id")
-        .eq("role", role)
+        .eq("role", role as AppRole)
         .single();
 
       if (roleError) throw roleError;
@@ -48,12 +53,14 @@ export default function RolePermissions() {
   });
 
   const handlePermissionToggle = async (permissionId: string, enabled: boolean) => {
+    if (!role) return;
+
     try {
       // Get role ID
       const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
         .select("id")
-        .eq("role", role)
+        .eq("role", role as AppRole)
         .single();
 
       if (roleError) throw roleError;

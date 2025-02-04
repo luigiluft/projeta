@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 export default function RoleManagement() {
   const navigate = useNavigate();
@@ -15,14 +18,17 @@ export default function RoleManagement() {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .distinct();
+        .eq("approved", true);
 
       if (error) throw error;
-      return data;
+      
+      // Get unique roles
+      const uniqueRoles = Array.from(new Set(data.map(r => r.role)));
+      return uniqueRoles.map(role => ({ role }));
     },
   });
 
-  const handleRoleClick = (role: string) => {
+  const handleRoleClick = (role: AppRole) => {
     navigate(`/settings/roles/${role}`);
   };
 
@@ -46,7 +52,7 @@ export default function RoleManagement() {
               <tr key={role.role} className="border-b">
                 <td className="p-4">{role.role}</td>
                 <td className="p-4">
-                  <Button onClick={() => handleRoleClick(role.role)}>
+                  <Button onClick={() => handleRoleClick(role.role as AppRole)}>
                     Ver Permissões
                   </Button>
                 </td>
