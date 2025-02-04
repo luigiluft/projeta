@@ -131,6 +131,9 @@ export default function Auth() {
 
     setLoading(true);
     try {
+      // First, ensure there's no existing session
+      await supabase.auth.signOut();
+      
       console.log("Attempting to sign up user with data:", {
         email: signupData.email,
         firstName: signupData.firstName,
@@ -156,17 +159,6 @@ export default function Auth() {
       }
 
       console.log("Signup successful:", data);
-
-      // Update user_roles table with supervisor email
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ supervisor_email: signupData.supervisorEmail.trim().toLowerCase() })
-        .eq('user_id', data.user?.id);
-
-      if (roleError) {
-        console.error("Error updating user role:", roleError);
-        throw roleError;
-      }
 
       toast({
         title: "Cadastro realizado com sucesso!",
