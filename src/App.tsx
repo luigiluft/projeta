@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "@/components/Layout";
-import Index from "@/pages/Index";
+import Dashboard from "@/pages/Dashboard";
 import NotFound from "@/pages/NotFound";
 import ProjectAttributes from "@/pages/ProjectAttributes";
 import TaskManagement from "@/pages/TaskManagement";
@@ -11,7 +11,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Index />} />
+          <Route index element={<Dashboard />} />
           <Route path="project-attributes" element={<ProjectAttributes />} />
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="team" element={<Team />} />
