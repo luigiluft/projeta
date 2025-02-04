@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskList } from "@/components/TaskManagement/TaskList";
 
 interface Attribute {
   id: string;
@@ -36,7 +37,6 @@ interface ProjectFormProps {
 }
 
 export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: ProjectFormProps) {
-  // Create a dynamic schema based on attributes
   const formSchema = z.object({
     name: z.string().min(2, {
       message: "O nome deve ter pelo menos 2 caracteres.",
@@ -82,6 +82,65 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     
     onSubmit(projectData);
     toast.success(editingId ? "Projeto atualizado com sucesso!" : "Projeto criado com sucesso!");
+  };
+
+  const mockTasks = [
+    {
+      id: "1",
+      name: "Epic 1: Core Features",
+      type: "epic",
+      priority: "high" as const,
+      status: "in_progress" as const,
+      responsible: "John Doe",
+      timeMin: "40",
+      timeMed: "50",
+      timeMax: "60"
+    },
+    {
+      id: "2",
+      name: "Story 1.1: User Authentication",
+      type: "story",
+      priority: "medium" as const,
+      status: "backlog" as const,
+      responsible: "Jane Smith",
+      timeMin: "16",
+      timeMed: "20",
+      timeMax: "24"
+    },
+    {
+      id: "3",
+      name: "Task 1.1.1: Implement Login Form",
+      type: "task",
+      priority: "low" as const,
+      status: "done" as const,
+      responsible: "Bob Wilson",
+      timeMin: "4",
+      timeMed: "6",
+      timeMax: "8"
+    }
+  ];
+
+  const taskColumns = [
+    { id: "name", label: "Nome", visible: true },
+    { id: "type", label: "Tipo", visible: true },
+    { id: "priority", label: "Prioridade", visible: true },
+    { id: "status", label: "Status", visible: true },
+    { id: "responsible", label: "Responsável", visible: true },
+    { id: "timeMin", label: "Tempo Min (h)", visible: true },
+    { id: "timeMed", label: "Tempo Med (h)", visible: true },
+    { id: "timeMax", label: "Tempo Max (h)", visible: true }
+  ];
+
+  const calculateTotalTime = () => {
+    const total = mockTasks.reduce((acc, task) => {
+      return {
+        min: acc.min + Number(task.timeMin),
+        med: acc.med + Number(task.timeMed),
+        max: acc.max + Number(task.timeMax)
+      };
+    }, { min: 0, med: 0, max: 0 });
+
+    return `Min: ${total.min}h | Med: ${total.med}h | Max: ${total.max}h`;
   };
 
   return (
@@ -137,8 +196,14 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
           </TabsContent>
 
           <TabsContent value="scope" className="space-y-4 mt-4">
-            <div className="text-center text-gray-500">
-              Conteúdo do escopo será implementado em breve.
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Lista de Tarefas</h3>
+                <div className="text-sm text-gray-600">
+                  Total de Horas: {calculateTotalTime()}
+                </div>
+              </div>
+              <TaskList tasks={mockTasks} columns={taskColumns} />
             </div>
           </TabsContent>
         </Tabs>
