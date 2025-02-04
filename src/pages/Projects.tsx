@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
 import { ProjectList } from "@/components/Projects/ProjectList";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
@@ -33,6 +34,7 @@ interface View {
 }
 
 export default function Projects() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
