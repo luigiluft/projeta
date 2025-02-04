@@ -3,26 +3,7 @@ import { toast } from "sonner";
 import { AttributeForm } from "@/components/ProjectAttributes/AttributeForm";
 import { AttributeList } from "@/components/ProjectAttributes/AttributeList";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
-
-interface Attribute {
-  id: string;
-  name: string;
-  unit: "hours" | "quantity" | "percentage";
-  type: "number" | "list" | "text";
-  defaultValue?: string;
-}
-
-interface Column {
-  id: string;
-  label: string;
-  visible: boolean;
-}
-
-interface View {
-  id: string;
-  name: string;
-  columns: string[];
-}
+import { Column, View, Attribute } from "@/types/project";
 
 export default function ProjectAttributes() {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
@@ -75,10 +56,10 @@ export default function ProjectAttributes() {
       toast.error("Limite máximo de 5 visualizações atingido");
       return;
     }
-    const newView = {
+    const newView: View = {
       id: crypto.randomUUID(),
       name: `Visualização ${savedViews.length + 1}`,
-      columns: columns.filter(col => col.visible).map(col => col.id),
+      columns: columns.filter(col => col.visible),
     };
     setSavedViews([...savedViews, newView]);
     toast.success("Visualização salva com sucesso");
@@ -87,22 +68,13 @@ export default function ProjectAttributes() {
   const handleLoadView = (view: View) => {
     setColumns(columns.map(col => ({
       ...col,
-      visible: view.columns.includes(col.id),
+      visible: view.columns.some(viewCol => viewCol.id === col.id),
     })));
   };
 
   const handleImportSpreadsheet = () => {
     // Implement spreadsheet import logic here
     console.log("Import spreadsheet clicked");
-  };
-
-  const handleNewAttribute = () => {
-    setEditingId(null);
-    setShowForm(true);
-  };
-
-  const handleColumnsChange = (newColumns: Column[]) => {
-    setColumns(newColumns);
   };
 
   return (
@@ -135,7 +107,6 @@ export default function ProjectAttributes() {
         columns={columns}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        onColumnsChange={handleColumnsChange}
       />
     </div>
   );
