@@ -111,7 +111,6 @@ export default function ProjectAttributes() {
           onColumnVisibilityChange={handleColumnVisibilityChange}
           onSaveView={handleSaveView}
           onLoadView={handleLoadView}
-          onNewAttribute={handleNewAttribute}
           onImportSpreadsheet={handleImportSpreadsheet}
           newButtonText="Novo Atributo"
           data={attributes}

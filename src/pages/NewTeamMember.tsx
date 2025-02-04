@@ -15,7 +15,7 @@ export default function NewTeamMember() {
         </Button>
         <h1 className="text-2xl font-bold">Cadastrar Membro</h1>
       </div>
-      <TeamForm open={true} onOpenChange={() => navigate("/team")} />
+      <TeamForm onOpenChange={() => navigate("/team")} />
     </div>
   );
 }
