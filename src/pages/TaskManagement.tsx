@@ -86,6 +86,8 @@ export default function TaskManagement() {
           onNewAttribute={handleNewTask}
           onImportSpreadsheet={handleImportSpreadsheet}
           newButtonText="Nova Tarefa"
+          data={tasks}
+          exportFilename="tarefas"
         />
       </div>
 

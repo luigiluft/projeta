@@ -114,6 +114,8 @@ export default function ProjectAttributes() {
           onNewAttribute={handleNewAttribute}
           onImportSpreadsheet={handleImportSpreadsheet}
           newButtonText="Novo Atributo"
+          data={attributes}
+          exportFilename="atributos-projeto"
         />
       </div>
 

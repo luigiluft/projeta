@@ -1,36 +1,45 @@
 import { useState } from "react";
-import { TeamList } from "@/components/Team/TeamList";
-import { TeamForm } from "@/components/Team/TeamForm";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
+import { TeamList } from "@/components/Team/TeamList";
 
-interface View {
+interface TeamMember {
   id: string;
   name: string;
-  columns: string[];
+  role: string;
+  email: string;
+  department: string;
+  status: "active" | "inactive";
 }
 
-interface Column {
-  id: string;
-  label: string;
-  visible: boolean;
-}
+const mockTeamMembers: TeamMember[] = [
+  {
+    id: "1",
+    name: "João Silva",
+    role: "Desenvolvedor Frontend",
+    email: "joao@exemplo.com",
+    department: "Tecnologia",
+    status: "active",
+  },
+  {
+    id: "2",
+    name: "Maria Santos",
+    role: "Product Manager",
+    email: "maria@exemplo.com",
+    department: "Produto",
+    status: "active",
+  },
+];
 
 export default function Team() {
-  const [showForm, setShowForm] = useState(false);
-  const [columns, setColumns] = useState<Column[]>([
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
+  const [savedViews, setSavedViews] = useState<any[]>([]); // Adjust type as necessary
+  const [columns, setColumns] = useState<any[]>([ // Adjust type as necessary
     { id: "name", label: "Nome", visible: true },
     { id: "role", label: "Cargo", visible: true },
+    { id: "email", label: "Email", visible: true },
     { id: "department", label: "Departamento", visible: true },
+    { id: "status", label: "Status", visible: true },
   ]);
-  const [savedViews, setSavedViews] = useState<View[]>([]);
-
-  const handleImportSpreadsheet = () => {
-    console.log("Import spreadsheet clicked");
-  };
-
-  const handleNewMember = () => {
-    setShowForm(true);
-  };
 
   const handleColumnVisibilityChange = (columnId: string) => {
     setColumns(columns.map(col => 
@@ -42,14 +51,22 @@ export default function Team() {
     console.log("Save view clicked");
   };
 
-  const handleLoadView = (view: View) => {
+  const handleLoadView = (view: any) => {
     console.log("Load view clicked", view);
+  };
+
+  const handleImportSpreadsheet = () => {
+    console.log("Import spreadsheet clicked");
+  };
+
+  const handleNewMember = () => {
+    console.log("New member clicked");
   };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Time</h1>
+        <h1 className="text-2xl font-bold">Equipe</h1>
         <ActionButtons
           columns={columns}
           savedViews={savedViews}
@@ -58,23 +75,13 @@ export default function Team() {
           onLoadView={handleLoadView}
           onNewAttribute={handleNewMember}
           onImportSpreadsheet={handleImportSpreadsheet}
-          newButtonText="Novo Colaborador"
+          newButtonText="Novo Membro"
+          data={teamMembers}
+          exportFilename="equipe"
         />
       </div>
 
-      {showForm ? (
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <TeamForm open={showForm} onOpenChange={setShowForm} />
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <TeamList />
-          </div>
-        </div>
-      )}
+      <TeamList />
     </div>
   );
 }

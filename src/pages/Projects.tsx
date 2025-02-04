@@ -149,6 +149,8 @@ export default function Projects() {
           onNewAttribute={handleNewProject}
           onImportSpreadsheet={handleImportSpreadsheet}
           newButtonText="Adicionar Projeto"
+          data={projects}
+          exportFilename="projetos"
         />
       </div>
 
