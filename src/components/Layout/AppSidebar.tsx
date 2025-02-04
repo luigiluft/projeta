@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { LayoutDashboard, ClipboardList, Settings, Users, ListTodo, Variable, Calendar, Home } from "lucide-react";
 import { Link } from "react-router-dom";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/" },
@@ -19,7 +20,6 @@ const menuItems = [
   { title: "Calendário", icon: Calendar, url: "/calendar" },
   { title: "Gestão de Tarefas", icon: ListTodo, url: "/task-management" },
   { title: "Atributos do Projeto", icon: Variable, url: "/project-attributes" },
-  { title: "Configurações", icon: Settings, url: "/settings" },
 ];
 
 export function AppSidebar() {
@@ -40,6 +40,39 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              
+              <SidebarMenuItem>
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <SidebarMenuButton className="flex items-center gap-2">
+                      <Settings className="h-5 w-5" />
+                      <span>Configurações</span>
+                    </SidebarMenuButton>
+                  </HoverCardTrigger>
+                  <HoverCardContent side="right" align="start" className="w-48">
+                    <nav className="space-y-2">
+                      <Link 
+                        to="/settings/import" 
+                        className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        Importação de dados
+                      </Link>
+                      <Link 
+                        to="/settings/user-approval" 
+                        className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        Usuários
+                      </Link>
+                      <Link 
+                        to="/settings/roles" 
+                        className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        Permissões
+                      </Link>
+                    </nav>
+                  </HoverCardContent>
+                </HoverCard>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
