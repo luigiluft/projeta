@@ -65,17 +65,17 @@ export default function UserApproval() {
           }
 
           // Get auth user data
-          const { data: { users }, error: authError } = await supabase.auth.admin.listUsers({
-            filters: {
-              id: `eq.${role.user_id}`
-            }
+          const { data, error: authError } = await supabase.auth.admin.listUsers({
+            page: 1,
+            perPage: 1,
+            query: role.user_id
           });
 
           if (authError) {
             console.error("Error fetching auth user:", authError);
           }
 
-          const authUser = users?.[0];
+          const authUser = data?.users?.[0];
 
           return {
             id: role.id,
