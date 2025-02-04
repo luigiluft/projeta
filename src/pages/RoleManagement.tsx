@@ -15,7 +15,6 @@ export default function RoleManagement() {
   const { data: roles } = useQuery({
     queryKey: ["roles"],
     queryFn: async () => {
-      // Get distinct roles from user_roles where approved is true
       const { data, error } = await supabase.rpc('get_distinct_approved_roles');
 
       if (error) {
