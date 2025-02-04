@@ -8,6 +8,14 @@ import { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
+interface Permission {
+  id: string;
+  name: string;
+  description: string | null;
+  module: string;
+  enabled: boolean;
+}
+
 export default function RolePermissions() {
   const { role } = useParams<{ role: AppRole }>();
   const { toast } = useToast();
@@ -25,30 +33,30 @@ export default function RolePermissions() {
 
       if (permissionsError) throw permissionsError;
 
-      // Get role ID
-      const { data: roleData, error: roleError } = await supabase
-        .from("user_roles")
+      // Get profiles with this role that are approved
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
         .select("id")
-        .eq("role", role as AppRole)
-        .single();
+        .eq("role", role)
+        .eq("approved", true);
 
-      if (roleError) throw roleError;
+      if (profilesError) throw profilesError;
 
-      // Get role permissions
+      // Get permissions for this role
       const { data: rolePermissions, error: rolePermissionsError } = await supabase
-        .from("role_permissions")
-        .select("permission_id")
-        .eq("role_id", roleData.id);
+        .from("permissions")
+        .select("id")
+        .eq("role", role);
 
       if (rolePermissionsError) throw rolePermissionsError;
 
-      const rolePermissionIds = rolePermissions.map((rp) => rp.permission_id);
+      const rolePermissionIds = rolePermissions?.map((rp) => rp.id) || [];
 
       // Combine the data
-      return allPermissions.map((permission) => ({
+      return allPermissions?.map((permission) => ({
         ...permission,
         enabled: rolePermissionIds.includes(permission.id),
-      }));
+      })) || [];
     },
   });
 
@@ -56,32 +64,20 @@ export default function RolePermissions() {
     if (!role) return;
 
     try {
-      // Get role ID
-      const { data: roleData, error: roleError } = await supabase
-        .from("user_roles")
-        .select("id")
-        .eq("role", role as AppRole)
-        .single();
-
-      if (roleError) throw roleError;
-
       if (enabled) {
         // Add permission
         const { error } = await supabase
-          .from("role_permissions")
-          .insert({
-            role_id: roleData.id,
-            permission_id: permissionId,
-          });
+          .from("permissions")
+          .update({ role })
+          .eq("id", permissionId);
 
         if (error) throw error;
       } else {
         // Remove permission
         const { error } = await supabase
-          .from("role_permissions")
-          .delete()
-          .eq("role_id", roleData.id)
-          .eq("permission_id", permissionId);
+          .from("permissions")
+          .update({ role: null })
+          .eq("id", permissionId);
 
         if (error) throw error;
       }
