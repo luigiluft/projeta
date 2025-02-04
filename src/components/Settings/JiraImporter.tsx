@@ -38,59 +38,68 @@ export function JiraImporter({ onImport }: { onImport: (projects: Project[]) => 
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
           
-          const values = lines[i].split(',').map(value => value.trim());
-          
-          const project: Project = {
-            id: crypto.randomUUID(),
-            name: values[headers.indexOf('Resumo')] || `Projeto ${i}`,
-            attributes: {
-              ordersPerMonth: "0",
-              averageTicket: "0",
-              skuCount: "0",
-            },
-            jiraFields: {
-              itemType: values[headers.indexOf('Tipo de item')] || '',
-              itemKey: values[headers.indexOf('Chave da item')] || '',
-              itemId: parseInt(values[headers.indexOf('ID da item')]) || 0,
-              summary: values[headers.indexOf('Resumo')] || '',
-              assignee: values[headers.indexOf('Responsável')] || '',
-              assigneeId: values[headers.indexOf('ID do responsável')] || '',
-              reporter: values[headers.indexOf('Relator')] || '',
-              reporterId: values[headers.indexOf('ID do relator')] || '',
-              priority: values[headers.indexOf('Prioridade')] || '',
-              status: values[headers.indexOf('Status')] || '',
-              resolution: values[headers.indexOf('Resolução')] || '',
-              created: values[headers.indexOf('Criado')] || '',
-              updated: values[headers.indexOf('Atualizado')] || '',
-              resolved: values[headers.indexOf('Resolvido')] || '',
-              components: values[headers.indexOf('Componentes')] || '',
-              affectedVersion: values[headers.indexOf('Versão Afetada')] || '',
-              fixVersion: values[headers.indexOf('Versão de Correção')] || '',
-              sprints: values[headers.indexOf('Sprints')] || '',
-              timeTracking: values[headers.indexOf('Histórico de Tempo')] || '',
-              internalLinks: [
-                values[headers.indexOf('Link de item interno (Cloners)')] || '',
-                values[headers.indexOf('Link de item interno (Cloners).1')] || '',
-                values[headers.indexOf('Link de item interno (Cloners).2')] || '',
-              ].filter(Boolean),
-              externalLinks: values[headers.indexOf('Link externo de item (Cloners)')] || '',
-              originalEstimate: parseFloat(values[headers.indexOf('Campo personalizado (Original estimate)')]) || 0,
-              parentId: parseInt(values[headers.indexOf('Pai')]) || 0,
-              parentSummary: values[headers.indexOf('Parent summary')] || '',
-              startDate: values[headers.indexOf('Campo personalizado (Start date)')] || '',
-              totalOriginalEstimate: parseFloat(values[headers.indexOf('Σ da Estimativa Original')]) || 0,
-              totalTimeSpent: parseFloat(values[headers.indexOf('Σ de Tempo Gasto')]) || 0,
-              remainingEstimate: parseFloat(values[headers.indexOf('Σ Estimativa de trabalho restante')]) || 0,
-            }
-          };
+          try {
+            const values = lines[i].split(',').map(value => value.trim());
+            
+            const project: Project = {
+              id: crypto.randomUUID(),
+              name: values[headers.indexOf('Resumo')] || `Projeto ${i}`,
+              attributes: {
+                ordersPerMonth: "0",
+                averageTicket: "0",
+                skuCount: "0",
+              },
+              jiraFields: {
+                itemType: values[headers.indexOf('Tipo de item')] || '',
+                itemKey: values[headers.indexOf('Chave da item')] || '',
+                itemId: parseInt(values[headers.indexOf('ID da item')]) || 0,
+                summary: values[headers.indexOf('Resumo')] || '',
+                assignee: values[headers.indexOf('Responsável')] || '',
+                assigneeId: values[headers.indexOf('ID do responsável')] || '',
+                reporter: values[headers.indexOf('Relator')] || '',
+                reporterId: values[headers.indexOf('ID do relator')] || '',
+                priority: values[headers.indexOf('Prioridade')] || '',
+                status: values[headers.indexOf('Status')] || '',
+                resolution: values[headers.indexOf('Resolução')] || '',
+                created: values[headers.indexOf('Criado')] || '',
+                updated: values[headers.indexOf('Atualizado')] || '',
+                resolved: values[headers.indexOf('Resolvido')] || '',
+                components: values[headers.indexOf('Componentes')] || '',
+                affectedVersion: values[headers.indexOf('Versão Afetada')] || '',
+                fixVersion: values[headers.indexOf('Versão de Correção')] || '',
+                sprints: values[headers.indexOf('Sprints')] || '',
+                timeTracking: values[headers.indexOf('Histórico de Tempo')] || '',
+                internalLinks: [
+                  values[headers.indexOf('Link de item interno (Cloners)')] || '',
+                  values[headers.indexOf('Link de item interno (Cloners).1')] || '',
+                  values[headers.indexOf('Link de item interno (Cloners).2')] || '',
+                ].filter(Boolean),
+                externalLinks: values[headers.indexOf('Link externo de item (Cloners)')] || '',
+                originalEstimate: parseFloat(values[headers.indexOf('Campo personalizado (Original estimate)')]) || 0,
+                parentId: parseInt(values[headers.indexOf('Pai')]) || 0,
+                parentSummary: values[headers.indexOf('Parent summary')] || '',
+                startDate: values[headers.indexOf('Campo personalizado (Start date)')] || '',
+                totalOriginalEstimate: parseFloat(values[headers.indexOf('Σ da Estimativa Original')]) || 0,
+                totalTimeSpent: parseFloat(values[headers.indexOf('Σ de Tempo Gasto')]) || 0,
+                remainingEstimate: parseFloat(values[headers.indexOf('Σ Estimativa de trabalho restante')]) || 0,
+              }
+            };
 
-          projects.push(project);
+            projects.push(project);
+          } catch (lineError) {
+            console.error(`Erro ao processar linha ${i + 1}:`, lineError);
+            toast.error(`Erro ao processar linha ${i + 1} do arquivo CSV`);
+          }
         }
 
-        onImport(projects);
-        toast.success(`${projects.length} projetos importados com sucesso!`);
+        if (projects.length > 0) {
+          onImport(projects);
+          toast.success(`${projects.length} projetos importados com sucesso!`);
+        } else {
+          toast.error('Nenhum projeto foi importado. Verifique o formato do arquivo.');
+        }
       } catch (error) {
-        console.error('Error parsing CSV:', error);
+        console.error('Erro ao processar CSV:', error);
         toast.error('Erro ao processar o arquivo CSV. Verifique o formato do arquivo.');
       }
       setIsLoading(false);
