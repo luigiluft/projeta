@@ -6,17 +6,38 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { format } from "date-fns";
 
 interface Task {
   id: string;
-  name: string;
-  type: "epic" | "story" | "task";
-  priority: "low" | "medium" | "high" | "urgent";
-  status: "backlog" | "in_progress" | "done";
-  responsible: string;
-  timeMin: string;
-  timeMed: string;
-  timeMax: string;
+  itemType: string;
+  itemKey: string;
+  itemId: number;
+  summary: string;
+  assignee: string;
+  assigneeId: string;
+  reporter: string;
+  reporterId: string;
+  priority: string;
+  status: string;
+  resolution: string;
+  created: string;
+  updated: string;
+  resolved: string;
+  components: string;
+  affectedVersion: string;
+  fixVersion: string;
+  sprints: string;
+  timeTracking: string;
+  internalLinks: string[];
+  externalLinks: string;
+  originalEstimate: number;
+  parentId: number;
+  parentSummary: string;
+  startDate: string;
+  totalOriginalEstimate: number;
+  totalTimeSpent: number;
+  remainingEstimate: number;
 }
 
 interface Column {
@@ -31,28 +52,31 @@ interface TaskListProps {
 }
 
 export function TaskList({ tasks, columns }: TaskListProps) {
-  const getPriorityColor = (priority: Task["priority"]) => {
-    switch (priority) {
-      case "low":
-        return "text-green-600";
-      case "medium":
-        return "text-yellow-600";
-      case "high":
-        return "text-orange-600";
-      case "urgent":
-        return "text-red-600";
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    try {
+      return format(new Date(dateString), "dd/MM/yyyy HH:mm");
+    } catch {
+      return dateString;
     }
   };
 
-  const getStatusColor = (status: Task["status"]) => {
-    switch (status) {
-      case "backlog":
-        return "bg-gray-100";
-      case "in_progress":
-        return "bg-blue-100";
-      case "done":
-        return "bg-green-100";
+  const formatValue = (value: any, columnId: string) => {
+    if (value === null || value === undefined) return "";
+    
+    if (columnId.includes("date") || columnId === "created" || columnId === "updated" || columnId === "resolved") {
+      return formatDate(value);
     }
+    
+    if (Array.isArray(value)) {
+      return value.join(", ");
+    }
+    
+    if (typeof value === "number") {
+      return value.toString();
+    }
+    
+    return value;
   };
 
   return (
@@ -74,22 +98,7 @@ export function TaskList({ tasks, columns }: TaskListProps) {
                 .filter(col => col.visible)
                 .map(column => (
                   <TableCell key={`${task.id}-${column.id}`}>
-                    {column.id === "priority" ? (
-                      <span className={getPriorityColor(task.priority)}>
-                        {task.priority === "low" && "Baixa"}
-                        {task.priority === "medium" && "Média"}
-                        {task.priority === "high" && "Alta"}
-                        {task.priority === "urgent" && "Urgente"}
-                      </span>
-                    ) : column.id === "status" ? (
-                      <span className={`px-2 py-1 rounded-full text-sm ${getStatusColor(task.status)}`}>
-                        {task.status === "backlog" && "Backlog"}
-                        {task.status === "in_progress" && "Em Andamento"}
-                        {task.status === "done" && "Concluído"}
-                      </span>
-                    ) : (
-                      task[column.id as keyof Task]
-                    )}
+                    {formatValue(task[column.id as keyof Task], column.id)}
                   </TableCell>
                 ))}
             </TableRow>
