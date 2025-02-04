@@ -45,8 +45,10 @@ export default function UserApproval() {
           approved,
           supervisor_email,
           user_id,
-          profiles:profiles(first_name, last_name),
-          users:auth.users(email)
+          profiles!user_roles_user_id_fkey (
+            first_name,
+            last_name
+          )
         `)
         .eq('supervisor_email', currentUserEmail);
 
@@ -55,14 +57,29 @@ export default function UserApproval() {
         throw userRolesError;
       }
 
-      return userRoles.map((userRole: any) => ({
-        id: userRole.id,
-        email: userRole.users?.email,
-        first_name: userRole.profiles?.first_name,
-        last_name: userRole.profiles?.last_name,
-        role: userRole.role,
-        approved: userRole.approved,
-      }));
+      // Get emails for users in a separate query
+      const userIds = userRoles.map((role: any) => role.user_id);
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers({
+        userIds: userIds
+      });
+
+      if (authError) {
+        console.error("Error fetching auth users:", authError);
+        throw authError;
+      }
+
+      // Combine the data
+      return userRoles.map((userRole: any) => {
+        const authUser = authUsers.users.find((u: any) => u.id === userRole.user_id);
+        return {
+          id: userRole.id,
+          email: authUser?.email,
+          first_name: userRole.profiles?.first_name,
+          last_name: userRole.profiles?.last_name,
+          role: userRole.role,
+          approved: userRole.approved,
+        };
+      });
     },
     enabled: !!currentUserEmail,
   });
