@@ -1,11 +1,4 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DraggableTable } from "@/components/ui/draggable-table";
 import { format } from "date-fns";
 
 interface Task {
@@ -49,9 +42,10 @@ interface Column {
 interface TaskListProps {
   tasks: Task[];
   columns: Column[];
+  onColumnsChange: (columns: Column[]) => void;
 }
 
-export function TaskList({ tasks, columns }: TaskListProps) {
+export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
     try {
@@ -81,37 +75,12 @@ export function TaskList({ tasks, columns }: TaskListProps) {
 
   return (
     <div className="bg-white rounded-lg shadow">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {columns
-              .filter(col => col.visible)
-              .map(column => (
-                <TableHead key={column.id}>{column.label}</TableHead>
-              ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tasks.map((task) => (
-            <TableRow key={task.id}>
-              {columns
-                .filter(col => col.visible)
-                .map(column => (
-                  <TableCell key={`${task.id}-${column.id}`}>
-                    {formatValue(task[column.id as keyof Task], column.id)}
-                  </TableCell>
-                ))}
-            </TableRow>
-          ))}
-          {tasks.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={columns.filter(col => col.visible).length} className="text-center py-4 text-gray-500">
-                Nenhuma tarefa cadastrada
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+      <DraggableTable
+        columns={columns}
+        onColumnsChange={onColumnsChange}
+        data={tasks}
+        formatValue={formatValue}
+      />
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,11 +8,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Eye } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect } from "react";
+
+interface Column {
+  id: string;
+  label: string;
+  visible: boolean;
+}
 
 interface View {
   id: string;
   name: string;
-  columns: string[];
+  columns: Column[];
 }
 
 interface ViewManagerProps {
@@ -23,6 +29,14 @@ interface ViewManagerProps {
 }
 
 export function ViewManager({ onSaveView, onLoadView, savedViews }: ViewManagerProps) {
+  useEffect(() => {
+    // Load last saved view as default
+    if (savedViews.length > 0) {
+      const lastView = savedViews[savedViews.length - 1];
+      onLoadView(lastView);
+    }
+  }, []);
+
   const handleSaveView = () => {
     if (savedViews.length >= 5) {
       toast.error("Limite máximo de 5 visualizações atingido. Remova uma visualização antes de adicionar outra.");
