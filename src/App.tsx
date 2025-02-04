@@ -1,9 +1,9 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Layout } from "@/components/Layout";
-import { Index } from "@/pages/Index";
-import { NotFound } from "@/pages/NotFound";
-import { ProjectAttributes } from "@/pages/ProjectAttributes";
-import { TaskManagement } from "@/pages/TaskManagement";
+import Layout from "@/components/Layout";
+import Index from "@/pages/Index";
+import NotFound from "@/pages/NotFound";
+import ProjectAttributes from "@/pages/ProjectAttributes";
+import TaskManagement from "@/pages/TaskManagement";
 import Team from "@/pages/Team";
 
 function App() {
