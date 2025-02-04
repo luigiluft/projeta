@@ -13,6 +13,9 @@ import NewTask from "@/pages/NewTask";
 import NewAttribute from "@/pages/NewAttribute";
 import Settings from "@/pages/Settings";
 import Auth from "@/pages/Auth";
+import UserApproval from "@/pages/UserApproval";
+import RoleManagement from "@/pages/RoleManagement";
+import RolePermissions from "@/pages/RolePermissions";
 import { AuthProvider } from "@/components/AuthProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -41,6 +44,9 @@ function App() {
             <Route path="team/new" element={<NewTeamMember />} />
             <Route path="calendar" element={<Calendar />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="settings/user-approval" element={<UserApproval />} />
+            <Route path="settings/roles" element={<RoleManagement />} />
+            <Route path="settings/roles/:role" element={<RolePermissions />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
