@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,7 +20,7 @@ export default function RolePermissions() {
   const { role } = useParams<{ role: AppRole }>();
   const { toast } = useToast();
 
-  const { data: permissions, refetch, isLoading, error } = useQuery({
+  const { data: permissions, refetch } = useQuery({
     queryKey: ["permissions", role],
     queryFn: async () => {
       if (!role) throw new Error("Role is required");
@@ -30,12 +30,9 @@ export default function RolePermissions() {
         .select("*")
         .order("module");
 
-      if (error) {
-        console.error("Error fetching permissions:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      return allPermissions as Permission[];
+      return allPermissions || [];
     },
   });
 
@@ -56,7 +53,6 @@ export default function RolePermissions() {
       });
       refetch();
     } catch (error: any) {
-      console.error("Error updating permission:", error);
       toast({
         title: "Erro ao atualizar permissão",
         description: error.message,
@@ -64,18 +60,6 @@ export default function RolePermissions() {
       });
     }
   };
-
-  if (isLoading) {
-    return <div className="container mx-auto py-6">Carregando permissões...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto py-6">
-        Erro ao carregar permissões: {(error as Error).message}
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -99,29 +83,21 @@ export default function RolePermissions() {
             </tr>
           </thead>
           <tbody>
-            {permissions && permissions.length > 0 ? (
-              permissions.map((permission) => (
-                <tr key={permission.id} className="border-b">
-                  <td className="p-4">{permission.module}</td>
-                  <td className="p-4">{permission.name}</td>
-                  <td className="p-4">{permission.description}</td>
-                  <td className="p-4">
-                    <Checkbox
-                      checked={permission.enabled || false}
-                      onCheckedChange={(checked) =>
-                        handlePermissionToggle(permission.id, checked as boolean)
-                      }
-                    />
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="p-4 text-center">
-                  Nenhuma permissão encontrada
+            {permissions?.map((permission) => (
+              <tr key={permission.id} className="border-b">
+                <td className="p-4">{permission.module}</td>
+                <td className="p-4">{permission.name}</td>
+                <td className="p-4">{permission.description}</td>
+                <td className="p-4">
+                  <Checkbox
+                    checked={permission.enabled || false}
+                    onCheckedChange={(checked) =>
+                      handlePermissionToggle(permission.id, checked as boolean)
+                    }
+                  />
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>
