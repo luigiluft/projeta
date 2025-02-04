@@ -15,10 +15,6 @@ import { Database } from "@/integrations/supabase/types";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
-interface PendingUser extends Profile {
-  email: string | null;
-}
-
 export default function UserApproval() {
   const { toast } = useToast();
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -47,21 +43,7 @@ export default function UserApproval() {
         throw error;
       }
 
-      // Get auth users data for emails
-      const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
-      if (authError) {
-        console.error("Error fetching auth users:", authError);
-        return profiles || [];
-      }
-
-      // Combine the data
-      return profiles?.map((profile) => {
-        const authUser = users?.find(u => u.id === profile.id);
-        return {
-          ...profile,
-          email: authUser?.email || null,
-        };
-      }) || [];
+      return profiles || [];
     },
     enabled: !!currentUserEmail,
   });
@@ -101,19 +83,17 @@ export default function UserApproval() {
         <TableHeader>
           <TableRow>
             <TableHead>Nome</TableHead>
-            <TableHead>Email</TableHead>
             <TableHead>Função</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {pendingUsers?.map((user: PendingUser) => (
+          {pendingUsers?.map((user: Profile) => (
             <TableRow key={user.id}>
               <TableCell>
                 {`${user.first_name || ''} ${user.last_name || ''}`}
               </TableCell>
-              <TableCell>{user.email}</TableCell>
               <TableCell>{user.role}</TableCell>
               <TableCell>
                 {user.approved ? "Aprovado" : "Pendente"}
@@ -133,7 +113,7 @@ export default function UserApproval() {
           {(!pendingUsers || pendingUsers.length === 0) && (
             <TableRow>
               <TableCell
-                colSpan={5}
+                colSpan={4}
                 className="text-center py-4 text-gray-500"
               >
                 Nenhum usuário pendente encontrado

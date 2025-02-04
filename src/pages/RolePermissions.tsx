@@ -33,29 +33,21 @@ export default function RolePermissions() {
 
       if (permissionsError) throw permissionsError;
 
-      // Get profiles with this role that are approved
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("role", role)
-        .eq("approved", true);
-
-      if (profilesError) throw profilesError;
-
-      // Get permissions for this role
-      const { data: rolePermissions, error: rolePermissionsError } = await supabase
+      // Get enabled permissions for this role
+      const { data: enabledPermissions, error: enabledError } = await supabase
         .from("permissions")
         .select("id")
-        .eq("role", role);
+        .eq("enabled", true)
+        .eq("module", role);
 
-      if (rolePermissionsError) throw rolePermissionsError;
+      if (enabledError) throw enabledError;
 
-      const rolePermissionIds = rolePermissions?.map((rp) => rp.id) || [];
+      const enabledIds = enabledPermissions?.map(p => p.id) || [];
 
       // Combine the data
       return allPermissions?.map((permission) => ({
         ...permission,
-        enabled: rolePermissionIds.includes(permission.id),
+        enabled: enabledIds.includes(permission.id),
       })) || [];
     },
   });
@@ -64,23 +56,13 @@ export default function RolePermissions() {
     if (!role) return;
 
     try {
-      if (enabled) {
-        // Add permission
-        const { error } = await supabase
-          .from("permissions")
-          .update({ role })
-          .eq("id", permissionId);
+      const { error } = await supabase
+        .from("permissions")
+        .update({ enabled: enabled })
+        .eq("id", permissionId)
+        .eq("module", role);
 
-        if (error) throw error;
-      } else {
-        // Remove permission
-        const { error } = await supabase
-          .from("permissions")
-          .update({ role: null })
-          .eq("id", permissionId);
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Permissão atualizada",
