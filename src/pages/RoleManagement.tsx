@@ -12,11 +12,11 @@ export default function RoleManagement() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: roles } = useQuery({
+  const { data: roles, error } = useQuery({
     queryKey: ["roles"],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_distinct_approved_roles');
-
+      
       if (error) {
         console.error('Error fetching roles:', error);
         throw error;
@@ -25,6 +25,10 @@ export default function RoleManagement() {
       return data || [];
     },
   });
+
+  if (error) {
+    console.error('Query error:', error);
+  }
 
   const handleRoleClick = (role: AppRole) => {
     navigate(`/settings/roles/${role}`);
@@ -50,7 +54,7 @@ export default function RoleManagement() {
               <tr key={role.role} className="border-b">
                 <td className="p-4">{role.role}</td>
                 <td className="p-4">
-                  <Button onClick={() => handleRoleClick(role.role as AppRole)}>
+                  <Button onClick={() => handleRoleClick(role.role)}>
                     Ver Permissões
                   </Button>
                 </td>

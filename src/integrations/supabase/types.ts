@@ -116,6 +116,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_distinct_approved_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       is_admin: {
         Args: {
           user_id: string
