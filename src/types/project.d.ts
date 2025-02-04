@@ -1,7 +1,9 @@
 export interface Project {
   id: string;
   name: string;
-  attributes: Record<string, string | number>;
+  attributes: {
+    [key: string]: string | number;
+  };
 }
 
 export interface Attribute {
