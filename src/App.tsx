@@ -5,6 +5,7 @@ import NotFound from "@/pages/NotFound";
 import ProjectAttributes from "@/pages/ProjectAttributes";
 import TaskManagement from "@/pages/TaskManagement";
 import Team from "@/pages/Team";
+import Projects from "@/pages/Projects";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
+          <Route path="projects" element={<Projects />} />
           <Route path="project-attributes" element={<ProjectAttributes />} />
           <Route path="task-management" element={<TaskManagement />} />
           <Route path="team" element={<Team />} />
