@@ -11,6 +11,7 @@ import NewProject from "@/pages/NewProject";
 import NewTeamMember from "@/pages/NewTeamMember";
 import NewTask from "@/pages/NewTask";
 import NewAttribute from "@/pages/NewAttribute";
+import Settings from "@/pages/Settings";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="team" element={<Team />} />
           <Route path="team/new" element={<NewTeamMember />} />
           <Route path="calendar" element={<Calendar />} />
+          <Route path="settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
