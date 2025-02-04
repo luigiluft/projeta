@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -54,7 +53,7 @@ export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeF
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow">
         <FormField
           control={form.control}
           name="name"
@@ -131,9 +130,11 @@ export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeF
           )}
         />
 
-        <Button type="submit" className="w-full">
-          {editingId ? "Atualizar Atributo" : "Criar Novo Atributo"}
-        </Button>
+        <div className="flex justify-end">
+          <Button type="submit">
+            {editingId ? "Atualizar Atributo" : "Criar Novo Atributo"}
+          </Button>
+        </div>
       </form>
     </Form>
   );
