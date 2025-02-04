@@ -12,26 +12,39 @@ import NewTeamMember from "@/pages/NewTeamMember";
 import NewTask from "@/pages/NewTask";
 import NewAttribute from "@/pages/NewAttribute";
 import Settings from "@/pages/Settings";
+import Auth from "@/pages/Auth";
+import { AuthProvider } from "@/components/AuthProvider";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="projects" element={<Projects />} />
-          <Route path="projects/new" element={<NewProject />} />
-          <Route path="project-attributes" element={<ProjectAttributes />} />
-          <Route path="project-attributes/new" element={<NewAttribute />} />
-          <Route path="task-management" element={<TaskManagement />} />
-          <Route path="task-management/new" element={<NewTask />} />
-          <Route path="team" element={<Team />} />
-          <Route path="team/new" element={<NewTeamMember />} />
-          <Route path="calendar" element={<Calendar />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/auth" element={<Auth />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="projects" element={<Projects />} />
+            <Route path="projects/new" element={<NewProject />} />
+            <Route path="project-attributes" element={<ProjectAttributes />} />
+            <Route path="project-attributes/new" element={<NewAttribute />} />
+            <Route path="task-management" element={<TaskManagement />} />
+            <Route path="task-management/new" element={<NewTask />} />
+            <Route path="team" element={<Team />} />
+            <Route path="team/new" element={<NewTeamMember />} />
+            <Route path="calendar" element={<Calendar />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
