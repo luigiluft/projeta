@@ -68,7 +68,9 @@ export default function UserApproval() {
           const { data, error: authError } = await supabase.auth.admin.listUsers({
             page: 1,
             perPage: 1,
-            query: role.user_id
+            filter: {
+              id: `eq.${role.user_id}`
+            }
           });
 
           if (authError) {
