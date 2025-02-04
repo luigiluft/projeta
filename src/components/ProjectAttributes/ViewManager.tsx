@@ -8,12 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Eye } from "lucide-react";
 import { toast } from "sonner";
-
-interface View {
-  id: string;
-  name: string;
-  columns: string[];
-}
+import { View, Column } from "@/types/project";
 
 interface ViewManagerProps {
   onSaveView: () => void;

@@ -2,9 +2,11 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { TaskForm } from "@/components/TaskManagement/TaskForm";
+import { useState } from "react";
 
 export default function NewTask() {
   const navigate = useNavigate();
+  const [open, setOpen] = useState(true);
 
   const handleSubmit = (values: any) => {
     console.log(values);
@@ -20,7 +22,11 @@ export default function NewTask() {
         </Button>
         <h1 className="text-2xl font-bold">Cadastrar Tarefa</h1>
       </div>
-      <TaskForm onSubmit={handleSubmit} />
+      <TaskForm 
+        onSubmit={handleSubmit}
+        open={open}
+        onOpenChange={setOpen}
+      />
     </div>
   );
 }
