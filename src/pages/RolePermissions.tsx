@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -66,11 +66,15 @@ export default function RolePermissions() {
   };
 
   if (isLoading) {
-    return <div>Carregando permissões...</div>;
+    return <div className="container mx-auto py-6">Carregando permissões...</div>;
   }
 
   if (error) {
-    return <div>Erro ao carregar permissões: {(error as Error).message}</div>;
+    return (
+      <div className="container mx-auto py-6">
+        Erro ao carregar permissões: {(error as Error).message}
+      </div>
+    );
   }
 
   return (
