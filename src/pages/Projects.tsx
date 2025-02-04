@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { Header } from "@/components/Layout/Header";
-import { AppSidebar } from "@/components/Layout/AppSidebar";
-import { ProjectForm } from "@/components/Projects/ProjectForm";
-import { ProjectList } from "@/components/Projects/ProjectList";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
+import { ProjectList } from "@/components/Projects/ProjectList";
+import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { toast } from "sonner";
 
 interface Project {
@@ -139,43 +137,39 @@ export default function Projects() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <AppSidebar />
-      <div className="flex-1 flex flex-col">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">Gestão de Projetos</h1>
-              <ActionButtons
-                columns={columns}
-                savedViews={savedViews}
-                onColumnVisibilityChange={handleColumnVisibilityChange}
-                onSaveView={handleSaveView}
-                onLoadView={handleLoadView}
-                onNewAttribute={handleNewProject}
-                onImportSpreadsheet={handleImportSpreadsheet}
-                newButtonText="Adicionar Projeto"
-              />
-            </div>
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Gestão de Projetos</h1>
+        <ActionButtons
+          columns={columns}
+          savedViews={savedViews}
+          onColumnVisibilityChange={handleColumnVisibilityChange}
+          onSaveView={handleSaveView}
+          onLoadView={handleLoadView}
+          onNewAttribute={handleNewProject}
+          onImportSpreadsheet={handleImportSpreadsheet}
+          newButtonText="Adicionar Projeto"
+        />
+      </div>
 
-            {showForm && (
-              <ProjectForm
-                editingId={editingId}
-                attributes={attributes}
-                onSubmit={handleSubmit}
-                initialValues={projects.find(p => p.id === editingId)}
-              />
-            )}
+      {showForm && (
+        <ProjectForm
+          editingId={editingId}
+          attributes={attributes}
+          onSubmit={handleSubmit}
+          initialValues={projects.find(p => p.id === editingId)}
+        />
+      )}
 
-            <ProjectList
-              projects={projects}
-              columns={columns}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          </div>
-        </main>
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6">
+          <ProjectList
+            projects={projects}
+            columns={columns}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </div>
       </div>
     </div>
   );

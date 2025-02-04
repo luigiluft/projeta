@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { Header } from "@/components/Layout/Header";
-import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { toast } from "sonner";
 import { AttributeForm } from "@/components/ProjectAttributes/AttributeForm";
 import { AttributeList } from "@/components/ProjectAttributes/AttributeList";
@@ -104,42 +102,35 @@ export default function ProjectAttributes() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <AppSidebar />
-      <div className="flex-1 flex flex-col">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">Gestão de Atributos do Projeto</h1>
-              <ActionButtons
-                columns={columns}
-                savedViews={savedViews}
-                onColumnVisibilityChange={handleColumnVisibilityChange}
-                onSaveView={handleSaveView}
-                onLoadView={handleLoadView}
-                onNewAttribute={handleNewAttribute}
-                onImportSpreadsheet={handleImportSpreadsheet}
-              />
-            </div>
-            
-            {showForm && (
-              <AttributeForm
-                editingId={editingId}
-                onSubmit={handleSubmit}
-                initialValues={attributes.find(attr => attr.id === editingId)}
-              />
-            )}
-
-            <AttributeList
-              attributes={attributes}
-              columns={columns}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          </div>
-        </main>
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Atributos do Projeto</h1>
+        <ActionButtons
+          columns={columns}
+          savedViews={savedViews}
+          onColumnVisibilityChange={handleColumnVisibilityChange}
+          onSaveView={handleSaveView}
+          onLoadView={handleLoadView}
+          onNewAttribute={handleNewAttribute}
+          onImportSpreadsheet={handleImportSpreadsheet}
+          newButtonText="Novo Atributo"
+        />
       </div>
+
+      {showForm && (
+        <AttributeForm
+          editingId={editingId}
+          onSubmit={handleSubmit}
+          initialValues={attributes.find(attr => attr.id === editingId)}
+        />
+      )}
+
+      <AttributeList
+        attributes={attributes}
+        columns={columns}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }
