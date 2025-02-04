@@ -10,18 +10,7 @@ import {
 import { ColumnManager } from "./ColumnManager";
 import { ViewManager } from "./ViewManager";
 import { exportToCSV } from "@/utils/csvExport";
-
-interface Column {
-  id: string;
-  label: string;
-  visible: boolean;
-}
-
-interface View {
-  id: string;
-  name: string;
-  columns: string[];
-}
+import { Column, View } from "@/types/project";
 
 interface ActionButtonsProps {
   columns: Column[];

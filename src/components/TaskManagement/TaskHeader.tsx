@@ -34,7 +34,6 @@ export function TaskHeader({
         onLoadView={onLoadView}
         onImportSpreadsheet={onImportSpreadsheet}
         newButtonText="Nova Tarefa"
-        onNewClick={onNewTask}
         data={tasks}
         exportFilename="tarefas"
       />
