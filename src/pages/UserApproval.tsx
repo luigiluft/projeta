@@ -27,16 +27,12 @@ export default function UserApproval() {
     getCurrentUser();
   }, []);
 
-  const { data: pendingUsers, isLoading, refetch } = useQuery({
-    queryKey: ["pendingUsers", currentUserEmail],
+  const { data: profiles, isLoading, refetch } = useQuery({
+    queryKey: ["profiles"],
     queryFn: async () => {
-      if (!currentUserEmail) return [];
-
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("*")
-        .eq('supervisor_email', currentUserEmail)
-        .eq('approved', false);
+        .select("*");
 
       if (error) {
         console.error("Error fetching profiles:", error);
@@ -45,7 +41,6 @@ export default function UserApproval() {
 
       return profiles || [];
     },
-    enabled: !!currentUserEmail,
   });
 
   const handleApprove = async (userId: string) => {
@@ -89,7 +84,7 @@ export default function UserApproval() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {pendingUsers?.map((user: Profile) => (
+          {profiles?.map((user: Profile) => (
             <TableRow key={user.id}>
               <TableCell>
                 {`${user.first_name || ''} ${user.last_name || ''}`}
@@ -110,13 +105,13 @@ export default function UserApproval() {
               </TableCell>
             </TableRow>
           ))}
-          {(!pendingUsers || pendingUsers.length === 0) && (
+          {(!profiles || profiles.length === 0) && (
             <TableRow>
               <TableCell
                 colSpan={4}
                 className="text-center py-4 text-gray-500"
               >
-                Nenhum usuário pendente encontrado
+                Nenhum usuário encontrado
               </TableCell>
             </TableRow>
           )}

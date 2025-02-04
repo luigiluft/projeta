@@ -80,6 +80,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_limited_user: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "developer" | "financial" | "user"
