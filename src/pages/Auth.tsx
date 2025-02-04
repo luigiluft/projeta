@@ -24,32 +24,50 @@ export default function Auth() {
     lastName: "",
   });
 
+  const handleAuthError = (error: any) => {
+    let errorMessage = "An unexpected error occurred";
+    
+    // Handle specific error codes
+    if (error.message?.includes("Invalid login credentials")) {
+      errorMessage = "Email ou senha incorretos";
+    } else if (error.message?.includes("Email not confirmed")) {
+      errorMessage = "Por favor, confirme seu email antes de fazer login";
+    } else if (error.message?.includes("Password should be")) {
+      errorMessage = "A senha deve ter pelo menos 6 caracteres";
+    } else if (error.message?.includes("User already registered")) {
+      errorMessage = "Este email já está cadastrado";
+    } else {
+      // Log unexpected errors for debugging
+      console.error("Auth error:", error);
+      errorMessage = error.message || errorMessage;
+    }
+
+    toast({
+      title: "Erro",
+      description: errorMessage,
+      variant: "destructive",
+    });
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!loginData.email || !loginData.password) {
+      toast({
+        title: "Erro",
+        description: "Por favor, preencha todos os campos",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
+        email: loginData.email.trim(),
         password: loginData.password,
       });
 
-      if (error) {
-        let errorMessage = "Erro ao fazer login";
-        
-        // Customize error messages based on error type
-        switch (error.message) {
-          case "Invalid login credentials":
-            errorMessage = "Email ou senha inválidos";
-            break;
-          case "Email not confirmed":
-            errorMessage = "Por favor, confirme seu email antes de fazer login";
-            break;
-          default:
-            errorMessage = error.message;
-        }
-        
-        throw new Error(errorMessage);
-      }
+      if (error) throw error;
 
       navigate("/");
       toast({
@@ -57,11 +75,7 @@ export default function Auth() {
         description: "Bem-vindo de volta!",
       });
     } catch (error: any) {
-      toast({
-        title: "Erro ao fazer login",
-        description: error.message,
-        variant: "destructive",
-      });
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
@@ -69,14 +83,19 @@ export default function Auth() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!signupData.email || !signupData.password || !signupData.firstName || !signupData.lastName) {
+      toast({
+        title: "Erro",
+        description: "Por favor, preencha todos os campos",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!signupData.firstName || !signupData.lastName) {
-        throw new Error("Por favor, preencha todos os campos");
-      }
-
       const { error } = await supabase.auth.signUp({
-        email: signupData.email,
+        email: signupData.email.trim(),
         password: signupData.password,
         options: {
           data: {
@@ -86,30 +105,13 @@ export default function Auth() {
         },
       });
 
-      if (error) {
-        let errorMessage = "Erro ao fazer cadastro";
-        
-        // Customize error messages based on error type
-        switch (error.message) {
-          case "User already registered":
-            errorMessage = "Este email já está cadastrado";
-            break;
-          case "Password should be at least 6 characters":
-            errorMessage = "A senha deve ter pelo menos 6 caracteres";
-            break;
-          default:
-            errorMessage = error.message;
-        }
-        
-        throw new Error(errorMessage);
-      }
+      if (error) throw error;
 
       toast({
         title: "Cadastro realizado com sucesso!",
         description: "Verifique seu email para confirmar o cadastro.",
       });
       
-      // Clear form after successful signup
       setSignupData({
         email: "",
         password: "",
@@ -117,11 +119,7 @@ export default function Auth() {
         lastName: "",
       });
     } catch (error: any) {
-      toast({
-        title: "Erro ao fazer cadastro",
-        description: error.message,
-        variant: "destructive",
-      });
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
