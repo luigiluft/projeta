@@ -22,16 +22,11 @@ interface PendingUser {
   display_name: string | null;
 }
 
-interface UserRoleWithProfile {
+interface UserRole {
   id: string;
   role: string;
   approved: boolean;
   user_id: string;
-  profiles: {
-    first_name: string | null;
-    last_name: string | null;
-    id: string;
-  } | null;
 }
 
 export default function UserApproval() {
@@ -51,20 +46,11 @@ export default function UserApproval() {
     queryFn: async () => {
       if (!currentUserEmail) return [];
 
+      // First, get user roles
       const { data: userRoles, error: userRolesError } = await supabase
         .from("user_roles")
-        .select(`
-          id,
-          role,
-          approved,
-          user_id,
-          profiles!user_roles_user_id_fkey (
-            first_name,
-            last_name,
-            id
-          )
-        `)
-        .eq('supervisor_email', currentUserEmail) as { data: UserRoleWithProfile[] | null, error: any };
+        .select("*")
+        .eq('supervisor_email', currentUserEmail) as { data: UserRole[] | null, error: any };
 
       if (userRolesError) {
         console.error("Error fetching user roles:", userRolesError);
@@ -73,6 +59,17 @@ export default function UserApproval() {
 
       if (!userRoles) return [];
 
+      // Then, get profiles for these users
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("*")
+        .in('id', userRoles.map(role => role.user_id));
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        throw profilesError;
+      }
+
       // Get auth users data for emails
       const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
       if (authError) {
@@ -80,8 +77,9 @@ export default function UserApproval() {
         return [];
       }
 
+      // Combine the data
       return userRoles.map((role) => {
-        const profile = role.profiles;
+        const profile = profiles?.find(p => p.id === role.user_id);
         const authUser = authData?.users?.find(u => u.id === role.user_id);
         
         return {
