@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
-import { Column, View } from "@/types/project";
+import { Column, View, Task } from "@/types/project";
 
 interface TaskHeaderProps {
   columns: Column[];
@@ -10,7 +10,7 @@ interface TaskHeaderProps {
   onLoadView: (view: View) => void;
   onImportSpreadsheet: () => void;
   onNewTask: () => void;
-  tasks: any[];
+  tasks: Task[];
 }
 
 export function TaskHeader({

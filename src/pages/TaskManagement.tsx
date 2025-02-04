@@ -9,17 +9,17 @@ export default function TaskManagement() {
   const [showForm, setShowForm] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [columns, setColumns] = useState<Column[]>([
-    { id: "name", label: "Nome", visible: true },
-    { id: "description", label: "Descrição", visible: true },
+    { id: "itemKey", label: "Chave", visible: true },
+    { id: "summary", label: "Resumo", visible: true },
     { id: "type", label: "Tipo", visible: true },
     { id: "priority", label: "Prioridade", visible: true },
     { id: "status", label: "Status", visible: true },
-    { id: "timeMin", label: "Tempo Mínimo", visible: true },
-    { id: "timeMed", label: "Tempo Médio", visible: true },
-    { id: "timeMax", label: "Tempo Máximo", visible: true },
-    { id: "dependencies", label: "Dependências", visible: true },
-    { id: "responsible", label: "Responsável", visible: true },
-    { id: "timeFormula", label: "Fórmula de Tempo", visible: true },
+    { id: "assignee", label: "Responsável", visible: true },
+    { id: "created", label: "Criado em", visible: true },
+    { id: "updated", label: "Atualizado em", visible: true },
+    { id: "originalEstimate", label: "Estimativa Original", visible: true },
+    { id: "totalTimeSpent", label: "Tempo Total Gasto", visible: true },
+    { id: "remainingEstimate", label: "Estimativa Restante", visible: true },
   ]);
   const [savedViews, setSavedViews] = useState<View[]>([]);
 
@@ -60,7 +60,7 @@ export default function TaskManagement() {
     toast.success("Visualização carregada com sucesso");
   };
 
-  const handleTaskSubmit = (values: any) => {
+  const handleTaskSubmit = (values: Omit<Task, "id">) => {
     const newTask: Task = {
       id: crypto.randomUUID(),
       ...values
