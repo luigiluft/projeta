@@ -1,5 +1,6 @@
 import { JiraImporter } from "@/components/Settings/JiraImporter";
 import { useProjects } from "@/hooks/useProjects";
+import { Project } from "@/types/project";
 
 export default function Settings() {
   const { projects, handleSubmit } = useProjects();
