@@ -8,14 +8,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Calendar, ClipboardList, Settings, Users, ListTodo, Variable } from "lucide-react";
+import { BarChart2, Calendar, ClipboardList, Settings, Users, ListTodo, Variable } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const menuItems = [
-  { title: "Dashboard", icon: LayoutDashboard, url: "/" },
+  { title: "Dashboard", icon: BarChart2, url: "/" },
+  { title: "Projetos", icon: ClipboardList, url: "/projects" },
   { title: "Time", icon: Users, url: "/team" },
+  { title: "Calendário", icon: Calendar, url: "/calendar" },
   { title: "Gestão de Tarefas", icon: ListTodo, url: "/task-management" },
   { title: "Atributos do Projeto", icon: Variable, url: "/project-attributes" },
+  { title: "Configurações", icon: Settings, url: "/settings" },
 ];
 
 export function AppSidebar() {
@@ -29,10 +32,7 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link 
-                      to={item.url} 
-                      className="flex items-center gap-2 text-sidebar-foreground hover:text-sidebar-accent-foreground"
-                    >
+                    <Link to={item.url} className="flex items-center gap-2">
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
                     </Link>
