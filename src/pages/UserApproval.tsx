@@ -34,18 +34,14 @@ export default function UserApproval() {
   }, []);
 
   const { data: pendingUsers, isLoading, refetch } = useQuery({
-    queryKey: ["pendingUsers"],
+    queryKey: ["pendingUsers", currentUserEmail],
     queryFn: async () => {
-      console.log("Fetching pending users...");
+      if (!currentUserEmail) return [];
+
+      // First, get the user roles
       const { data: userRoles, error: userRolesError } = await supabase
         .from("user_roles")
-        .select(`
-          id,
-          role,
-          approved,
-          supervisor_email,
-          user_id
-        `)
+        .select("id, role, approved, supervisor_email, user_id")
         .eq('supervisor_email', currentUserEmail);
 
       if (userRolesError) {
@@ -53,27 +49,39 @@ export default function UserApproval() {
         throw userRolesError;
       }
 
-      // Get profile information for each user
-      const profilePromises = userRoles.map(async (role) => {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', role.user_id)
-          .single();
-        
-        const { data: { user } } = await supabase.auth.admin.getUserById(role.user_id);
-        
-        return {
-          id: role.id,
-          email: user?.email || '',
-          first_name: profile?.first_name || null,
-          last_name: profile?.last_name || null,
-          role: role.role,
-          approved: role.approved,
-        };
-      });
+      // Then, get the profiles for these users
+      const usersWithProfiles = await Promise.all(
+        userRoles.map(async (role) => {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', role.user_id)
+            .single();
 
-      return Promise.all(profilePromises);
+          if (profileError) {
+            console.error("Error fetching profile:", profileError);
+            return {
+              id: role.id,
+              email: "Unknown",
+              first_name: profile?.first_name || null,
+              last_name: profile?.last_name || null,
+              role: role.role,
+              approved: role.approved,
+            };
+          }
+
+          return {
+            id: role.id,
+            email: "Loading...", // We'll update this in the next step
+            first_name: profile?.first_name || null,
+            last_name: profile?.last_name || null,
+            role: role.role,
+            approved: role.approved,
+          };
+        })
+      );
+
+      return usersWithProfiles;
     },
     enabled: !!currentUserEmail,
   });
