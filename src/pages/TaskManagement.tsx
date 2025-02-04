@@ -94,9 +94,9 @@ export default function TaskManagement() {
         <div className="bg-white rounded-lg shadow">
           <div className="p-6">
             <TaskForm 
-              open={showForm} 
-              onOpenChange={setShowForm}
               onSubmit={handleTaskSubmit}
+              open={showForm}
+              onOpenChange={setShowForm}
             />
           </div>
         </div>

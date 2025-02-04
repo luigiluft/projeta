@@ -41,9 +41,11 @@ const formSchema = z.object({
 
 interface TaskFormProps {
   onSubmit?: (values: z.infer<typeof formSchema>) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function TaskForm({ onSubmit }: TaskFormProps) {
+export function TaskForm({ onSubmit, open, onOpenChange }: TaskFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -65,6 +67,7 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
     onSubmit?.(values);
     toast.success("Item criado com sucesso!");
     form.reset();
+    onOpenChange?.(false);
   }
 
   return (
