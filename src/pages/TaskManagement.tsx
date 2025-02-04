@@ -83,7 +83,6 @@ export default function TaskManagement() {
           onColumnVisibilityChange={handleColumnVisibilityChange}
           onSaveView={handleSaveView}
           onLoadView={handleLoadView}
-          onNewAttribute={handleNewTask}
           onImportSpreadsheet={handleImportSpreadsheet}
           newButtonText="Nova Tarefa"
           data={tasks}

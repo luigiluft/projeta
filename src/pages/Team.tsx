@@ -59,10 +59,6 @@ export default function Team() {
     console.log("Import spreadsheet clicked");
   };
 
-  const handleNewMember = () => {
-    console.log("New member clicked");
-  };
-
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -73,7 +69,6 @@ export default function Team() {
           onColumnVisibilityChange={handleColumnVisibilityChange}
           onSaveView={handleSaveView}
           onLoadView={handleLoadView}
-          onNewAttribute={handleNewMember}
           onImportSpreadsheet={handleImportSpreadsheet}
           newButtonText="Novo Membro"
           data={teamMembers}
