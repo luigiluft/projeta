@@ -96,10 +96,7 @@ export function TeamForm({ onClose }: TeamFormProps) {
             )}
           />
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" type="button" onClick={onClose}>
-              Cancelar
-            </Button>
+          <div className="flex justify-end">
             <Button type="submit">Salvar</Button>
           </div>
         </form>
