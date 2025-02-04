@@ -63,7 +63,7 @@ export function ActionButtons({
         <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
           <DropdownMenuItem onClick={onNewAttribute}>
             <Plus className="mr-2 h-4 w-4" />
-            Novo Atributo
+            Cadastrar Projeto
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onImportSpreadsheet}>
             <FilePlus className="mr-2 h-4 w-4" />
