@@ -8,10 +8,20 @@ import { Project } from "@/types/project";
 
 export function JiraImporter({ onImport }: { onImport: (projects: Project[]) => void }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!selectedFile) {
+      toast.error('Por favor, selecione um arquivo CSV para importar');
+      return;
+    }
 
     setIsLoading(true);
     const reader = new FileReader();
@@ -91,7 +101,7 @@ export function JiraImporter({ onImport }: { onImport: (projects: Project[]) => 
       setIsLoading(false);
     };
 
-    reader.readAsText(file);
+    reader.readAsText(selectedFile);
   };
 
   return (
@@ -106,11 +116,14 @@ export function JiraImporter({ onImport }: { onImport: (projects: Project[]) => 
           <Input
             type="file"
             accept=".csv"
-            onChange={handleFileUpload}
+            onChange={handleFileSelect}
             disabled={isLoading}
             className="max-w-sm"
           />
-          <Button disabled={isLoading} variant="outline">
+          <Button 
+            onClick={handleImport}
+            disabled={isLoading || !selectedFile}
+          >
             <Upload className="h-4 w-4 mr-2" />
             {isLoading ? 'Importando...' : 'Importar CSV'}
           </Button>
