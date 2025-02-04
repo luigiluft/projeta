@@ -7,14 +7,16 @@ export default function Layout() {
   return (
     <div className="min-h-screen">
       <Header />
-      <SidebarProvider>
-        <div className="flex">
-          <AppSidebar />
-          <main className="flex-1 p-6">
-            <Outlet />
-          </main>
-        </div>
-      </SidebarProvider>
+      <div className="pt-[72px]">
+        <SidebarProvider>
+          <div className="flex w-full">
+            <AppSidebar />
+            <main className="flex-1 p-6">
+              <Outlet />
+            </main>
+          </div>
+        </SidebarProvider>
+      </div>
     </div>
   );
 }

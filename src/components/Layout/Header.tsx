@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export function Header() {
   return (
-    <header className="border-b bg-white p-4">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-white p-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-primary">Project Management</h1>
         <div className="flex items-center gap-4">
