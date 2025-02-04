@@ -35,10 +35,7 @@ export default function Projects() {
   };
 
   const handleLoadView = (view: View) => {
-    setColumns(columns.map(col => ({
-      ...col,
-      visible: view.columns.includes(col.id),
-    })));
+    setColumns(view.columns);
   };
 
   const handleImportSpreadsheet = () => {
