@@ -99,7 +99,7 @@ export default function TaskManagement() {
                 onLoadView={handleLoadView}
                 onNewAttribute={() => setIsFormOpen(true)}
                 onImportSpreadsheet={handleImportSpreadsheet}
-                newButtonText="Nova Tarefa"
+                newButtonText="Cadastrar Tarefa"
               />
             </div>
 
