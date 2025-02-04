@@ -20,7 +20,7 @@ export default function RolePermissions() {
   const { role } = useParams<{ role: AppRole }>();
   const { toast } = useToast();
 
-  const { data: permissions, refetch } = useQuery({
+  const { data: permissions, refetch, isLoading, error } = useQuery({
     queryKey: ["permissions", role],
     queryFn: async () => {
       if (!role) throw new Error("Role is required");
@@ -30,9 +30,12 @@ export default function RolePermissions() {
         .select("*")
         .order("module");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching permissions:", error);
+        throw error;
+      }
 
-      return allPermissions || [];
+      return allPermissions as Permission[];
     },
   });
 
@@ -53,6 +56,7 @@ export default function RolePermissions() {
       });
       refetch();
     } catch (error: any) {
+      console.error("Error updating permission:", error);
       toast({
         title: "Erro ao atualizar permissão",
         description: error.message,
@@ -60,6 +64,14 @@ export default function RolePermissions() {
       });
     }
   };
+
+  if (isLoading) {
+    return <div>Carregando permissões...</div>;
+  }
+
+  if (error) {
+    return <div>Erro ao carregar permissões: {(error as Error).message}</div>;
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -83,21 +95,29 @@ export default function RolePermissions() {
             </tr>
           </thead>
           <tbody>
-            {permissions?.map((permission) => (
-              <tr key={permission.id} className="border-b">
-                <td className="p-4">{permission.module}</td>
-                <td className="p-4">{permission.name}</td>
-                <td className="p-4">{permission.description}</td>
-                <td className="p-4">
-                  <Checkbox
-                    checked={permission.enabled || false}
-                    onCheckedChange={(checked) =>
-                      handlePermissionToggle(permission.id, checked as boolean)
-                    }
-                  />
+            {permissions && permissions.length > 0 ? (
+              permissions.map((permission) => (
+                <tr key={permission.id} className="border-b">
+                  <td className="p-4">{permission.module}</td>
+                  <td className="p-4">{permission.name}</td>
+                  <td className="p-4">{permission.description}</td>
+                  <td className="p-4">
+                    <Checkbox
+                      checked={permission.enabled || false}
+                      onCheckedChange={(checked) =>
+                        handlePermissionToggle(permission.id, checked as boolean)
+                      }
+                    />
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="p-4 text-center">
+                  Nenhuma permissão encontrada
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
