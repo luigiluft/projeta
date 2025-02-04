@@ -15,8 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 interface PendingUser {
   id: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   role: string;
   approved: boolean;
 }
@@ -44,11 +44,7 @@ export default function UserApproval() {
           role,
           approved,
           supervisor_email,
-          user_id,
-          profiles!user_roles_user_id_fkey (
-            first_name,
-            last_name
-          )
+          user_id
         `)
         .eq('supervisor_email', currentUserEmail);
 
@@ -57,29 +53,27 @@ export default function UserApproval() {
         throw userRolesError;
       }
 
-      // Get emails for users in a separate query
-      const userIds = userRoles.map((role: any) => role.user_id);
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers({
-        userIds: userIds
-      });
-
-      if (authError) {
-        console.error("Error fetching auth users:", authError);
-        throw authError;
-      }
-
-      // Combine the data
-      return userRoles.map((userRole: any) => {
-        const authUser = authUsers.users.find((u: any) => u.id === userRole.user_id);
+      // Get profile information for each user
+      const profilePromises = userRoles.map(async (role) => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', role.user_id)
+          .single();
+        
+        const { data: { user } } = await supabase.auth.admin.getUserById(role.user_id);
+        
         return {
-          id: userRole.id,
-          email: authUser?.email,
-          first_name: userRole.profiles?.first_name,
-          last_name: userRole.profiles?.last_name,
-          role: userRole.role,
-          approved: userRole.approved,
+          id: role.id,
+          email: user?.email || '',
+          first_name: profile?.first_name || null,
+          last_name: profile?.last_name || null,
+          role: role.role,
+          approved: role.approved,
         };
       });
+
+      return Promise.all(profilePromises);
     },
     enabled: !!currentUserEmail,
   });
