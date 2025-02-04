@@ -2,50 +2,7 @@ import { useState } from "react";
 import { TaskList } from "@/components/TaskManagement/TaskList";
 import { TaskForm } from "@/components/TaskManagement/TaskForm";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
-
-interface Task {
-  id: string;
-  itemType: string;
-  itemKey: string;
-  itemId: number;
-  summary: string;
-  assignee: string;
-  assigneeId: string;
-  reporter: string;
-  reporterId: string;
-  priority: string;
-  status: string;
-  resolution: string;
-  created: string;
-  updated: string;
-  resolved: string;
-  components: string;
-  affectedVersion: string;
-  fixVersion: string;
-  sprints: string;
-  timeTracking: string;
-  internalLinks: string[];
-  externalLinks: string;
-  originalEstimate: number;
-  parentId: number;
-  parentSummary: string;
-  startDate: string;
-  totalOriginalEstimate: number;
-  totalTimeSpent: number;
-  remainingEstimate: number;
-}
-
-interface Column {
-  id: string;
-  label: string;
-  visible: boolean;
-}
-
-interface View {
-  id: string;
-  name: string;
-  columns: string[];
-}
+import { Column, Task, View } from "@/types/project";
 
 export default function TaskManagement() {
   const [showForm, setShowForm] = useState(false);
@@ -78,7 +35,7 @@ export default function TaskManagement() {
     { id: "startDate", label: "Data de Início", visible: true },
     { id: "totalOriginalEstimate", label: "Σ Estimativa Original", visible: true },
     { id: "totalTimeSpent", label: "Σ Tempo Gasto", visible: true },
-    { id: "remainingEstimate", label: "Σ Estimativa Restante", visible: true },
+    { id: "remainingEstimate", label: "Σ Estimativa Restante", visible: true }
   ]);
   const [savedViews, setSavedViews] = useState<View[]>([]);
 
@@ -94,6 +51,10 @@ export default function TaskManagement() {
     setColumns(columns.map(col => 
       col.id === columnId ? { ...col, visible: !col.visible } : col
     ));
+  };
+
+  const handleColumnsChange = (newColumns: Column[]) => {
+    setColumns(newColumns);
   };
 
   const handleSaveView = () => {
@@ -143,7 +104,11 @@ export default function TaskManagement() {
       ) : (
         <div className="bg-white rounded-lg shadow">
           <div className="p-6">
-            <TaskList tasks={tasks} columns={columns} />
+            <TaskList 
+              tasks={tasks} 
+              columns={columns}
+              onColumnsChange={handleColumnsChange}
+            />
           </div>
         </div>
       )}

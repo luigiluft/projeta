@@ -214,13 +214,18 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
   const calculateTotalTime = () => {
     const total = mockTasks.reduce((acc, task) => {
       return {
-        min: acc.min + Number(task.timeMin),
-        med: acc.med + Number(task.timeMed),
-        max: acc.max + Number(task.timeMax)
+        min: acc.min + Number(task.originalEstimate || 0),
+        med: acc.med + Number(task.totalTimeSpent || 0),
+        max: acc.max + Number(task.remainingEstimate || 0)
       };
     }, { min: 0, med: 0, max: 0 });
 
     return `Min: ${total.min}h | Med: ${total.med}h | Max: ${total.max}h`;
+  };
+
+  const handleColumnsChange = (newColumns: Column[]) => {
+    // Update columns state if needed
+    console.log("Columns changed:", newColumns);
   };
 
   return (
@@ -283,7 +288,11 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
                   Total de Horas: {calculateTotalTime()}
                 </div>
               </div>
-              <TaskList tasks={mockTasks} columns={taskColumns} />
+              <TaskList 
+                tasks={mockTasks} 
+                columns={taskColumns}
+                onColumnsChange={handleColumnsChange}
+              />
             </div>
           </TabsContent>
         </Tabs>
