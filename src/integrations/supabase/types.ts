@@ -35,82 +35,28 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approved: boolean | null
           first_name: string | null
           id: string
           last_name: string | null
-        }
-        Insert: {
-          first_name?: string | null
-          id: string
-          last_name?: string | null
-        }
-        Update: {
-          first_name?: string | null
-          id?: string
-          last_name?: string | null
-        }
-        Relationships: []
-      }
-      role_permissions: {
-        Row: {
-          created_at: string
-          id: string
-          permission_id: string
-          role_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          permission_id: string
-          role_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          permission_id?: string
-          role_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "role_permissions_permission_id_fkey"
-            columns: ["permission_id"]
-            isOneToOne: false
-            referencedRelation: "permissions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "role_permissions_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "user_roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_roles: {
-        Row: {
-          approved: boolean | null
-          created_at: string
-          id: string
           role: Database["public"]["Enums"]["app_role"]
-          supervisor_email: string
-          user_id: string
+          supervisor_email: string | null
         }
         Insert: {
           approved?: boolean | null
-          created_at?: string
-          id?: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
-          supervisor_email: string
-          user_id: string
+          supervisor_email?: string | null
         }
         Update: {
           approved?: boolean | null
-          created_at?: string
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
-          supervisor_email?: string
-          user_id?: string
+          supervisor_email?: string | null
         }
         Relationships: []
       }
