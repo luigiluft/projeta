@@ -22,8 +22,8 @@ import UserApproval from "./pages/UserApproval";
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route element={<ProtectedRoute />}>
@@ -47,8 +47,8 @@ function App() {
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
