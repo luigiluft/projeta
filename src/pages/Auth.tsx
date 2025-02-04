@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Auth() {
@@ -33,7 +33,23 @@ export default function Auth() {
         password: loginData.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        let errorMessage = "Erro ao fazer login";
+        
+        // Customize error messages based on error type
+        switch (error.message) {
+          case "Invalid login credentials":
+            errorMessage = "Email ou senha inválidos";
+            break;
+          case "Email not confirmed":
+            errorMessage = "Por favor, confirme seu email antes de fazer login";
+            break;
+          default:
+            errorMessage = error.message;
+        }
+        
+        throw new Error(errorMessage);
+      }
 
       navigate("/");
       toast({
@@ -55,6 +71,10 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     try {
+      if (!signupData.firstName || !signupData.lastName) {
+        throw new Error("Por favor, preencha todos os campos");
+      }
+
       const { error } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
@@ -66,11 +86,35 @@ export default function Auth() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        let errorMessage = "Erro ao fazer cadastro";
+        
+        // Customize error messages based on error type
+        switch (error.message) {
+          case "User already registered":
+            errorMessage = "Este email já está cadastrado";
+            break;
+          case "Password should be at least 6 characters":
+            errorMessage = "A senha deve ter pelo menos 6 caracteres";
+            break;
+          default:
+            errorMessage = error.message;
+        }
+        
+        throw new Error(errorMessage);
+      }
 
       toast({
         title: "Cadastro realizado com sucesso!",
         description: "Verifique seu email para confirmar o cadastro.",
+      });
+      
+      // Clear form after successful signup
+      setSignupData({
+        email: "",
+        password: "",
+        firstName: "",
+        lastName: "",
       });
     } catch (error: any) {
       toast({
