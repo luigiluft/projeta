@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Attribute {
   id: string;
@@ -100,32 +101,47 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
           )}
         />
 
-        {attributes.map((attribute) => (
-          <FormField
-            key={attribute.id}
-            control={form.control}
-            name={attribute.id as keyof FormValues}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{attribute.name}</FormLabel>
-                <FormControl>
-                  <Input
-                    type={attribute.type === "number" ? "number" : "text"}
-                    placeholder={`Digite ${attribute.name.toLowerCase()}`}
-                    {...field}
-                    onChange={(e) => {
-                      const value = attribute.type === "number"
-                        ? e.target.value === "" ? "" : Number(e.target.value)
-                        : e.target.value;
-                      field.onChange(value);
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        ))}
+        <Tabs defaultValue="pricing" className="w-full">
+          <TabsList className="w-full">
+            <TabsTrigger value="pricing" className="flex-1">Precificação</TabsTrigger>
+            <TabsTrigger value="scope" className="flex-1">Escopo</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pricing" className="space-y-4 mt-4">
+            {attributes.map((attribute) => (
+              <FormField
+                key={attribute.id}
+                control={form.control}
+                name={attribute.id as keyof FormValues}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{attribute.name}</FormLabel>
+                    <FormControl>
+                      <Input
+                        type={attribute.type === "number" ? "number" : "text"}
+                        placeholder={`Digite ${attribute.name.toLowerCase()}`}
+                        {...field}
+                        onChange={(e) => {
+                          const value = attribute.type === "number"
+                            ? e.target.value === "" ? "" : Number(e.target.value)
+                            : e.target.value;
+                          field.onChange(value);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+          </TabsContent>
+
+          <TabsContent value="scope" className="space-y-4 mt-4">
+            <div className="text-center text-gray-500">
+              Conteúdo do escopo será implementado em breve.
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <div className="flex justify-end">
           <Button type="submit">
