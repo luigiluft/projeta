@@ -77,6 +77,10 @@ export default function ProjectAttributes() {
     console.log("Import spreadsheet clicked");
   };
 
+  const handleColumnsChange = (newColumns: Column[]) => {
+    setColumns(newColumns);
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -107,6 +111,7 @@ export default function ProjectAttributes() {
         columns={columns}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onColumnsChange={handleColumnsChange}
       />
     </div>
   );
