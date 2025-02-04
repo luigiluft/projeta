@@ -49,7 +49,7 @@ export function AppSidebar() {
                       <span>Configurações</span>
                     </SidebarMenuButton>
                   </HoverCardTrigger>
-                  <HoverCardContent side="right" align="start" className="w-48">
+                  <HoverCardContent side="right" align="start" className="w-48 bg-white">
                     <nav className="space-y-2">
                       <Link 
                         to="/settings/import" 
