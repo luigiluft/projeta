@@ -22,6 +22,18 @@ interface PendingUser {
   display_name: string | null;
 }
 
+interface UserRoleWithProfile {
+  id: string;
+  role: string;
+  approved: boolean;
+  user_id: string;
+  profiles: {
+    first_name: string | null;
+    last_name: string | null;
+    id: string;
+  } | null;
+}
+
 export default function UserApproval() {
   const { toast } = useToast();
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -39,7 +51,6 @@ export default function UserApproval() {
     queryFn: async () => {
       if (!currentUserEmail) return [];
 
-      // Get user roles and related profiles
       const { data: userRoles, error: userRolesError } = await supabase
         .from("user_roles")
         .select(`
@@ -47,18 +58,20 @@ export default function UserApproval() {
           role,
           approved,
           user_id,
-          profiles:user_id (
+          profiles!user_roles_user_id_fkey (
             first_name,
             last_name,
             id
           )
         `)
-        .eq('supervisor_email', currentUserEmail);
+        .eq('supervisor_email', currentUserEmail) as { data: UserRoleWithProfile[] | null, error: any };
 
       if (userRolesError) {
         console.error("Error fetching user roles:", userRolesError);
         throw userRolesError;
       }
+
+      if (!userRoles) return [];
 
       // Get auth users data for emails
       const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
