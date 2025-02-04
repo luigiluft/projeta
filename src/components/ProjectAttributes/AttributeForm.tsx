@@ -132,7 +132,7 @@ export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeF
 
         <div className="flex justify-end">
           <Button type="submit">
-            {editingId ? "Atualizar Atributo" : "Criar Novo Atributo"}
+            Salvar
           </Button>
         </div>
       </form>
