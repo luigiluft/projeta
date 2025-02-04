@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Database } from "@/integrations/supabase/types";
@@ -15,16 +15,15 @@ export default function RoleManagement() {
   const { data: roles } = useQuery({
     queryKey: ["roles"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("approved", true);
+      // Get distinct roles from user_roles where approved is true
+      const { data, error } = await supabase.rpc('get_distinct_approved_roles');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching roles:', error);
+        throw error;
+      }
       
-      // Get unique roles
-      const uniqueRoles = Array.from(new Set(data.map(r => r.role)));
-      return uniqueRoles.map(role => ({ role }));
+      return data || [];
     },
   });
 
