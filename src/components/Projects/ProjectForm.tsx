@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskList } from "@/components/TaskManagement/TaskList";
+import { Column } from "@/types/project";
 
 interface Attribute {
   id: string;
