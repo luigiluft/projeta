@@ -29,6 +29,7 @@ interface ActionButtonsProps {
   onLoadView: (view: View) => void;
   onNewAttribute: () => void;
   onImportSpreadsheet: () => void;
+  newButtonText?: string;
 }
 
 export function ActionButtons({
@@ -39,6 +40,7 @@ export function ActionButtons({
   onLoadView,
   onNewAttribute,
   onImportSpreadsheet,
+  newButtonText = "Adicionar Atributo",
 }: ActionButtonsProps) {
   return (
     <div className="flex items-center gap-4">
@@ -55,7 +57,7 @@ export function ActionButtons({
         <DropdownMenuTrigger asChild>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            Adicionar Atributo
+            {newButtonText}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
