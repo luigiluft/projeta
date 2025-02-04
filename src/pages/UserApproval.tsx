@@ -19,6 +19,7 @@ interface PendingUser {
   last_name: string | null;
   role: string;
   approved: boolean;
+  display_name: string | null;
 }
 
 export default function UserApproval() {
@@ -49,9 +50,10 @@ export default function UserApproval() {
         throw userRolesError;
       }
 
-      // Then, get the profiles for these users
+      // Then, get the profiles and auth data for these users
       const usersWithProfiles = await Promise.all(
         userRoles.map(async (role) => {
+          // Get profile data
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('first_name, last_name')
@@ -60,19 +62,25 @@ export default function UserApproval() {
 
           if (profileError) {
             console.error("Error fetching profile:", profileError);
-            return {
-              id: role.id,
-              email: "Unknown",
-              first_name: profile?.first_name || null,
-              last_name: profile?.last_name || null,
-              role: role.role,
-              approved: role.approved,
-            };
           }
+
+          // Get auth user data
+          const { data: { users }, error: authError } = await supabase.auth.admin.listUsers({
+            filters: {
+              id: `eq.${role.user_id}`
+            }
+          });
+
+          if (authError) {
+            console.error("Error fetching auth user:", authError);
+          }
+
+          const authUser = users?.[0];
 
           return {
             id: role.id,
-            email: "Loading...", // We'll update this in the next step
+            email: authUser?.email || "Unknown",
+            display_name: authUser?.user_metadata?.name || null,
             first_name: profile?.first_name || null,
             last_name: profile?.last_name || null,
             role: role.role,
@@ -131,7 +139,7 @@ export default function UserApproval() {
           {pendingUsers?.map((user: PendingUser) => (
             <TableRow key={user.id}>
               <TableCell>
-                {user.first_name} {user.last_name}
+                {user.display_name || `${user.first_name || ''} ${user.last_name || ''}`}
               </TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>{user.role}</TableCell>
@@ -150,6 +158,16 @@ export default function UserApproval() {
               </TableCell>
             </TableRow>
           ))}
+          {(!pendingUsers || pendingUsers.length === 0) && (
+            <TableRow>
+              <TableCell
+                colSpan={5}
+                className="text-center py-4 text-gray-500"
+              >
+                Nenhum usuário pendente encontrado
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
     </div>
