@@ -127,9 +127,11 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
           />
         ))}
 
-        <Button type="submit">
-          Salvar
-        </Button>
+        <div className="flex justify-end">
+          <Button type="submit">
+            Salvar
+          </Button>
+        </div>
       </form>
     </Form>
   );
