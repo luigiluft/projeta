@@ -9,6 +9,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { BarChart2, Calendar, ClipboardList, Settings, Users, ListTodo, Variable } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const menuItems = [
   { title: "Dashboard", icon: BarChart2, url: "/" },
@@ -31,10 +32,10 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="flex items-center gap-2">
+                    <Link to={item.url} className="flex items-center gap-2">
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
