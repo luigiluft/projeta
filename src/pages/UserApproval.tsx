@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 interface PendingUser {
   id: string;
@@ -75,7 +76,7 @@ export default function UserApproval() {
           }
 
           // Find the matching user from the returned users array
-          const authUser = data?.users?.find(u => u.id === role.user_id);
+          const authUser = (data?.users as User[])?.find(u => u.id === role.user_id);
 
           return {
             id: role.id,
