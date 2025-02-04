@@ -24,21 +24,26 @@ export default function Auth() {
     lastName: "",
   });
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleAuthError = (error: any) => {
-    let errorMessage = "An unexpected error occurred";
+    console.error("Auth error details:", error);
+    let errorMessage = "Ocorreu um erro inesperado";
     
-    // Handle specific error codes
     if (error.message?.includes("Invalid login credentials")) {
-      errorMessage = "Email ou senha incorretos";
+      errorMessage = "Email ou senha incorretos. Por favor, verifique suas credenciais.";
     } else if (error.message?.includes("Email not confirmed")) {
       errorMessage = "Por favor, confirme seu email antes de fazer login";
     } else if (error.message?.includes("Password should be")) {
       errorMessage = "A senha deve ter pelo menos 6 caracteres";
     } else if (error.message?.includes("User already registered")) {
       errorMessage = "Este email já está cadastrado";
+    } else if (error.message?.includes("Invalid email")) {
+      errorMessage = "Por favor, insira um email válido";
     } else {
-      // Log unexpected errors for debugging
-      console.error("Auth error:", error);
       errorMessage = error.message || errorMessage;
     }
 
@@ -51,6 +56,7 @@ export default function Auth() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!loginData.email || !loginData.password) {
       toast({
         title: "Erro",
@@ -60,10 +66,19 @@ export default function Auth() {
       return;
     }
 
+    if (!validateEmail(loginData.email)) {
+      toast({
+        title: "Erro",
+        description: "Por favor, insira um email válido",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: loginData.email.trim(),
+        email: loginData.email.trim().toLowerCase(),
         password: loginData.password,
       });
 
@@ -83,6 +98,7 @@ export default function Auth() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!signupData.email || !signupData.password || !signupData.firstName || !signupData.lastName) {
       toast({
         title: "Erro",
@@ -92,15 +108,33 @@ export default function Auth() {
       return;
     }
 
+    if (!validateEmail(signupData.email)) {
+      toast({
+        title: "Erro",
+        description: "Por favor, insira um email válido",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (signupData.password.length < 6) {
+      toast({
+        title: "Erro",
+        description: "A senha deve ter pelo menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
-        email: signupData.email.trim(),
+        email: signupData.email.trim().toLowerCase(),
         password: signupData.password,
         options: {
           data: {
-            first_name: signupData.firstName,
-            last_name: signupData.lastName,
+            first_name: signupData.firstName.trim(),
+            last_name: signupData.lastName.trim(),
           },
         },
       });
