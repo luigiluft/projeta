@@ -20,7 +20,7 @@ export function AttributeList({
   onDelete,
   onColumnsChange,
 }: AttributeListProps) {
-  const formatValue = (value: any, columnId: string, rowData: any) => {
+  const formatValue = (value: any, columnId: string, rowData?: any) => {
     if (columnId === "actions") {
       return (
         <div className="flex gap-2">
@@ -42,11 +42,11 @@ export function AttributeList({
       );
     }
 
-    if (columnId === "value" && rowData.unit === "percentage") {
+    if (columnId === "value" && rowData?.unit === "percentage") {
       return `${value}%`;
     }
 
-    if (columnId === "value" && rowData.unit === "currency") {
+    if (columnId === "value" && rowData?.unit === "currency") {
       return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL'

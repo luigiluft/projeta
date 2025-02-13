@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   DndContext,
@@ -27,7 +28,7 @@ interface DraggableTableProps {
   columns: Column[];
   onColumnsChange: (columns: Column[]) => void;
   data: any[];
-  formatValue?: (value: any, columnId: string) => React.ReactNode;
+  formatValue?: (value: any, columnId: string, rowData?: any) => React.ReactNode;
   itemsPerPage?: number;
 }
 
@@ -112,7 +113,7 @@ export function DraggableTable({
             <TableRow key={index}>
               {visibleColumns.map((column) => (
                 <TableCell key={`${index}-${column.id}`}>
-                  {formatValue(item[column.id], column.id)}
+                  {formatValue(item[column.id], column.id, item)}
                 </TableCell>
               ))}
             </TableRow>
