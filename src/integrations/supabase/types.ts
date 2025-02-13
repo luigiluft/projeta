@@ -63,6 +63,48 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          created_at: string
+          dependency: string | null
+          epic: string | null
+          hours: number | null
+          id: string
+          is_active: boolean | null
+          order_number: number | null
+          owner: string | null
+          phase: string | null
+          story: string | null
+          task_name: string
+        }
+        Insert: {
+          created_at?: string
+          dependency?: string | null
+          epic?: string | null
+          hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          order_number?: number | null
+          owner?: string | null
+          phase?: string | null
+          story?: string | null
+          task_name: string
+        }
+        Update: {
+          created_at?: string
+          dependency?: string | null
+          epic?: string | null
+          hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          order_number?: number | null
+          owner?: string | null
+          phase?: string | null
+          story?: string | null
+          task_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

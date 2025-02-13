@@ -1,50 +1,32 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Task } from "@/types/project";
 
 interface TaskFormProps {
-  onSubmit: (values: Omit<Task, "id">) => void;
+  onSubmit: (values: Omit<Task, "id" | "created_at">) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function TaskForm({ onSubmit, open, onOpenChange }: TaskFormProps) {
-  const [values, setValues] = useState<Omit<Task, "id">>({
-    itemType: "",
-    itemKey: "",
-    itemId: 0,
-    summary: "",
-    assignee: "",
-    assigneeId: "",
-    reporter: "",
-    reporterId: "",
-    priority: "",
-    status: "",
-    resolution: "",
-    created: new Date().toISOString(),
-    updated: new Date().toISOString(),
-    resolved: "",
-    components: "",
-    affectedVersion: "",
-    fixVersion: "",
-    sprints: "",
-    timeTracking: "",
-    internalLinks: [],
-    externalLinks: "",
-    originalEstimate: 0,
-    parentId: 0,
-    parentSummary: "",
-    startDate: "",
-    totalOriginalEstimate: 0,
-    totalTimeSpent: 0,
-    remainingEstimate: 0
-  });
+  const { register, handleSubmit, reset } = useForm<Omit<Task, "id" | "created_at">>();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(values);
+  const onSubmitForm = (values: Omit<Task, "id" | "created_at">) => {
+    onSubmit({
+      ...values,
+      order_number: 0,
+      is_active: true,
+    });
+    reset();
   };
 
   return (
@@ -53,35 +35,47 @@ export function TaskForm({ onSubmit, open, onOpenChange }: TaskFormProps) {
         <DialogHeader>
           <DialogTitle>Nova Tarefa</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Input
-              placeholder="Resumo"
-              value={values.summary}
-              onChange={(e) => setValues({ ...values, summary: e.target.value })}
+        <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="task_name">Nome da Tarefa</Label>
+            <Input id="task_name" {...register("task_name", { required: true })} />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="phase">Fase</Label>
+            <Input id="phase" {...register("phase")} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="epic">Epic</Label>
+            <Input id="epic" {...register("epic")} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="story">Story</Label>
+            <Input id="story" {...register("story")} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="hours">Horas</Label>
+            <Input 
+              id="hours" 
+              type="number" 
+              step="0.01"
+              {...register("hours", { valueAsNumber: true })} 
             />
           </div>
-          <div>
-            <Input
-              placeholder="Responsável"
-              value={values.assignee}
-              onChange={(e) => setValues({ ...values, assignee: e.target.value })}
-            />
+
+          <div className="space-y-2">
+            <Label htmlFor="owner">Responsável</Label>
+            <Input id="owner" {...register("owner")} />
           </div>
-          <div>
-            <Input
-              placeholder="Prioridade"
-              value={values.priority}
-              onChange={(e) => setValues({ ...values, priority: e.target.value })}
-            />
+
+          <div className="space-y-2">
+            <Label htmlFor="dependency">Dependência</Label>
+            <Input id="dependency" {...register("dependency")} />
           </div>
-          <div>
-            <Input
-              placeholder="Status"
-              value={values.status}
-              onChange={(e) => setValues({ ...values, status: e.target.value })}
-            />
-          </div>
+
           <Button type="submit">Criar Tarefa</Button>
         </form>
       </DialogContent>
