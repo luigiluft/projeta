@@ -1,25 +1,14 @@
+
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { DraggableTable } from "@/components/ui/draggable-table";
-
-interface Attribute {
-  id: string;
-  name: string;
-  unit: "hours" | "quantity" | "percentage";
-  type: "number" | "list" | "text";
-  defaultValue?: string;
-}
-
-interface Column {
-  id: string;
-  label: string;
-  visible: boolean;
-}
+import { ProjectAttribute } from "@/types/database";
+import { Column } from "@/types/project";
 
 interface AttributeListProps {
-  attributes: Attribute[];
+  attributes: ProjectAttribute[];
   columns: Column[];
-  onEdit: (attribute: Attribute) => void;
+  onEdit: (attribute: ProjectAttribute) => void;
   onDelete: (id: string) => void;
   onColumnsChange: (columns: Column[]) => void;
 }
@@ -31,29 +20,39 @@ export function AttributeList({
   onDelete,
   onColumnsChange,
 }: AttributeListProps) {
-  const formatValue = (value: any, columnId: string) => {
+  const formatValue = (value: any, columnId: string, rowData: any) => {
     if (columnId === "actions") {
-      const attribute = attributes.find((attr) => attr.id === value);
-      if (!attribute) return null;
       return (
         <div className="flex gap-2">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onEdit(attribute)}
+            onClick={() => onEdit(rowData)}
           >
             <Pencil className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(attribute.id)}
+            onClick={() => onDelete(rowData.id)}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       );
     }
+
+    if (columnId === "value" && rowData.unit === "percentage") {
+      return `${value}%`;
+    }
+
+    if (columnId === "value" && rowData.unit === "currency") {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(Number(value));
+    }
+
     return value;
   };
 

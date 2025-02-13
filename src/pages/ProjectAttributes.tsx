@@ -1,48 +1,100 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { AttributeForm } from "@/components/ProjectAttributes/AttributeForm";
 import { AttributeList } from "@/components/ProjectAttributes/AttributeList";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
-import { Column, View, Attribute } from "@/types/project";
+import { Column, View } from "@/types/project";
+import { ProjectAttribute } from "@/types/database";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function ProjectAttributes() {
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [attributes, setAttributes] = useState<ProjectAttribute[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [columns, setColumns] = useState<Column[]>([
     { id: "name", label: "Nome", visible: true },
+    { id: "value", label: "Valor", visible: true },
     { id: "unit", label: "Unidade", visible: true },
-    { id: "type", label: "Tipo", visible: true },
-    { id: "defaultValue", label: "Valor Padrão", visible: true },
   ]);
   const [savedViews, setSavedViews] = useState<View[]>([]);
 
-  const handleSubmit = (values: Omit<Attribute, "id">) => {
-    if (editingId) {
-      setAttributes(attributes.map(attr => 
-        attr.id === editingId ? { ...values, id: editingId } : attr
-      ));
-      setEditingId(null);
-      toast.success("Atributo atualizado com sucesso!");
-    } else {
-      const newAttribute: Attribute = {
-        ...values,
-        id: Math.random().toString(36).substr(2, 9),
-      };
-      setAttributes([...attributes, newAttribute]);
-      toast.success("Atributo criado com sucesso!");
+  useEffect(() => {
+    fetchAttributes();
+  }, []);
+
+  const fetchAttributes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('project_attributes')
+        .select('*');
+
+      if (error) {
+        throw error;
+      }
+
+      setAttributes(data || []);
+    } catch (error) {
+      console.error('Error fetching attributes:', error);
+      toast.error('Erro ao carregar atributos');
+    } finally {
+      setLoading(false);
     }
-    setShowForm(false);
   };
 
-  const handleEdit = (attribute: Attribute) => {
+  const handleSubmit = async (values: Omit<ProjectAttribute, 'id' | 'created_at'>) => {
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from('project_attributes')
+          .update({
+            name: values.name,
+            value: values.value,
+            unit: values.unit
+          })
+          .eq('id', editingId);
+
+        if (error) throw error;
+        toast.success("Atributo atualizado com sucesso!");
+      } else {
+        const { error } = await supabase
+          .from('project_attributes')
+          .insert([values]);
+
+        if (error) throw error;
+        toast.success("Atributo criado com sucesso!");
+      }
+
+      setEditingId(null);
+      setShowForm(false);
+      fetchAttributes();
+    } catch (error) {
+      console.error('Error saving attribute:', error);
+      toast.error('Erro ao salvar atributo');
+    }
+  };
+
+  const handleEdit = (attribute: ProjectAttribute) => {
     setEditingId(attribute.id);
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    setAttributes(attributes.filter(attr => attr.id !== id));
-    toast.success("Atributo removido com sucesso!");
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('project_attributes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      setAttributes(attributes.filter(attr => attr.id !== id));
+      toast.success("Atributo removido com sucesso!");
+    } catch (error) {
+      console.error('Error deleting attribute:', error);
+      toast.error('Erro ao remover atributo');
+    }
   };
 
   const handleColumnVisibilityChange = (columnId: string) => {

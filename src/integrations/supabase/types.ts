@@ -63,6 +63,111 @@ export type Database = {
         }
         Relationships: []
       }
+      project_attributes: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          project_id: string
+          unit: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          project_id: string
+          unit?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          project_id?: string
+          unit?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
+      project_integrations: {
+        Row: {
+          created_at: string
+          id: string
+          integration_name: string
+          is_enabled: boolean | null
+          project_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          integration_name: string
+          is_enabled?: boolean | null
+          project_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          integration_name?: string
+          is_enabled?: boolean | null
+          project_id?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
+      project_schedule: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          start_date: string
+          workday_end: string
+          workday_hours: number
+          workday_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          start_date: string
+          workday_end: string
+          workday_hours: number
+          workday_start: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          start_date?: string
+          workday_end?: string
+          workday_hours?: number
+          workday_start?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           created_at: string

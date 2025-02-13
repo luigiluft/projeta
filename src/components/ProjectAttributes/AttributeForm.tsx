@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -18,36 +19,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ProjectAttribute } from "@/types/database";
 
 const formSchema = z.object({
+  project_id: z.string(),
   name: z.string().min(2, {
     message: "O nome deve ter pelo menos 2 caracteres.",
   }),
-  unit: z.enum(["hours", "quantity", "percentage"]),
-  type: z.enum(["number", "list", "text"]),
-  defaultValue: z.string().optional(),
+  value: z.string(),
+  unit: z.string(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface Attribute extends FormValues {
-  id: string;
-}
-
 interface AttributeFormProps {
   editingId: string | null;
   onSubmit: (values: FormValues) => void;
-  initialValues?: Attribute;
+  initialValues?: ProjectAttribute;
 }
 
 export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialValues || {
-      name: "",
-      unit: "hours",
-      type: "number",
-      defaultValue: "",
+    defaultValues: {
+      project_id: initialValues?.project_id || '11111111-1111-1111-1111-111111111111',
+      name: initialValues?.name || "",
+      value: initialValues?.value || "",
+      unit: initialValues?.unit || "quantity",
     },
   });
 
@@ -68,63 +66,40 @@ export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeF
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="unit"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Unidade de Medida</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a unidade" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="hours">Horas</SelectItem>
-                    <SelectItem value="quantity">Quantidade</SelectItem>
-                    <SelectItem value="percentage">Percentual</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo de Entrada</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="number">Numérico</SelectItem>
-                    <SelectItem value="list">Lista de Opções</SelectItem>
-                    <SelectItem value="text">Texto</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="value"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Valor</FormLabel>
+              <FormControl>
+                <Input placeholder="Digite o valor do atributo" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
-          name="defaultValue"
+          name="unit"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Valor Padrão (Opcional)</FormLabel>
-              <FormControl>
-                <Input placeholder="Digite o valor padrão" {...field} />
-              </FormControl>
+              <FormLabel>Unidade</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a unidade" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="quantity">Quantidade</SelectItem>
+                  <SelectItem value="currency">Moeda</SelectItem>
+                  <SelectItem value="percentage">Percentual</SelectItem>
+                  <SelectItem value="hours">Horas</SelectItem>
+                  <SelectItem value="minutes">Minutos</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -132,7 +107,7 @@ export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeF
 
         <div className="flex justify-end">
           <Button type="submit">
-            Salvar
+            {editingId ? "Atualizar" : "Criar"}
           </Button>
         </div>
       </form>
