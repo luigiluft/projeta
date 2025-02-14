@@ -5,9 +5,39 @@ import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+const ROLE_RATES = {
+  "BK": 78.75,
+  "DS": 48.13,
+  "PMO": 87.50,
+  "PO": 35.00,
+  "CS": 48.13,
+  "FRJ": 70.00,
+  "FRP": 119.00,
+  "BKT": 131.04,
+  "ATS": 65.85,
+};
+
 export const useProjects = () => {
   const [savedViews, setSavedViews] = useState<View[]>([]);
   const queryClient = useQueryClient();
+
+  const calculateProjectCosts = (tasks: Task[]) => {
+    const baseCost = tasks.reduce((sum, task) => {
+      const hourlyRate = ROLE_RATES[task.owner as keyof typeof ROLE_RATES] || 0;
+      return sum + (task.hours * hourlyRate);
+    }, 0);
+
+    const profitMargin = 30.00; // 30%
+    const totalCost = baseCost * (1 + profitMargin / 100);
+    const totalHours = tasks.reduce((sum, task) => sum + (task.hours || 0), 0);
+
+    return {
+      baseCost,
+      totalCost,
+      totalHours,
+      profitMargin
+    };
+  };
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -34,9 +64,15 @@ export const useProjects = () => {
             throw tasksError;
           }
 
+          const costs = calculateProjectCosts(tasks || []);
+
           return {
             ...project,
             tasks: tasks || [],
+            total_hours: costs.totalHours,
+            base_cost: costs.baseCost,
+            total_cost: costs.totalCost,
+            profit_margin: costs.profitMargin
           };
         })
       );
@@ -52,11 +88,7 @@ export const useProjects = () => {
     }
 
     const epic = selectedTasks[0].epic;
-    const totalHours = selectedTasks.reduce((sum, task) => sum + (task.hours || 0), 0);
-    const hourlyRate = 150; // R$ 150 por hora
-    const baseCost = totalHours * hourlyRate;
-    const profitMargin = 30.00; // 30%
-    const totalCost = baseCost * (1 + profitMargin / 100);
+    const costs = calculateProjectCosts(selectedTasks);
 
     try {
       const { error: projectError } = await supabase
@@ -65,10 +97,10 @@ export const useProjects = () => {
           name: epic,
           epic,
           type: 'default',
-          total_hours: totalHours,
-          base_cost: baseCost,
-          profit_margin: profitMargin,
-          total_cost: totalCost,
+          total_hours: costs.totalHours,
+          base_cost: costs.baseCost,
+          profit_margin: costs.profitMargin,
+          total_cost: costs.totalCost,
           status: 'draft',
           currency: 'BRL',
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),

@@ -91,6 +91,12 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
     }
   };
 
+  const getAverageHourlyRate = (project: Project) => {
+    if (!project.tasks || project.tasks.length === 0) return 0;
+    if (project.total_hours === 0) return 0;
+    return project.base_cost / project.total_hours;
+  };
+
   return (
     <div className="bg-white rounded-lg border shadow-sm">
       <Table>
@@ -102,6 +108,7 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
             <TableHead>Tipo</TableHead>
             <TableHead className="text-right">Total Horas</TableHead>
             <TableHead className="text-right">Valor Total</TableHead>
+            <TableHead className="text-right">Média HH</TableHead>
             <TableHead className="text-right">Data Conclusão</TableHead>
             <TableHead className="w-[100px]">Ações</TableHead>
           </TableRow>
@@ -109,6 +116,7 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
         <TableBody>
           {projects.map((project) => {
             const isExpanded = expandedProjects.includes(project.id);
+            const averageHourlyRate = getAverageHourlyRate(project);
             return (
               <>
                 <TableRow 
@@ -153,6 +161,9 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(project.total_cost)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {formatCurrency(averageHourlyRate)}/h
                   </TableCell>
                   <TableCell className="text-right">
                     {getEstimatedDate(project)}
@@ -287,7 +298,7 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
           })}
           {projects.length === 0 && (
             <TableRow>
-              <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                 Nenhum projeto cadastrado
               </TableCell>
             </TableRow>
