@@ -1,7 +1,9 @@
 
 export interface Project {
   id: string;
+  name: string;
   epic: string;
+  type: string;
   created_at: string;
   total_hours: number;
   tasks: Task[];
@@ -31,4 +33,12 @@ export interface View {
   id: string;
   name: string;
   columns: Column[];
+}
+
+export interface Attribute {
+  id: string;
+  name: string;
+  unit: "hours" | "quantity" | "percentage";
+  type: "number" | "list" | "text";
+  defaultValue?: string;
 }

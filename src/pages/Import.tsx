@@ -1,3 +1,4 @@
+
 import { JiraImporter } from "@/components/Settings/JiraImporter";
 import { useProjects } from "@/hooks/useProjects";
 import { Project } from "@/types/project";
@@ -7,7 +8,7 @@ export default function Import() {
 
   const handleImport = (importedProjects: Project[]) => {
     importedProjects.forEach(project => {
-      handleSubmit(project);
+      handleSubmit(project.tasks);
     });
   };
 

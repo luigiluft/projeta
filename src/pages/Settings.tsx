@@ -1,3 +1,4 @@
+
 import { JiraImporter } from "@/components/Settings/JiraImporter";
 import { useProjects } from "@/hooks/useProjects";
 import { Project } from "@/types/project";
@@ -5,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 export default function Settings() {
-  const { projects, handleSubmit } = useProjects();
+  const { handleSubmit } = useProjects();
 
   const handleImport = (importedProjects: Project[]) => {
     importedProjects.forEach(project => {
-      handleSubmit(project);
+      handleSubmit(project.tasks);
     });
   };
 

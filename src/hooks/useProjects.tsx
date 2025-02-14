@@ -60,7 +60,9 @@ export const useProjects = () => {
       const { error } = await supabase
         .from('projects')
         .insert([{
+          name: epic, // Usando o epic como nome do projeto
           epic,
+          type: 'default', // Valor padrão para o tipo
           total_hours: totalHours,
         }]);
 
