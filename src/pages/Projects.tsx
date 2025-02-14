@@ -5,15 +5,18 @@ import { Task } from "@/types/project";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProjectTaskSelector } from "@/components/Projects/ProjectTaskSelector";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Clock, DollarSign, ChevronDown, ChevronRight, UserCircle2, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Trash2, Clock, DollarSign, ChevronDown, ChevronRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  Card,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -40,9 +43,15 @@ export default function Projects() {
   const navigate = useNavigate();
 
   const handleTasksSelected = async (tasks: Task[]) => {
-    await handleSubmit(tasks);
-    setOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['projects'] });
+    try {
+      await handleSubmit(tasks);
+      setOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success("Projeto criado com sucesso");
+    } catch (error) {
+      console.error('Erro ao criar projeto:', error);
+      toast.error("Erro ao criar projeto");
+    }
   };
 
   const handleProjectDelete = async (projectId: string) => {
@@ -51,16 +60,20 @@ export default function Projects() {
 
   const confirmDelete = async () => {
     if (projectToDelete) {
-      await handleDelete(projectToDelete);
-      setProjectToDelete(null);
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast.success("Projeto excluído com sucesso");
+      try {
+        await handleDelete(projectToDelete);
+        setProjectToDelete(null);
+        await queryClient.invalidateQueries({ queryKey: ['projects'] });
+        toast.success("Projeto excluído com sucesso");
+      } catch (error) {
+        console.error('Erro ao excluir projeto:', error);
+        toast.error("Erro ao excluir projeto");
+      }
     }
   };
 
   const handleEditProject = (projectId: string) => {
     navigate(`/projects/edit/${projectId}`);
-    toast.success("Editando projeto...");
   };
 
   const formatCurrency = (value: number) => {
@@ -102,128 +115,138 @@ export default function Projects() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project) => {
-          const isExpanded = expandedProject === project.id;
-          return (
-            <Card 
-              key={project.id} 
-              className={`group transition-all duration-300 ${isExpanded ? 'col-span-full' : ''}`}
-              onClick={() => toggleProject(project.id)}
-            >
-              <CardContent className="pt-6">
-                <div className={`space-y-4 ${isExpanded ? 'grid grid-cols-3 gap-6' : ''}`}>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">{project.name}</h3>
-                      {isExpanded ? (
-                        <ChevronDown className="h-4 w-4 text-gray-400" />
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[300px]">Nome do Projeto</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead className="text-right">Horas</TableHead>
+              <TableHead className="text-right">Custo Total</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {projects.map((project) => (
+              <>
+                <TableRow 
+                  key={project.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => toggleProject(project.id)}
+                >
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {expandedProject === project.id ? (
+                        <ChevronDown className="h-4 w-4" />
                       ) : (
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                        <ChevronRight className="h-4 w-4" />
                       )}
+                      {project.name}
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Clock className="h-4 w-4" />
-                        <span>{project.total_hours.toFixed(1)}h</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <DollarSign className="h-4 w-4" />
-                        <span>{formatCurrency(project.total_cost)}</span>
-                      </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                      {project.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {project.type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      {project.total_hours.toFixed(1)}h
                     </div>
-                  </div>
-
-                  {isExpanded && (
-                    <>
-                      <div className="space-y-4 border-l pl-6">
-                        <h4 className="font-medium text-gray-900">Informações do Projeto</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <CalendarDays className="h-4 w-4" />
-                            <span>Criado em: {new Date(project.created_at).toLocaleDateString('pt-BR')}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Badge variant="outline">{project.type}</Badge>
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                              {project.status}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4 border-l pl-6">
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <DollarSign className="h-4 w-4 text-gray-500" />
+                      {formatCurrency(project.total_cost)}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProject(project.id);
+                        }}
+                        className="hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProjectDelete(project.id);
+                        }}
+                        className="hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+                {expandedProject === project.id && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="p-0">
+                      <div className="bg-muted/50 p-4 space-y-4">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-gray-900">Tarefas</h4>
-                          <Button size="sm" variant="outline" className="h-8">
-                            <Plus className="h-3 w-3 mr-1" />
-                            Adicionar
+                          <h4 className="font-medium">Tarefas do Projeto</h4>
+                          <Button size="sm">
+                            <Plus className="h-3 w-3 mr-2" />
+                            Adicionar Tarefa
                           </Button>
                         </div>
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                          {project.tasks?.map((task) => (
-                            <div 
-                              key={task.id}
-                              className="p-3 bg-muted/50 rounded-lg hover:bg-muted/80 transition-colors"
-                            >
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <p className="font-medium text-sm">{task.task_name}</p>
-                                  <p className="text-xs text-gray-500">{task.story}</p>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                  <UserCircle2 className="h-3 w-3" />
-                                  {task.owner}
-                                </div>
-                              </div>
-                              <div className="mt-2 flex items-center justify-between text-xs">
-                                <Badge variant="outline" className="text-xs">
-                                  {task.phase}
-                                </Badge>
-                                <span className="text-gray-600">{task.hours}h</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Tarefa</TableHead>
+                              <TableHead>Fase</TableHead>
+                              <TableHead>História</TableHead>
+                              <TableHead>Responsável</TableHead>
+                              <TableHead className="text-right">Horas</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {project.tasks?.map((task) => (
+                              <TableRow key={task.id}>
+                                <TableCell>{task.task_name}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="text-xs">
+                                    {task.phase}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>{task.story}</TableCell>
+                                <TableCell>{task.owner}</TableCell>
+                                <TableCell className="text-right">{task.hours}h</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-end gap-2 pt-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditProject(project.id);
-                  }}
-                  className="hover:bg-primary/10 hover:text-primary"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleProjectDelete(project.id);
-                  }}
-                  className="hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          );
-        })}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </>
+            ))}
 
-        {projects.length === 0 && (
-          <div className="col-span-full flex items-center justify-center p-8 bg-muted/10 rounded-lg border border-dashed">
-            <p className="text-muted-foreground">Nenhum projeto cadastrado</p>
-          </div>
-        )}
+            {projects.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="h-32 text-center">
+                  Nenhum projeto cadastrado
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
