@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   name: string;
@@ -6,6 +5,7 @@ export interface Project {
   epic: string;
   type: string;
   created_at: string;
+  updated_at: string;
   total_hours: number;
   total_cost: number;
   base_cost: number;
@@ -23,6 +23,21 @@ export interface Project {
   attributes: {
     [key: string]: string | number;
   };
+  client_id?: string;
+  workspace_id?: string;
+  team_id?: string;
+  owner_id?: string;
+  category_id?: string;
+  favorite: boolean;
+  priority: number;
+  tags: string[];
+  archived: boolean;
+  archived_at?: string;
+  deleted: boolean;
+  deleted_at?: string;
+  version: number;
+  metadata: Record<string, any>;
+  settings: Record<string, any>;
 }
 
 export interface Task {

@@ -45,6 +45,7 @@ export const useProjects = () => {
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
+        .eq('deleted', false) // Only fetch non-deleted projects
         .order('created_at', { ascending: false });
 
       if (projectsError) {
@@ -64,7 +65,6 @@ export const useProjects = () => {
             throw tasksError;
           }
 
-          // Ensure task status is of the correct type
           const tasks = (tasksData || []).map(task => ({
             ...task,
             status: (task.status as "pending" | "in_progress" | "completed") || "pending"
@@ -78,7 +78,15 @@ export const useProjects = () => {
             total_hours: costs.totalHours,
             base_cost: costs.baseCost,
             total_cost: costs.totalCost,
-            profit_margin: costs.profitMargin
+            profit_margin: costs.profitMargin,
+            favorite: project.favorite || false,
+            priority: project.priority || 0,
+            tags: project.tags || [],
+            archived: project.archived || false,
+            deleted: project.deleted || false,
+            version: project.version || 1,
+            metadata: project.metadata || {},
+            settings: project.settings || {},
           };
         })
       );
@@ -111,6 +119,14 @@ export const useProjects = () => {
           currency: 'BRL',
           progress: 0,
           delay_days: 0,
+          favorite: false,
+          priority: 0,
+          tags: [],
+          archived: false,
+          deleted: false,
+          version: 1,
+          metadata: {},
+          settings: {},
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         }]);
 
@@ -128,12 +144,16 @@ export const useProjects = () => {
     try {
       const { error } = await supabase
         .from('projects')
-        .delete()
+        .update({
+          deleted: true,
+          deleted_at: new Date().toISOString()
+        })
         .eq('id', projectId);
 
       if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success("Projeto excluído com sucesso");
     } catch (error) {
       toast.error("Erro ao excluir projeto");
       console.error(error);

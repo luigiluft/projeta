@@ -149,67 +149,115 @@ export type Database = {
       }
       projects: {
         Row: {
+          archived: boolean | null
+          archived_at: string | null
           base_cost: number | null
+          category_id: string | null
+          client_id: string | null
           client_name: string | null
           created_at: string
           currency: string | null
           delay_days: number | null
+          deleted: boolean | null
+          deleted_at: string | null
           description: string | null
           due_date: string | null
           epic: string | null
           expected_end_date: string | null
+          favorite: boolean | null
           id: string
+          metadata: Json | null
           name: string
+          owner_id: string | null
+          priority: number | null
           profit_margin: number | null
           progress: number | null
           project_name: string
+          settings: Json | null
           start_date: string | null
           status: string | null
+          tags: string[] | null
+          team_id: string | null
           total_cost: number | null
           total_hours: number | null
           type: string
+          updated_at: string | null
+          version: number | null
+          workspace_id: string | null
         }
         Insert: {
+          archived?: boolean | null
+          archived_at?: string | null
           base_cost?: number | null
+          category_id?: string | null
+          client_id?: string | null
           client_name?: string | null
           created_at?: string
           currency?: string | null
           delay_days?: number | null
+          deleted?: boolean | null
+          deleted_at?: string | null
           description?: string | null
           due_date?: string | null
           epic?: string | null
           expected_end_date?: string | null
+          favorite?: boolean | null
           id?: string
+          metadata?: Json | null
           name: string
+          owner_id?: string | null
+          priority?: number | null
           profit_margin?: number | null
           progress?: number | null
           project_name?: string
+          settings?: Json | null
           start_date?: string | null
           status?: string | null
+          tags?: string[] | null
+          team_id?: string | null
           total_cost?: number | null
           total_hours?: number | null
           type: string
+          updated_at?: string | null
+          version?: number | null
+          workspace_id?: string | null
         }
         Update: {
+          archived?: boolean | null
+          archived_at?: string | null
           base_cost?: number | null
+          category_id?: string | null
+          client_id?: string | null
           client_name?: string | null
           created_at?: string
           currency?: string | null
           delay_days?: number | null
+          deleted?: boolean | null
+          deleted_at?: string | null
           description?: string | null
           due_date?: string | null
           epic?: string | null
           expected_end_date?: string | null
+          favorite?: boolean | null
           id?: string
+          metadata?: Json | null
           name?: string
+          owner_id?: string | null
+          priority?: number | null
           profit_margin?: number | null
           progress?: number | null
           project_name?: string
+          settings?: Json | null
           start_date?: string | null
           status?: string | null
+          tags?: string[] | null
+          team_id?: string | null
           total_cost?: number | null
           total_hours?: number | null
           type?: string
+          updated_at?: string | null
+          version?: number | null
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -334,6 +382,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "developer" | "financial" | "user"
+      project_status: "draft" | "in_progress" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
