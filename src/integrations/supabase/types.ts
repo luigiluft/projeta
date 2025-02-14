@@ -149,31 +149,52 @@ export type Database = {
       }
       projects: {
         Row: {
+          base_cost: number | null
+          client_name: string | null
           created_at: string
+          currency: string | null
+          description: string | null
+          due_date: string | null
           epic: string | null
           id: string
           name: string
+          profit_margin: number | null
           project_name: string
+          status: string | null
           total_cost: number | null
           total_hours: number | null
           type: string
         }
         Insert: {
+          base_cost?: number | null
+          client_name?: string | null
           created_at?: string
+          currency?: string | null
+          description?: string | null
+          due_date?: string | null
           epic?: string | null
           id?: string
           name: string
+          profit_margin?: number | null
           project_name?: string
+          status?: string | null
           total_cost?: number | null
           total_hours?: number | null
           type: string
         }
         Update: {
+          base_cost?: number | null
+          client_name?: string | null
           created_at?: string
+          currency?: string | null
+          description?: string | null
+          due_date?: string | null
           epic?: string | null
           id?: string
           name?: string
+          profit_margin?: number | null
           project_name?: string
+          status?: string | null
           total_cost?: number | null
           total_hours?: number | null
           type?: string
@@ -224,7 +245,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      project_stats: {
+        Row: {
+          base_cost: number | null
+          created_at: string | null
+          due_date: string | null
+          profit_margin: number | null
+          project_id: string | null
+          project_name: string | null
+          status: string | null
+          total_cost: number | null
+          total_hours: number | null
+          total_tasks: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_distinct_approved_roles: {

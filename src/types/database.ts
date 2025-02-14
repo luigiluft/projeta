@@ -4,6 +4,17 @@ export interface Project {
   name: string;
   type: string;
   created_at: string;
+  total_hours: number;
+  total_cost: number;
+  base_cost: number;
+  profit_margin: number;
+  status: 'draft' | 'in_progress' | 'completed' | 'cancelled';
+  due_date: string | null;
+  client_name: string | null;
+  description: string | null;
+  currency: 'BRL' | 'USD' | 'EUR';
+  project_name: string;
+  epic: string | null;
 }
 
 export interface ProjectAttribute {
@@ -31,5 +42,18 @@ export interface ProjectIntegration {
   integration_name: string;
   is_enabled: boolean;
   status: string | null;
+  created_at: string;
+}
+
+export interface ProjectStats {
+  project_id: string;
+  project_name: string;
+  status: string;
+  total_tasks: number;
+  total_hours: number;
+  total_cost: number;
+  base_cost: number;
+  profit_margin: number;
+  due_date: string | null;
   created_at: string;
 }
