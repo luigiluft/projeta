@@ -1,33 +1,28 @@
 
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { Header } from "@/components/Layout/Header";
-import { StatsCard } from "@/components/Dashboard/StatsCard";
 import { 
   Activity, 
   Clock, 
-  DollarSign, 
   Target, 
-  Users, 
-  ChevronUp, 
-  ChevronDown,
   AlertTriangle,
   CheckCircle2,
   TimerOff,
-  Loader2
+  Loader2,
+  ChevronRight,
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { BurndownChart } from "@/components/Dashboard/BurndownChart";
 import { BurnupChart } from "@/components/Dashboard/BurnupChart";
 import { CumulativeFlowChart } from "@/components/Dashboard/CumulativeFlowChart";
 import { ProjectsPieChart } from "@/components/Dashboard/ProjectsPieChart";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DailyTasks } from "@/components/Dashboard/DailyTasks";
 import { GanttChart } from "@/components/Dashboard/GanttChart";
 import { AllocationChart } from "@/components/Dashboard/AllocationChart";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { ProjectStats } from "@/types/project";
 
 const timeRanges = [
   { value: "7d", label: "Últimos 7 dias" },
@@ -115,16 +110,20 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="min-h-screen flex w-full bg-gray-50/80">
       <AppSidebar />
       <div className="flex-1">
         <Header />
-        <main className="p-6 bg-gray-50 min-h-[calc(100vh-73px)]">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <main className="p-8 min-h-[calc(100vh-73px)]">
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Cabeçalho e filtros */}
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+                <p className="text-gray-500 mt-1">Visão geral dos projetos</p>
+              </div>
               <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[180px] bg-white">
                   <SelectValue placeholder="Selecione o período" />
                 </SelectTrigger>
                 <SelectContent>
@@ -137,64 +136,119 @@ const Index = () => {
               </Select>
             </div>
 
-            {/* KPIs principais */}
-            <div className="grid gap-4 md:grid-cols-4">
-              <StatsCard
-                title="Projetos em Andamento"
-                value={(dashboardStats?.inProgressProjects || 0).toString()}
-                icon={Target}
-                trend={{
-                  value: formatPercentage(dashboardStats?.averageProgress || 0),
-                  positive: true,
-                  icon: ChevronUp,
-                }}
-              />
-              <StatsCard
-                title="Projetos Atrasados"
-                value={(dashboardStats?.delayedProjects || 0).toString()}
-                icon={AlertTriangle}
-                trend={{
-                  value: "Ação necessária",
-                  positive: false,
-                  icon: TimerOff,
-                }}
-              />
-              <StatsCard
-                title="Precisão das Estimativas"
-                value={formatPercentage(dashboardStats?.averageAccuracy || 0)}
-                icon={Clock}
-                trend={{
-                  value: "+8.2%",
-                  positive: true,
-                  icon: ChevronUp,
-                }}
-              />
-              <StatsCard
-                title="Projetos Concluídos"
-                value={(dashboardStats?.completedProjects || 0).toString()}
-                icon={CheckCircle2}
-                trend={{
-                  value: "+15.3%",
-                  positive: true,
-                  icon: ChevronUp,
-                }}
-              />
+            {/* Cards principais */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-gray-500">
+                      Em Andamento
+                    </CardTitle>
+                    <Target className="h-4 w-4 text-blue-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {dashboardStats?.inProgressProjects || 0}
+                      </span>
+                      <span className="text-sm text-green-600 flex items-center mt-1">
+                        {formatPercentage(dashboardStats?.averageProgress || 0)} concluído
+                      </span>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-gray-500">
+                      Atrasados
+                    </CardTitle>
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {dashboardStats?.delayedProjects || 0}
+                      </span>
+                      <span className="text-sm text-red-600 flex items-center mt-1">
+                        Atenção necessária
+                      </span>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-gray-500">
+                      Precisão das Estimativas
+                    </CardTitle>
+                    <Clock className="h-4 w-4 text-purple-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {formatPercentage(dashboardStats?.averageAccuracy || 0)}
+                      </span>
+                      <span className="text-sm text-purple-600 flex items-center mt-1">
+                        +8.2% este mês
+                      </span>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-gray-500">
+                      Concluídos
+                    </CardTitle>
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {dashboardStats?.completedProjects || 0}
+                      </span>
+                      <span className="text-sm text-green-600 flex items-center mt-1">
+                        +15.3% este mês
+                      </span>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Gráficos de progresso e alocação */}
+            {/* Gráficos principais */}
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
                 <CardHeader>
-                  <CardTitle>Alocação por Desenvolvedor</CardTitle>
+                  <CardTitle className="text-lg text-gray-900">Alocação por Desenvolvedor</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <AllocationChart />
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
                 <CardHeader>
-                  <CardTitle>Status dos Projetos</CardTitle>
+                  <CardTitle className="text-lg text-gray-900">Status dos Projetos</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ProjectsPieChart />
@@ -202,20 +256,20 @@ const Index = () => {
               </Card>
             </div>
 
-            {/* Gráficos de Burndown e Burnup */}
+            {/* Gráficos de tendência */}
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
                 <CardHeader>
-                  <CardTitle>Burndown - Progresso vs. Planejado</CardTitle>
+                  <CardTitle className="text-lg text-gray-900">Burndown - Progresso vs. Planejado</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <BurndownChart />
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
                 <CardHeader>
-                  <CardTitle>Burnup - Entregas Acumuladas</CardTitle>
+                  <CardTitle className="text-lg text-gray-900">Burnup - Entregas Acumuladas</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <BurnupChart />
@@ -223,28 +277,30 @@ const Index = () => {
               </Card>
             </div>
 
-            {/* Fluxo cumulativo e timeline */}
-            <Card>
+            {/* Fluxo de trabalho */}
+            <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
               <CardHeader>
-                <CardTitle>Fluxo de Trabalho</CardTitle>
+                <CardTitle className="text-lg text-gray-900">Fluxo de Trabalho</CardTitle>
               </CardHeader>
               <CardContent>
                 <CumulativeFlowChart />
               </CardContent>
             </Card>
 
+            {/* Timeline e tarefas */}
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
                 <CardHeader>
-                  <CardTitle>Timeline de Projetos</CardTitle>
+                  <CardTitle className="text-lg text-gray-900">Timeline de Projetos</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <GanttChart tasks={[]} />
                 </CardContent>
               </Card>
-              <Card>
+
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
                 <CardHeader>
-                  <CardTitle>Tarefas Críticas</CardTitle>
+                  <CardTitle className="text-lg text-gray-900">Tarefas Críticas</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <DailyTasks tasks={[]} />
