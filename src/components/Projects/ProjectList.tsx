@@ -7,10 +7,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Project } from "@/types/project";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { Clock, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -36,6 +36,17 @@ export function ProjectList({ projects }: ProjectListProps) {
 
   const formatHours = (hours: number) => {
     return hours.toFixed(1);
+  };
+
+  const getEstimatedDate = (project: Project) => {
+    if (project.due_date) {
+      return format(new Date(project.due_date), "dd/MM/yyyy", { locale: ptBR });
+    }
+    // Se não houver data definida, retorna uma estimativa baseada nas horas
+    const today = new Date();
+    const estimatedDays = Math.ceil(project.total_hours / 8); // Assumindo 8 horas por dia
+    const estimatedDate = new Date(today.setDate(today.getDate() + estimatedDays));
+    return format(estimatedDate, "dd/MM/yyyy", { locale: ptBR });
   };
 
   return (
@@ -136,8 +147,8 @@ export function ProjectList({ projects }: ProjectListProps) {
                     <span>{formatHours(project.total_hours)}h estimadas</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-600">
-                    <Users className="h-4 w-4" />
-                    <span>{project.tasks.filter(t => t.owner).length} responsáveis</span>
+                    <Calendar className="h-4 w-4" />
+                    <span>Conclusão: {getEstimatedDate(project)}</span>
                   </div>
                 </div>
               </CardContent>
