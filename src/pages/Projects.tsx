@@ -16,7 +16,12 @@ export default function Projects() {
     handleSaveView,
   } = useProjects();
 
-  const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
+  const [open, setOpen] = useState(false);
+
+  const handleTasksSelected = async (tasks: Task[]) => {
+    await handleSubmit(tasks);
+    setOpen(false);
+  };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -28,7 +33,7 @@ export default function Projects() {
           </p>
         </div>
         
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90">
               <Plus className="h-4 w-4 mr-2" />
@@ -39,7 +44,7 @@ export default function Projects() {
             <DialogHeader>
               <DialogTitle>Criar Novo Projeto</DialogTitle>
             </DialogHeader>
-            <ProjectTaskSelector onTasksSelected={setSelectedTasks} />
+            <ProjectTaskSelector onTasksSelected={handleTasksSelected} />
           </DialogContent>
         </Dialog>
       </div>

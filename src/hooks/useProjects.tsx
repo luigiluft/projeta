@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { Project, Task, View } from "@/types/project";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useProjects = () => {
   const [savedViews, setSavedViews] = useState<View[]>([]);
+  const queryClient = useQueryClient();
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -57,17 +58,20 @@ export const useProjects = () => {
     const totalHours = selectedTasks.reduce((sum, task) => sum + (task.hours || 0), 0);
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('projects')
         .insert([{
-          name: epic, // Usando o epic como nome do projeto
+          name: epic,
           epic,
-          type: 'default', // Valor padrão para o tipo
+          type: 'default',
           total_hours: totalHours,
-        }]);
+        }])
+        .select()
+        .single();
 
       if (error) throw error;
 
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success("Projeto criado com sucesso!");
     } catch (error) {
       toast.error("Erro ao criar projeto");
