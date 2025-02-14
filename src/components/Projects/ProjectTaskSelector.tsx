@@ -3,10 +3,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Task } from "@/types/project";
-import { TaskList } from "@/components/TaskManagement/TaskList";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,18 +38,39 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
   const selectedTasks = tasks.filter(task => task.epic === selectedEpic);
   const totalHours = selectedTasks.reduce((sum, task) => sum + (task.hours || 0), 0);
 
-  const handleSubmit = () => {
-    if (!selectedEpic) {
-      toast.error("Selecione um epic");
-      return;
-    }
-
+  const handleSubmit = async () => {
     if (!projectName.trim()) {
       toast.error("Digite um nome para o projeto");
       return;
     }
 
-    onTasksSelected(selectedTasks);
+    if (!selectedEpic) {
+      toast.error("Selecione um epic");
+      return;
+    }
+
+    try {
+      const { data: newProject, error: projectError } = await supabase
+        .from('projects')
+        .insert([{
+          name: projectName,
+          project_name: projectName,
+          epic: selectedEpic,
+          type: 'default',
+          total_hours: totalHours,
+          total_cost: 0, // Será calculado depois
+        }])
+        .select()
+        .single();
+
+      if (projectError) throw projectError;
+
+      onTasksSelected(selectedTasks);
+      toast.success("Projeto criado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao criar projeto");
+      console.error(error);
+    }
   };
 
   return (
@@ -70,7 +90,7 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
         </div>
 
         <div className="space-y-4">
-          <div>
+          <div className="space-y-2">
             <label htmlFor="projectName" className="text-sm font-medium">
               Nome do Projeto
             </label>
@@ -79,19 +99,18 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
               placeholder="Digite o nome do projeto"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              className="mt-1"
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <label htmlFor="epic" className="text-sm font-medium">
               Epic
             </label>
             <Select value={selectedEpic} onValueChange={setSelectedEpic}>
-              <SelectTrigger className="w-full mt-1">
+              <SelectTrigger id="epic">
                 <SelectValue placeholder="Selecione um epic" />
               </SelectTrigger>
-              <SelectContent className="bg-white">
+              <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Epics Disponíveis</SelectLabel>
                   {epics.map((epic) => (
@@ -106,26 +125,8 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
         </div>
       </div>
 
-      {selectedEpic && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Tarefas do Epic</h3>
-          </div>
-          <TaskList
-            tasks={selectedTasks}
-            columns={[
-              { id: "task_name", label: "Tarefa", visible: true },
-              { id: "phase", label: "Fase", visible: true },
-              { id: "story", label: "Story", visible: true },
-              { id: "hours", label: "Horas", visible: true },
-            ]}
-            onColumnsChange={() => {}}
-          />
-        </div>
-      )}
-
-      <div className="flex justify-end gap-2">
-        <Button onClick={handleSubmit}>
+      <div className="flex justify-end">
+        <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
           Criar Projeto
         </Button>
       </div>

@@ -34,17 +34,9 @@ export const useProjects = () => {
             throw tasksError;
           }
 
-          const totalHours = tasks.reduce((sum: number, task: Task) => sum + (task.hours || 0), 0);
-          const totalCost = tasks.reduce((sum: number, task: Task) => {
-            const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
-            return sum + (hourlyRate * (task.hours || 0));
-          }, 0);
-
           return {
             ...project,
-            tasks,
-            total_hours: totalHours,
-            total_cost: totalCost,
+            tasks: tasks || [],
           };
         })
       );
@@ -61,25 +53,19 @@ export const useProjects = () => {
 
     const epic = selectedTasks[0].epic;
     const totalHours = selectedTasks.reduce((sum, task) => sum + (task.hours || 0), 0);
-    const totalCost = selectedTasks.reduce((sum, task) => {
-      const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
-      return sum + (hourlyRate * (task.hours || 0));
-    }, 0);
 
     try {
-      const { data, error } = await supabase
+      const { error: projectError } = await supabase
         .from('projects')
         .insert([{
           name: epic,
           epic,
           type: 'default',
           total_hours: totalHours,
-          total_cost: totalCost,
-        }])
-        .select()
-        .single();
+          total_cost: 0,
+        }]);
 
-      if (error) throw error;
+      if (projectError) throw projectError;
 
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success("Projeto criado com sucesso!");
@@ -127,16 +113,4 @@ export const useProjects = () => {
     handleDelete,
     handleSaveView,
   };
-};
-
-const teamRates = {
-  "BK": 78.75,
-  "DS": 48.13,
-  "PMO": 87.50,
-  "PO": 35.00,
-  "CS": 48.13,
-  "FRJ": 70.00,
-  "FRP": 119.00,
-  "BKT": 131.04,
-  "ATS": 65.85,
 };

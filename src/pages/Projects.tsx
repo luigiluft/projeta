@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ProjectTaskSelector } from "@/components/Projects/ProjectTaskSelector";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Projects() {
   const {
@@ -18,10 +19,17 @@ export default function Projects() {
   } = useProjects();
 
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleTasksSelected = async (tasks: Task[]) => {
     await handleSubmit(tasks);
     setOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
+  };
+
+  const handleProjectDelete = async (projectId: string) => {
+    await handleDelete(projectId);
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
   };
 
   return (
@@ -43,7 +51,7 @@ export default function Projects() {
               Novo Projeto
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Criar Novo Projeto</DialogTitle>
             </DialogHeader>
@@ -55,7 +63,7 @@ export default function Projects() {
       <div className="space-y-6">
         <ProjectList 
           projects={projects} 
-          onDeleteProject={handleDelete}
+          onDeleteProject={handleProjectDelete}
         />
       </div>
     </div>
