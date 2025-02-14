@@ -17,6 +17,13 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Column {
   id: string;
@@ -59,9 +66,11 @@ export function DraggableTable({
   onColumnsChange,
   data,
   formatValue = (value) => value,
-  itemsPerPage = 5,
+  itemsPerPage: defaultItemsPerPage = 5,
 }: DraggableTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
+  
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -87,8 +96,32 @@ export function DraggableTable({
     }
   };
 
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
   return (
     <div className="space-y-4">
+      <div className="flex justify-end mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">Linhas por página:</span>
+          <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+            <SelectTrigger className="w-[80px]">
+              <SelectValue placeholder="5" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="15">15</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -130,25 +163,31 @@ export function DraggableTable({
           )}
         </TableBody>
       </Table>
+
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 rounded border disabled:opacity-50"
-          >
-            Anterior
-          </button>
-          <span className="px-3 py-1">
-            Página {currentPage} de {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 rounded border disabled:opacity-50"
-          >
-            Próxima
-          </button>
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, data.length)} de {data.length} registros
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 rounded border disabled:opacity-50"
+            >
+              Anterior
+            </button>
+            <span className="px-3 py-1">
+              Página {currentPage} de {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 rounded border disabled:opacity-50"
+            >
+              Próxima
+            </button>
+          </div>
         </div>
       )}
     </div>
