@@ -2,6 +2,7 @@
 export interface Project {
   id: string;
   name: string;
+  project_name: string;
   epic: string;
   type: string;
   created_at: string;

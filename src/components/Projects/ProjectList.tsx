@@ -13,10 +13,10 @@ import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Calendar, ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectListProps {
   projects: Project[];
@@ -62,13 +62,23 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
     toast.info("Redirecionando para edição da tarefa");
   };
 
-  const handleEditProject = (projectId: string) => {
+  const handleEditProject = async (projectId: string) => {
     navigate(`/projects/edit/${projectId}`);
     toast.info("Redirecionando para edição do projeto");
   };
 
-  const handleDeleteProject = (projectId: string) => {
+  const handleDeleteProject = async (projectId: string) => {
     if (window.confirm("Tem certeza que deseja excluir este projeto?")) {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) {
+        toast.error("Erro ao excluir projeto");
+        return;
+      }
+
       onDeleteProject(projectId);
       toast.success("Projeto excluído com sucesso");
     }
@@ -112,7 +122,12 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
                       )}
                     </Button>
                   </TableCell>
-                  <TableCell className="font-medium">{project.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="space-y-1">
+                      <div>{project.epic}</div>
+                      <div className="text-sm text-muted-foreground">{project.project_name}</div>
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <Badge 
                       variant="outline" 
