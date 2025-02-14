@@ -41,7 +41,8 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
     return hours.toFixed(1);
   };
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | undefined) => {
+    if (typeof value !== 'number') return 'R$ 0,00';
     return value.toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -62,8 +63,8 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {projects.map((project) => {
         const isExpanded = expandedProjects.includes(project.id);
-        const newTasks = project.tasks.filter(t => t.is_new === true);
-        const modifiedTasks = project.tasks.filter(t => t.is_modified === true);
+        const newTasks = project.tasks?.filter(t => t.is_new === true) || [];
+        const modifiedTasks = project.tasks?.filter(t => t.is_modified === true) || [];
 
         return (
           <Collapsible
@@ -132,7 +133,7 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                       {project.type}
                     </Badge>
-                    {project.tasks.length > 0 && (
+                    {project.tasks?.length > 0 && (
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                         {project.tasks.length} tarefas
                       </Badge>
@@ -145,7 +146,7 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
                         <div>
                           <h4 className="font-medium text-gray-900 mb-2">Escopo do Projeto</h4>
                           <ul className="list-disc list-inside space-y-1">
-                            {project.tasks.map(task => (
+                            {project.tasks?.map(task => (
                               <li key={task.id} className="text-gray-600">
                                 {task.task_name} 
                                 {task.is_new && (
