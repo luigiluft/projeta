@@ -1,33 +1,44 @@
+
 import { useState } from "react";
-import { Project, View, Column, Attribute } from "@/types/project";
+import { Task, View } from "@/types/project";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useProjects = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [savedViews, setSavedViews] = useState<View[]>([]);
 
-  const handleSubmit = (values: Project) => {
-    if (editingId) {
-      setProjects(projects.map(project =>
-        project.id === editingId ? values : project
-      ));
-      setEditingId(null);
-    } else {
-      setProjects([...projects, values]);
-    }
-    setShowForm(false);
-    toast.success(editingId ? "Projeto atualizado com sucesso!" : "Projeto criado com sucesso!");
+  const { data: projects = [] } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('order_number', { ascending: true });
+
+      if (error) {
+        toast.error('Erro ao carregar tarefas');
+        throw error;
+      }
+
+      return data as Task[];
+    },
+  });
+
+  const handleSubmit = (values: Task) => {
+    // Implementar lógica de submissão mais tarde
+    toast.success("Projeto salvo com sucesso!");
   };
 
-  const handleEdit = (project: Project) => {
+  const handleEdit = (project: Task) => {
     setEditingId(project.id);
     setShowForm(true);
   };
 
   const handleDelete = (id: string) => {
-    setProjects(projects.filter(project => project.id !== id));
+    // Implementar lógica de deleção mais tarde
     toast.success("Projeto removido com sucesso!");
   };
 

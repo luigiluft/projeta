@@ -65,10 +65,10 @@ export function DraggableTable({
   onColumnsChange,
   data,
   formatValue = (value) => value,
-  itemsPerPage: defaultItemsPerPage = 5,
+  itemsPerPage: defaultItemsPerPage = 400,
 }: DraggableTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(defaultItemsPerPage);
+  const [itemsPerPage] = useState(defaultItemsPerPage);
   
   const sensors = useSensors(
     useSensor(PointerSensor),
