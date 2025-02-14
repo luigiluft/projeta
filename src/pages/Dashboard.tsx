@@ -73,8 +73,8 @@ const Index = () => {
       <AppSidebar />
       <div className="flex-1">
         <Header />
-        <main className="p-8 min-h-[calc(100vh-73px)]">
-          <div className="max-w-7xl mx-auto space-y-8">
+        <main className="p-4 lg:p-6 min-h-[calc(100vh-73px)]">
+          <div className="max-w-[1600px] mx-auto space-y-4 lg:space-y-6">
             <DashboardHeader 
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
