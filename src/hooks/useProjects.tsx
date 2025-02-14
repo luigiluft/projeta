@@ -53,6 +53,9 @@ export const useProjects = () => {
 
     const epic = selectedTasks[0].epic;
     const totalHours = selectedTasks.reduce((sum, task) => sum + (task.hours || 0), 0);
+    // Calcula um custo base por hora (pode ser ajustado conforme necessário)
+    const hourlyRate = 150; // R$ 150 por hora
+    const totalCost = totalHours * hourlyRate;
 
     try {
       const { error: projectError } = await supabase
@@ -62,7 +65,7 @@ export const useProjects = () => {
           epic,
           type: 'default',
           total_hours: totalHours,
-          total_cost: 0,
+          total_cost: totalCost,
         }]);
 
       if (projectError) throw projectError;
@@ -84,11 +87,12 @@ export const useProjects = () => {
 
       if (error) throw error;
 
+      // Atualiza a lista de projetos após a exclusão
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast.success("Projeto excluído com sucesso!");
     } catch (error) {
       toast.error("Erro ao excluir projeto");
       console.error(error);
+      throw error;
     }
   };
 

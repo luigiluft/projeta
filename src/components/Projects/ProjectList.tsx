@@ -76,10 +76,16 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
     setProjectToDelete(projectId);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (projectToDelete) {
-      onDeleteProject(projectToDelete);
-      setProjectToDelete(null);
+      try {
+        await onDeleteProject(projectToDelete);
+        setProjectToDelete(null);
+        toast.success("Projeto excluído com sucesso");
+      } catch (error) {
+        toast.error("Erro ao excluir projeto");
+        console.error(error);
+      }
     }
   };
 
@@ -241,18 +247,6 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
                                         </Badge>
                                       )}
                                     </div>
-                                  </div>
-
-                                  <div className="ml-4">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleEditTask(task.id)}
-                                      className="hover:bg-primary/10 hover:text-primary hover:border-primary"
-                                    >
-                                      <Pencil className="h-4 w-4 mr-2" />
-                                      Editar Tarefa
-                                    </Button>
                                   </div>
                                 </div>
                               ))}
