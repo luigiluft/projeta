@@ -2,26 +2,25 @@
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { Header } from "@/components/Layout/Header";
 import { 
-  Activity, 
   Clock, 
   Target, 
   AlertTriangle,
   CheckCircle2,
-  TimerOff,
+  TrendingUp,
+  DollarSign,
+  Users,
+  CalendarClock,
+  BarChart3,
   Loader2,
-  ChevronRight,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BurndownChart } from "@/components/Dashboard/BurndownChart";
-import { BurnupChart } from "@/components/Dashboard/BurnupChart";
-import { CumulativeFlowChart } from "@/components/Dashboard/CumulativeFlowChart";
 import { ProjectsPieChart } from "@/components/Dashboard/ProjectsPieChart";
-import { DailyTasks } from "@/components/Dashboard/DailyTasks";
-import { GanttChart } from "@/components/Dashboard/GanttChart";
 import { AllocationChart } from "@/components/Dashboard/AllocationChart";
+import { Progress } from "@/components/ui/progress";
 import { useState } from "react";
 
 const timeRanges = [
@@ -39,52 +38,43 @@ const Index = () => {
     queryFn: async () => {
       const { data: stats, error } = await supabase
         .from('project_stats')
-        .select(`
-          project_id,
-          project_name,
-          status,
-          total_tasks,
-          total_hours,
-          total_cost,
-          base_cost,
-          profit_margin,
-          due_date,
-          created_at,
-          progress,
-          delay_days,
-          completed_tasks,
-          in_progress_tasks,
-          pending_tasks,
-          hours_accuracy
-        `);
+        .select('*');
 
       if (error) {
         throw new Error('Erro ao carregar estatísticas');
       }
 
       const totalProjects = stats?.length || 0;
-      const completedProjects = stats?.filter(s => s.status === 'completed').length || 0;
-      const inProgressProjects = stats?.filter(s => s.status === 'in_progress').length || 0;
+      const activeProjects = stats?.filter(s => s.status === 'in_progress').length || 0;
       const delayedProjects = stats?.filter(s => s.delay_days > 0).length || 0;
+      const completedProjects = stats?.filter(s => s.status === 'completed').length || 0;
       
+      const totalRevenue = stats?.reduce((sum, s) => sum + (s.total_cost || 0), 0) || 0;
+      const totalCost = stats?.reduce((sum, s) => sum + (s.base_cost || 0), 0) || 0;
+      const totalProfit = totalRevenue - totalCost;
+      const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
       const totalHours = stats?.reduce((sum, s) => sum + (s.total_hours || 0), 0) || 0;
-      const totalCost = stats?.reduce((sum, s) => sum + (s.total_cost || 0), 0) || 0;
-      const averageProgress = totalProjects > 0 
-        ? (stats?.reduce((sum, s) => sum + (s.progress || 0), 0) || 0) / totalProjects 
-        : 0;
       const averageAccuracy = totalProjects > 0
         ? (stats?.reduce((sum, s) => sum + (s.hours_accuracy || 0), 0) || 0) / totalProjects
         : 0;
 
+      const totalTasks = stats?.reduce((sum, s) => sum + (s.total_tasks || 0), 0) || 0;
+      const completedTasks = stats?.reduce((sum, s) => sum + (s.completed_tasks || 0), 0) || 0;
+      const taskCompletionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
       return {
         totalProjects,
-        completedProjects,
-        inProgressProjects,
+        activeProjects,
         delayedProjects,
-        totalHours,
+        completedProjects,
+        totalRevenue,
         totalCost,
-        averageProgress,
+        totalProfit,
+        profitMargin,
+        totalHours,
         averageAccuracy,
+        taskCompletionRate,
         projectStats: stats || [],
       };
     },
@@ -98,7 +88,7 @@ const Index = () => {
   };
 
   const formatPercentage = (value: number) => {
-    return `${(value * 100).toFixed(1)}%`;
+    return `${value.toFixed(1)}%`;
   };
 
   if (isLoading) {
@@ -117,10 +107,10 @@ const Index = () => {
         <main className="p-8 min-h-[calc(100vh-73px)]">
           <div className="max-w-7xl mx-auto space-y-8">
             {/* Cabeçalho e filtros */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-8">
               <div>
                 <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-                <p className="text-gray-500 mt-1">Visão geral dos projetos</p>
+                <p className="text-gray-500 mt-1">Análise de Performance</p>
               </div>
               <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
                 <SelectTrigger className="w-[180px] bg-white">
@@ -136,56 +126,70 @@ const Index = () => {
               </Select>
             </div>
 
-            {/* Cards principais */}
+            {/* Indicadores Principais */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Performance Financeira */}
               <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-all">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-500">
-                      Em Andamento
+                      Performance Financeira
+                    </CardTitle>
+                    <DollarSign className="h-4 w-4 text-emerald-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="mt-2 space-y-2">
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-bold text-gray-900">
+                        {formatCurrency(dashboardStats?.totalRevenue || 0)}
+                      </span>
+                      <span className="text-sm text-emerald-600 flex items-center mt-1">
+                        Margem: {formatPercentage(dashboardStats?.profitMargin || 0)}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={dashboardStats?.profitMargin || 0} 
+                      className="h-1.5" 
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Projetos Ativos */}
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-gray-500">
+                      Gestão de Projetos
                     </CardTitle>
                     <Target className="h-4 w-4 text-blue-500" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="mt-2 flex items-baseline justify-between">
+                  <div className="mt-2 space-y-2">
                     <div className="flex flex-col">
-                      <span className="text-2xl font-bold text-gray-900">
-                        {dashboardStats?.inProgressProjects || 0}
-                      </span>
-                      <span className="text-sm text-green-600 flex items-center mt-1">
-                        {formatPercentage(dashboardStats?.averageProgress || 0)} concluído
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-2xl font-bold text-gray-900">
+                          {dashboardStats?.activeProjects || 0}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          de {dashboardStats?.totalProjects || 0}
+                        </span>
+                      </div>
+                      <span className="text-sm text-blue-600 flex items-center mt-1">
+                        Projetos em Andamento
                       </span>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                    <Progress 
+                      value={(dashboardStats?.activeProjects || 0) / (dashboardStats?.totalProjects || 1) * 100} 
+                      className="h-1.5" 
+                    />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-gray-500">
-                      Atrasados
-                    </CardTitle>
-                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="mt-2 flex items-baseline justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-2xl font-bold text-gray-900">
-                        {dashboardStats?.delayedProjects || 0}
-                      </span>
-                      <span className="text-sm text-red-600 flex items-center mt-1">
-                        Atenção necessária
-                      </span>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
-                  </div>
-                </CardContent>
-              </Card>
-
+              {/* Precisão das Estimativas */}
               <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-all">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
@@ -196,117 +200,133 @@ const Index = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="mt-2 flex items-baseline justify-between">
+                  <div className="mt-2 space-y-2">
                     <div className="flex flex-col">
                       <span className="text-2xl font-bold text-gray-900">
                         {formatPercentage(dashboardStats?.averageAccuracy || 0)}
                       </span>
                       <span className="text-sm text-purple-600 flex items-center mt-1">
-                        +8.2% este mês
+                        Média de Assertividade
                       </span>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                    <Progress 
+                      value={dashboardStats?.averageAccuracy || 0} 
+                      className="h-1.5" 
+                    />
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Taxa de Conclusão */}
               <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-md transition-all">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-gray-500">
-                      Concluídos
+                      Produtividade
                     </CardTitle>
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <TrendingUp className="h-4 w-4 text-green-500" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="mt-2 flex items-baseline justify-between">
+                  <div className="mt-2 space-y-2">
                     <div className="flex flex-col">
                       <span className="text-2xl font-bold text-gray-900">
-                        {dashboardStats?.completedProjects || 0}
+                        {formatPercentage(dashboardStats?.taskCompletionRate || 0)}
                       </span>
                       <span className="text-sm text-green-600 flex items-center mt-1">
-                        +15.3% este mês
+                        Taxa de Conclusão
                       </span>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
+                    <Progress 
+                      value={dashboardStats?.taskCompletionRate || 0} 
+                      className="h-1.5" 
+                    />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Gráficos principais */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
-                <CardHeader>
-                  <CardTitle className="text-lg text-gray-900">Alocação por Desenvolvedor</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <AllocationChart />
+            {/* Cards de Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-500">Total de Horas</p>
+                      <p className="text-2xl font-semibold">{Math.round(dashboardStats?.totalHours || 0)}h</p>
+                    </div>
+                    <CalendarClock className="h-8 w-8 text-gray-400" />
+                  </div>
                 </CardContent>
               </Card>
 
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-500">Projetos Atrasados</p>
+                      <p className="text-2xl font-semibold">{dashboardStats?.delayedProjects || 0}</p>
+                    </div>
+                    <AlertTriangle className="h-8 w-8 text-red-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-500">Projetos Concluídos</p>
+                      <p className="text-2xl font-semibold">{dashboardStats?.completedProjects || 0}</p>
+                    </div>
+                    <CheckCircle2 className="h-8 w-8 text-green-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-gray-500">Lucro Total</p>
+                      <p className="text-2xl font-semibold">{formatCurrency(dashboardStats?.totalProfit || 0)}</p>
+                    </div>
+                    <BarChart3 className="h-8 w-8 text-blue-400" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Gráficos */}
+            <div className="grid gap-6 lg:grid-cols-2">
               <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
                 <CardHeader>
-                  <CardTitle className="text-lg text-gray-900">Status dos Projetos</CardTitle>
+                  <CardTitle className="text-lg text-gray-900">Distribuição de Projetos</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ProjectsPieChart />
                 </CardContent>
               </Card>
-            </div>
-
-            {/* Gráficos de tendência */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
-                <CardHeader>
-                  <CardTitle className="text-lg text-gray-900">Burndown - Progresso vs. Planejado</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <BurndownChart />
-                </CardContent>
-              </Card>
 
               <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
                 <CardHeader>
-                  <CardTitle className="text-lg text-gray-900">Burnup - Entregas Acumuladas</CardTitle>
+                  <CardTitle className="text-lg text-gray-900">Alocação da Equipe</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <BurnupChart />
+                  <AllocationChart />
                 </CardContent>
               </Card>
             </div>
 
-            {/* Fluxo de trabalho */}
+            {/* Tendências */}
             <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
               <CardHeader>
-                <CardTitle className="text-lg text-gray-900">Fluxo de Trabalho</CardTitle>
+                <CardTitle className="text-lg text-gray-900">Tendência de Entrega</CardTitle>
               </CardHeader>
               <CardContent>
-                <CumulativeFlowChart />
+                <BurndownChart />
               </CardContent>
             </Card>
-
-            {/* Timeline e tarefas */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
-                <CardHeader>
-                  <CardTitle className="text-lg text-gray-900">Timeline de Projetos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <GanttChart tasks={[]} />
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/50 backdrop-blur-sm border border-gray-100">
-                <CardHeader>
-                  <CardTitle className="text-lg text-gray-900">Tarefas Críticas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DailyTasks tasks={[]} />
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </main>
       </div>
