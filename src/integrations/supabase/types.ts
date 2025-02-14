@@ -153,6 +153,7 @@ export type Database = {
           epic: string | null
           id: string
           name: string
+          total_cost: number | null
           total_hours: number | null
           type: string
         }
@@ -161,6 +162,7 @@ export type Database = {
           epic?: string | null
           id?: string
           name: string
+          total_cost?: number | null
           total_hours?: number | null
           type: string
         }
@@ -169,6 +171,7 @@ export type Database = {
           epic?: string | null
           id?: string
           name?: string
+          total_cost?: number | null
           total_hours?: number | null
           type?: string
         }

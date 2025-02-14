@@ -1,7 +1,8 @@
+
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { Header } from "@/components/Layout/Header";
 import { StatsCard } from "@/components/Dashboard/StatsCard";
-import { Activity, Clock, Target, Users } from "lucide-react";
+import { Activity, Clock, DollarSign, Target, Users, ChevronUp, ChevronDown } from "lucide-react";
 import { BurndownChart } from "@/components/Dashboard/BurndownChart";
 import { BurnupChart } from "@/components/Dashboard/BurnupChart";
 import { CumulativeFlowChart } from "@/components/Dashboard/CumulativeFlowChart";
@@ -11,58 +12,9 @@ import { DailyTasks } from "@/components/Dashboard/DailyTasks";
 import { GanttChart } from "@/components/Dashboard/GanttChart";
 import { AllocationChart } from "@/components/Dashboard/AllocationChart";
 import { useState } from "react";
-
-const projects = [
-  {
-    title: "Redesenho do Website",
-    progress: 75,
-    team: "Time de Design",
-    dueDate: "20 Dez",
-  },
-  {
-    title: "Desenvolvimento App Mobile",
-    progress: 45,
-    team: "Time de Dev",
-    dueDate: "15 Jan",
-  },
-  {
-    title: "Campanha de Marketing",
-    progress: 90,
-    team: "Marketing",
-    dueDate: "10 Dez",
-  },
-];
-
-const tasks = [
-  {
-    id: "1",
-    title: "Revisar mockups do design do site",
-    dueTime: "14:00",
-    completed: false,
-    project: "Redesenho do Website",
-  },
-  {
-    id: "2",
-    title: "Daily do time",
-    dueTime: "10:00",
-    completed: true,
-    project: "Desenvolvimento App Mobile",
-  },
-  {
-    id: "3",
-    title: "Atualizar documentação do projeto",
-    dueTime: "16:30",
-    completed: false,
-    project: "Desenvolvimento App Mobile",
-  },
-  {
-    id: "4",
-    title: "Reunião com cliente - App Mobile",
-    dueTime: "11:30",
-    completed: true,
-    project: "Desenvolvimento App Mobile",
-  },
-];
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const timeRanges = [
   { value: "7d", label: "Últimos 7 dias" },
@@ -72,12 +24,43 @@ const timeRanges = [
 ];
 
 const Index = () => {
-  const [selectedProject, setSelectedProject] = useState<string | undefined>();
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("7d");
 
-  const filteredTasks = selectedProject
-    ? tasks.filter((task) => task.project === selectedProject)
-    : tasks;
+  const { data: dashboardStats } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      const { data: projects, error: projectsError } = await supabase
+        .from('projects')
+        .select('*');
+
+      const { data: tasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select('*');
+
+      if (projectsError || tasksError) {
+        throw new Error('Erro ao carregar dados do dashboard');
+      }
+
+      const totalProjects = projects?.length || 0;
+      const totalTasks = tasks?.length || 0;
+      const totalHours = tasks?.reduce((sum, task) => sum + (task.hours || 0), 0) || 0;
+      const totalCost = projects?.reduce((sum, project) => sum + (project.total_cost || 0), 0) || 0;
+
+      return {
+        totalProjects,
+        totalTasks,
+        totalHours,
+        totalCost,
+      };
+    },
+  });
+
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+  };
 
   return (
     <div className="min-h-screen flex w-full">
@@ -85,45 +68,9 @@ const Index = () => {
       <div className="flex-1">
         <Header />
         <main className="p-6 bg-gray-50 min-h-[calc(100vh-73px)]">
-          <div className="grid gap-6">
-            <div className="grid gap-4 md:grid-cols-4">
-              <StatsCard
-                title="Total de Projetos"
-                value="12"
-                icon={Target}
-              />
-              <StatsCard
-                title="Tarefas Ativas"
-                value="48"
-                icon={Activity}
-              />
-              <StatsCard
-                title="Membros do Time"
-                value="8"
-                icon={Users}
-              />
-              <StatsCard
-                title="Horas Registradas"
-                value="164"
-                icon={Clock}
-              />
-            </div>
-
-            <div className="flex justify-end gap-4">
-              <Select value={selectedProject} onValueChange={setSelectedProject}>
-                <SelectTrigger className="w-[280px]">
-                  <SelectValue placeholder="Selecione um projeto para filtrar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={undefined}>Todos os projetos</SelectItem>
-                  {projects.map((project) => (
-                    <SelectItem key={project.title} value={project.title}>
-                      {project.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
+          <div className="max-w-7xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
               <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Selecione o período" />
@@ -138,49 +85,115 @@ const Index = () => {
               </Select>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-4 text-center">Distribuição de Horas por Projeto</h3>
-              <div className="flex justify-center items-center w-full">
-                <div className="w-[400px]">
+            <div className="grid gap-4 md:grid-cols-4">
+              <StatsCard
+                title="Total de Projetos"
+                value={dashboardStats?.totalProjects.toString() || "0"}
+                icon={Target}
+                trend={{
+                  value: "+12.5%",
+                  positive: true,
+                  icon: ChevronUp,
+                }}
+              />
+              <StatsCard
+                title="Tarefas Ativas"
+                value={dashboardStats?.totalTasks.toString() || "0"}
+                icon={Activity}
+                trend={{
+                  value: "-4.5%",
+                  positive: false,
+                  icon: ChevronDown,
+                }}
+              />
+              <StatsCard
+                title="Horas Registradas"
+                value={`${dashboardStats?.totalHours.toFixed(1)}h` || "0h"}
+                icon={Clock}
+                trend={{
+                  value: "+8.2%",
+                  positive: true,
+                  icon: ChevronUp,
+                }}
+              />
+              <StatsCard
+                title="Faturamento Total"
+                value={formatCurrency(dashboardStats?.totalCost || 0)}
+                icon={DollarSign}
+                trend={{
+                  value: "+15.3%",
+                  positive: true,
+                  icon: ChevronUp,
+                }}
+              />
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Distribuição de Horas por Projeto</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <ProjectsPieChart />
-                </div>
-              </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Alocação por Funcionário</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AllocationChart />
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-4">Alocação de Horas por Funcionário</h3>
-              <AllocationChart />
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Burndown Chart</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BurndownChart />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Burnup Chart</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BurnupChart />
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">📊 Gráfico de Burndown</h3>
-                <BurndownChart />
-              </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Fluxo Cumulativo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CumulativeFlowChart />
+              </CardContent>
+            </Card>
 
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">📈 Burnup Chart</h3>
-                <BurnupChart />
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="text-lg font-semibold mb-4">📉 Cumulative Flow Diagram (CFD)</h3>
-              <div className="flex justify-center items-center w-full">
-                <div className="w-[800px]">
-                  <CumulativeFlowChart />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-4">Cronograma do Dia</h3>
-                <GanttChart tasks={filteredTasks} />
-              </div>
-              <div className="bg-white rounded-lg shadow">
-                <DailyTasks tasks={filteredTasks} />
-              </div>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Cronograma do Dia</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <GanttChart tasks={[]} />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tarefas do Dia</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <DailyTasks tasks={[]} />
+                </CardContent>
+              </Card>
             </div>
           </div>
         </main>
