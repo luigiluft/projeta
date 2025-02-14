@@ -2,15 +2,14 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Project } from "@/types/project";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Clock, Calendar, ChevronDown, ChevronUp, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -18,12 +17,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface ProjectListProps {
   projects: Project[];
+  onDeleteProject: (projectId: string) => void;
 }
 
-export function ProjectList({ projects }: ProjectListProps) {
+export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
+  const navigate = useNavigate();
   const [expandedProjects, setExpandedProjects] = useState<string[]>([]);
 
   const toggleProject = (projectId: string) => {
@@ -38,13 +41,19 @@ export function ProjectList({ projects }: ProjectListProps) {
     return hours.toFixed(1);
   };
 
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+  };
+
   const getEstimatedDate = (project: Project) => {
     if (project.due_date) {
       return format(new Date(project.due_date), "dd/MM/yyyy", { locale: ptBR });
     }
-    // Se não houver data definida, retorna uma estimativa baseada nas horas
     const today = new Date();
-    const estimatedDays = Math.ceil(project.total_hours / 8); // Assumindo 8 horas por dia
+    const estimatedDays = Math.ceil(project.total_hours / 8);
     const estimatedDate = new Date(today.setDate(today.getDate() + estimatedDays));
     return format(estimatedDate, "dd/MM/yyyy", { locale: ptBR });
   };
@@ -63,32 +72,61 @@ export function ProjectList({ projects }: ProjectListProps) {
             onOpenChange={() => toggleProject(project.id)}
           >
             <Card className="group hover:shadow-lg transition-all bg-white/50 backdrop-blur-xl border border-gray-100">
-              <CollapsibleTrigger className="w-full text-left">
-                <CardHeader>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg font-semibold text-gray-900">
-                          {project.name}
-                        </CardTitle>
-                        <Badge 
-                          variant="outline" 
-                          className="bg-primary/10 text-primary border-primary/20 text-sm"
-                        >
-                          {project.epic}
-                        </Badge>
-                      </div>
-                      {isExpanded ? (
-                        <ChevronUp className="h-5 w-5 text-gray-400" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-400" />
-                      )}
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <CollapsibleTrigger className="text-left">
+                    <div className="space-y-1">
+                      <CardTitle className="text-lg font-semibold text-gray-900">
+                        {project.name}
+                      </CardTitle>
+                      <Badge 
+                        variant="outline" 
+                        className="bg-primary/10 text-primary border-primary/20 text-sm"
+                      >
+                        {project.epic}
+                      </Badge>
                     </div>
+                  </CollapsibleTrigger>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/projects/edit/${project.id}`);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteProject(project.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    {isExpanded ? (
+                      <ChevronUp className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-gray-400" />
+                    )}
                   </div>
-                </CardHeader>
-              </CollapsibleTrigger>
+                </div>
+              </CardHeader>
 
               <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-600">
+                    Valor Total:
+                  </div>
+                  <div className="text-lg font-semibold text-primary">
+                    {formatCurrency(project.total_cost)}
+                  </div>
+                </div>
+
                 <div className="text-sm text-gray-600 space-y-2">
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">

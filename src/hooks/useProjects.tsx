@@ -35,11 +35,16 @@ export const useProjects = () => {
           }
 
           const totalHours = tasks.reduce((sum: number, task: Task) => sum + (task.hours || 0), 0);
+          const totalCost = tasks.reduce((sum: number, task: Task) => {
+            const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
+            return sum + (hourlyRate * (task.hours || 0));
+          }, 0);
 
           return {
             ...project,
             tasks,
             total_hours: totalHours,
+            total_cost: totalCost,
           };
         })
       );
@@ -56,6 +61,10 @@ export const useProjects = () => {
 
     const epic = selectedTasks[0].epic;
     const totalHours = selectedTasks.reduce((sum, task) => sum + (task.hours || 0), 0);
+    const totalCost = selectedTasks.reduce((sum, task) => {
+      const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
+      return sum + (hourlyRate * (task.hours || 0));
+    }, 0);
 
     try {
       const { data, error } = await supabase
@@ -65,6 +74,7 @@ export const useProjects = () => {
           epic,
           type: 'default',
           total_hours: totalHours,
+          total_cost: totalCost,
         }])
         .select()
         .single();
@@ -75,6 +85,23 @@ export const useProjects = () => {
       toast.success("Projeto criado com sucesso!");
     } catch (error) {
       toast.error("Erro ao criar projeto");
+      console.error(error);
+    }
+  };
+
+  const handleDelete = async (projectId: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success("Projeto excluído com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao excluir projeto");
       console.error(error);
     }
   };
@@ -97,6 +124,19 @@ export const useProjects = () => {
     projects,
     savedViews,
     handleSubmit,
+    handleDelete,
     handleSaveView,
   };
+};
+
+const teamRates = {
+  "BK": 78.75,
+  "DS": 48.13,
+  "PMO": 87.50,
+  "PO": 35.00,
+  "CS": 48.13,
+  "FRJ": 70.00,
+  "FRP": 119.00,
+  "BKT": 131.04,
+  "ATS": 65.85,
 };

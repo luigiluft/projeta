@@ -13,6 +13,7 @@ export default function Projects() {
   const {
     projects,
     handleSubmit,
+    handleDelete,
     handleSaveView,
   } = useProjects();
 
@@ -52,7 +53,10 @@ export default function Projects() {
       </div>
 
       <div className="space-y-6">
-        <ProjectList projects={projects} />
+        <ProjectList 
+          projects={projects} 
+          onDeleteProject={handleDelete}
+        />
       </div>
     </div>
   );
