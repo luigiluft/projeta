@@ -54,7 +54,7 @@ export const useProjects = () => {
 
       const projectsWithTasks = await Promise.all(
         projectsData.map(async (project) => {
-          const { data: tasks, error: tasksError } = await supabase
+          const { data: tasksData, error: tasksError } = await supabase
             .from('tasks')
             .select('*')
             .eq('epic', project.epic);
@@ -64,11 +64,17 @@ export const useProjects = () => {
             throw tasksError;
           }
 
-          const costs = calculateProjectCosts(tasks || []);
+          // Ensure task status is of the correct type
+          const tasks = (tasksData || []).map(task => ({
+            ...task,
+            status: (task.status as "pending" | "in_progress" | "completed") || "pending"
+          }));
+
+          const costs = calculateProjectCosts(tasks);
 
           return {
             ...project,
-            tasks: tasks || [],
+            tasks,
             total_hours: costs.totalHours,
             base_cost: costs.baseCost,
             total_cost: costs.totalCost,

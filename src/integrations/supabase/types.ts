@@ -275,9 +275,15 @@ export type Database = {
       project_stats: {
         Row: {
           base_cost: number | null
+          completed_tasks: number | null
           created_at: string | null
+          delay_days: number | null
           due_date: string | null
+          hours_accuracy: number | null
+          in_progress_tasks: number | null
+          pending_tasks: number | null
           profit_margin: number | null
+          progress: number | null
           project_id: string | null
           project_name: string | null
           status: string | null
