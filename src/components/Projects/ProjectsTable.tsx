@@ -29,6 +29,7 @@ export function ProjectsTable({
             <TableHead className="w-[300px]">Nome do Projeto</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Tipo</TableHead>
+            <TableHead className="text-right">Progresso</TableHead>
             <TableHead className="text-right">Horas</TableHead>
             <TableHead className="text-right">Custo Total</TableHead>
             <TableHead className="text-right">Ações</TableHead>
@@ -48,8 +49,12 @@ export function ProjectsTable({
               />
               {expandedProject === project.id && (
                 <TableRow>
-                  <TableCell colSpan={6} className="p-0">
-                    <ProjectTasksTable tasks={project.tasks} />
+                  <TableCell colSpan={7} className="p-0">
+                    <ProjectTasksTable
+                      tasks={project.tasks}
+                      projectId={project.id}
+                      epic={project.epic}
+                    />
                   </TableCell>
                 </TableRow>
               )}
@@ -58,7 +63,7 @@ export function ProjectsTable({
 
           {projects.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="h-32 text-center">
+              <TableCell colSpan={7} className="h-32 text-center">
                 Nenhum projeto cadastrado
               </TableCell>
             </TableRow>

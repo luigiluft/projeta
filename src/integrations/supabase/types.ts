@@ -153,13 +153,17 @@ export type Database = {
           client_name: string | null
           created_at: string
           currency: string | null
+          delay_days: number | null
           description: string | null
           due_date: string | null
           epic: string | null
+          expected_end_date: string | null
           id: string
           name: string
           profit_margin: number | null
+          progress: number | null
           project_name: string
+          start_date: string | null
           status: string | null
           total_cost: number | null
           total_hours: number | null
@@ -170,13 +174,17 @@ export type Database = {
           client_name?: string | null
           created_at?: string
           currency?: string | null
+          delay_days?: number | null
           description?: string | null
           due_date?: string | null
           epic?: string | null
+          expected_end_date?: string | null
           id?: string
           name: string
           profit_margin?: number | null
+          progress?: number | null
           project_name?: string
+          start_date?: string | null
           status?: string | null
           total_cost?: number | null
           total_hours?: number | null
@@ -187,13 +195,17 @@ export type Database = {
           client_name?: string | null
           created_at?: string
           currency?: string | null
+          delay_days?: number | null
           description?: string | null
           due_date?: string | null
           epic?: string | null
+          expected_end_date?: string | null
           id?: string
           name?: string
           profit_margin?: number | null
+          progress?: number | null
           project_name?: string
+          start_date?: string | null
           status?: string | null
           total_cost?: number | null
           total_hours?: number | null
@@ -203,41 +215,56 @@ export type Database = {
       }
       tasks: {
         Row: {
+          actual_hours: number | null
           created_at: string
           dependency: string | null
+          end_date: string | null
           epic: string | null
+          estimated_completion_date: string | null
           hours: number | null
           id: string
           is_active: boolean | null
           order_number: number | null
           owner: string | null
           phase: string | null
+          start_date: string | null
+          status: string | null
           story: string | null
           task_name: string
         }
         Insert: {
+          actual_hours?: number | null
           created_at?: string
           dependency?: string | null
+          end_date?: string | null
           epic?: string | null
+          estimated_completion_date?: string | null
           hours?: number | null
           id?: string
           is_active?: boolean | null
           order_number?: number | null
           owner?: string | null
           phase?: string | null
+          start_date?: string | null
+          status?: string | null
           story?: string | null
           task_name: string
         }
         Update: {
+          actual_hours?: number | null
           created_at?: string
           dependency?: string | null
+          end_date?: string | null
           epic?: string | null
+          estimated_completion_date?: string | null
           hours?: number | null
           id?: string
           is_active?: boolean | null
           order_number?: number | null
           owner?: string | null
           phase?: string | null
+          start_date?: string | null
+          status?: string | null
           story?: string | null
           task_name?: string
         }

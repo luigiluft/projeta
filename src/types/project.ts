@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   name: string;
@@ -16,6 +15,10 @@ export interface Project {
   description?: string;
   currency: 'BRL' | 'USD' | 'EUR';
   tasks: Task[];
+  start_date?: string;
+  expected_end_date?: string;
+  progress: number;
+  delay_days: number;
   attributes: {
     [key: string]: string | number;
   };
@@ -35,6 +38,11 @@ export interface Task {
   owner: string;
   dependency: string | null;
   created_at: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  start_date?: string;
+  end_date?: string;
+  actual_hours: number;
+  estimated_completion_date?: string;
 }
 
 export interface Column {
@@ -68,4 +76,10 @@ export interface ProjectStats {
   profit_margin: number;
   due_date: string | null;
   created_at: string;
+  progress: number;
+  delay_days: number;
+  completed_tasks: number;
+  in_progress_tasks: number;
+  pending_tasks: number;
+  hours_accuracy: number;
 }

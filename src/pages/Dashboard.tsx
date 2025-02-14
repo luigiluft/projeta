@@ -2,7 +2,19 @@
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { Header } from "@/components/Layout/Header";
 import { StatsCard } from "@/components/Dashboard/StatsCard";
-import { Activity, Clock, DollarSign, Target, Users, ChevronUp, ChevronDown } from "lucide-react";
+import { 
+  Activity, 
+  Clock, 
+  DollarSign, 
+  Target, 
+  Users, 
+  ChevronUp, 
+  ChevronDown,
+  AlertTriangle,
+  CheckCircle2,
+  TimerOff,
+  Loader2
+} from "lucide-react";
 import { BurndownChart } from "@/components/Dashboard/BurndownChart";
 import { BurnupChart } from "@/components/Dashboard/BurnupChart";
 import { CumulativeFlowChart } from "@/components/Dashboard/CumulativeFlowChart";
@@ -29,28 +41,34 @@ const Index = () => {
   const { data: dashboardStats } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const { data: projects, error: projectsError } = await supabase
-        .from('projects')
+      const { data: stats, error } = await supabase
+        .from('project_stats')
         .select('*');
 
-      const { data: tasks, error: tasksError } = await supabase
-        .from('tasks')
-        .select('*');
-
-      if (projectsError || tasksError) {
-        throw new Error('Erro ao carregar dados do dashboard');
+      if (error) {
+        throw new Error('Erro ao carregar estatísticas');
       }
 
-      const totalProjects = projects?.length || 0;
-      const totalTasks = tasks?.length || 0;
-      const totalHours = tasks?.reduce((sum, task) => sum + (task.hours || 0), 0) || 0;
-      const totalCost = projects?.reduce((sum, project) => sum + (project.total_cost || 0), 0) || 0;
+      const totalProjects = stats?.length || 0;
+      const completedProjects = stats?.filter(s => s.status === 'completed').length || 0;
+      const inProgressProjects = stats?.filter(s => s.status === 'in_progress').length || 0;
+      const delayedProjects = stats?.filter(s => s.delay_days > 0).length || 0;
+      
+      const totalHours = stats?.reduce((sum, s) => sum + (s.total_hours || 0), 0) || 0;
+      const totalCost = stats?.reduce((sum, s) => sum + (s.total_cost || 0), 0) || 0;
+      const averageProgress = stats?.reduce((sum, s) => sum + (s.progress || 0), 0) / totalProjects || 0;
+      const averageAccuracy = stats?.reduce((sum, s) => sum + (s.hours_accuracy || 0), 0) / totalProjects || 0;
 
       return {
         totalProjects,
-        totalTasks,
+        completedProjects,
+        inProgressProjects,
+        delayedProjects,
         totalHours,
         totalCost,
+        averageProgress,
+        averageAccuracy,
+        projectStats: stats || [],
       };
     },
   });
@@ -60,6 +78,10 @@ const Index = () => {
       style: 'currency',
       currency: 'BRL',
     });
+  };
+
+  const formatPercentage = (value: number) => {
+    return `${(value * 100).toFixed(1)}%`;
   };
 
   return (
@@ -85,30 +107,31 @@ const Index = () => {
               </Select>
             </div>
 
+            {/* KPIs principais */}
             <div className="grid gap-4 md:grid-cols-4">
               <StatsCard
-                title="Total de Projetos"
-                value={dashboardStats?.totalProjects.toString() || "0"}
+                title="Projetos em Andamento"
+                value={dashboardStats?.inProgressProjects.toString() || "0"}
                 icon={Target}
                 trend={{
-                  value: "+12.5%",
+                  value: formatPercentage(dashboardStats?.averageProgress || 0),
                   positive: true,
                   icon: ChevronUp,
                 }}
               />
               <StatsCard
-                title="Tarefas Ativas"
-                value={dashboardStats?.totalTasks.toString() || "0"}
-                icon={Activity}
+                title="Projetos Atrasados"
+                value={dashboardStats?.delayedProjects.toString() || "0"}
+                icon={AlertTriangle}
                 trend={{
-                  value: "-4.5%",
+                  value: "Ação necessária",
                   positive: false,
-                  icon: ChevronDown,
+                  icon: TimerOff,
                 }}
               />
               <StatsCard
-                title="Horas Registradas"
-                value={`${dashboardStats?.totalHours.toFixed(1)}h` || "0h"}
+                title="Precisão das Estimativas"
+                value={formatPercentage(dashboardStats?.averageAccuracy || 0)}
                 icon={Clock}
                 trend={{
                   value: "+8.2%",
@@ -117,9 +140,9 @@ const Index = () => {
                 }}
               />
               <StatsCard
-                title="Faturamento Total"
-                value={formatCurrency(dashboardStats?.totalCost || 0)}
-                icon={DollarSign}
+                title="Projetos Concluídos"
+                value={dashboardStats?.completedProjects.toString() || "0"}
+                icon={CheckCircle2}
                 trend={{
                   value: "+15.3%",
                   positive: true,
@@ -128,30 +151,32 @@ const Index = () => {
               />
             </div>
 
+            {/* Gráficos de progresso e alocação */}
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Distribuição de Horas por Projeto</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ProjectsPieChart />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Alocação por Funcionário</CardTitle>
+                  <CardTitle>Alocação por Desenvolvedor</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <AllocationChart />
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Status dos Projetos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ProjectsPieChart />
+                </CardContent>
+              </Card>
             </div>
 
+            {/* Gráficos de Burndown e Burnup */}
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Burndown Chart</CardTitle>
+                  <CardTitle>Burndown - Progresso vs. Planejado</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <BurndownChart />
@@ -160,7 +185,7 @@ const Index = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Burnup Chart</CardTitle>
+                  <CardTitle>Burnup - Entregas Acumuladas</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <BurnupChart />
@@ -168,9 +193,10 @@ const Index = () => {
               </Card>
             </div>
 
+            {/* Fluxo cumulativo e timeline */}
             <Card>
               <CardHeader>
-                <CardTitle>Fluxo Cumulativo</CardTitle>
+                <CardTitle>Fluxo de Trabalho</CardTitle>
               </CardHeader>
               <CardContent>
                 <CumulativeFlowChart />
@@ -180,7 +206,7 @@ const Index = () => {
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Cronograma do Dia</CardTitle>
+                  <CardTitle>Timeline de Projetos</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <GanttChart tasks={[]} />
@@ -188,7 +214,7 @@ const Index = () => {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>Tarefas do Dia</CardTitle>
+                  <CardTitle>Tarefas Críticas</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <DailyTasks tasks={[]} />

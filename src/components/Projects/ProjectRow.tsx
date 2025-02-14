@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, DollarSign, Pencil, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { Project } from "@/types/project";
+import { Progress } from "@/components/ui/progress";
 
 interface ProjectRowProps {
   project: Project;
@@ -22,6 +23,16 @@ export function ProjectRow({
   onDelete,
   formatCurrency,
 }: ProjectRowProps) {
+  const getStatusColor = (status: string) => {
+    const colors = {
+      draft: "bg-gray-100 text-gray-700 border-gray-200",
+      in_progress: "bg-blue-50 text-blue-700 border-blue-200",
+      completed: "bg-green-50 text-green-700 border-green-200",
+      cancelled: "bg-red-50 text-red-700 border-red-200",
+    };
+    return colors[status as keyof typeof colors] || colors.draft;
+  };
+
   return (
     <TableRow 
       className="cursor-pointer hover:bg-muted/50"
@@ -34,11 +45,18 @@ export function ProjectRow({
           ) : (
             <ChevronRight className="h-4 w-4" />
           )}
-          {project.name}
+          <div className="space-y-1">
+            <div>{project.name}</div>
+            {project.delay_days > 0 && (
+              <div className="text-sm text-red-600">
+                Atrasado: {project.delay_days} dias
+              </div>
+            )}
+          </div>
         </div>
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+        <Badge variant="outline" className={getStatusColor(project.status)}>
           {project.status}
         </Badge>
       </TableCell>
@@ -46,6 +64,14 @@ export function ProjectRow({
         <Badge variant="outline">
           {project.type}
         </Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="space-y-2">
+          <div className="text-sm text-muted-foreground">
+            {Math.round(project.progress * 100)}%
+          </div>
+          <Progress value={project.progress * 100} className="h-2" />
+        </div>
       </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">
