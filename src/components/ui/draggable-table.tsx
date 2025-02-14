@@ -1,11 +1,5 @@
 
 import React from "react";
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-  type ColumnDef,
-} from "@tanstack/react-table";
 import { DragOverlay, useDraggable } from "@dnd-kit/core";
 import {
   Table,
@@ -15,12 +9,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Column } from "@/types/project";
 
 interface DraggableTableProps<T> {
   data: T[];
-  columns: ColumnDef<T>[];
+  columns: Column[];
   onReorder?: (startIndex: number, endIndex: number) => void;
-  onColumnsChange?: (columns: ColumnDef<T>[]) => void;
+  onColumnsChange?: (columns: Column[]) => void;
   itemsPerPage?: number;
   setItemsPerPage?: (value: number) => void;
   formatValue?: (value: any, columnId: string, rowData?: T) => React.ReactNode;
@@ -35,12 +30,6 @@ export function DraggableTable<T>({
   setItemsPerPage,
   formatValue,
 }: DraggableTableProps<T>) {
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
   const { setNodeRef } = useDraggable({
     id: "table",
   });
@@ -51,28 +40,26 @@ export function DraggableTable<T>({
     }
   };
 
+  const visibleColumns = columns.filter(col => col.visible);
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            {table.getFlatHeaders().map((header) => (
-              <TableHead key={header.id}>
-                {flexRender(
-                  header.column.columnDef.header,
-                  header.getContext()
-                )}
+            {visibleColumns.map((column) => (
+              <TableHead key={column.id}>
+                {column.label}
               </TableHead>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody ref={setNodeRef}>
-          {table.getRowModel().rows.map((row) => (
+          {data.map((row: any, rowIndex) => (
             <TableRow
               key={row.id}
-              data-state={row.getIsSelected() && "selected"}
               draggable
-              onDragStart={() => handleReorder(row.index, row.index)}
+              onDragStart={() => handleReorder(rowIndex, rowIndex)}
               onDragOver={(e) => {
                 e.preventDefault();
                 const target = e.target as HTMLElement;
@@ -81,19 +68,15 @@ export function DraggableTable<T>({
                   const targetIndex = Array.from(
                     targetRow.parentElement?.children || []
                   ).indexOf(targetRow);
-                  handleReorder(row.index, targetIndex);
+                  handleReorder(rowIndex, targetIndex);
                 }
               }}
             >
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
+              {visibleColumns.map((column) => (
+                <TableCell key={column.id}>
                   {formatValue 
-                    ? formatValue(
-                        cell.getValue(),
-                        cell.column.id,
-                        row.original
-                      )
-                    : flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    ? formatValue(row[column.id], column.id, row)
+                    : row[column.id]?.toString() || ''}
                 </TableCell>
               ))}
             </TableRow>
