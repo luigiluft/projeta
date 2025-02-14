@@ -102,6 +102,11 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     const projectData: Project = {
       id: editingId || crypto.randomUUID(),
       name: values.name,
+      epic: values.name, // Usando o nome como epic por padrão
+      type: "default",
+      created_at: new Date().toISOString(),
+      total_hours: tasks.reduce((sum, task) => sum + (task.hours || 0), 0),
+      tasks: tasks,
       attributes: Object.fromEntries(
         attributes.map((attr) => [
           attr.id,

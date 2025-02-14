@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   Table,
@@ -12,34 +13,25 @@ import { Pencil, Trash2 } from "lucide-react";
 
 interface TeamMember {
   id: string;
-  name: string;
-  email: string;
   role: string;
+  hourlyRate: number;
+  name: string;
 }
 
 export function TeamList() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(400);
+  const [itemsPerPage] = useState(10);
 
   const teamMembers: TeamMember[] = [
-    {
-      id: "1",
-      name: "João Silva",
-      email: "joao.silva@example.com",
-      role: "Desenvolvedor",
-    },
-    {
-      id: "2",
-      name: "Maria Oliveira",
-      email: "maria.oliveira@example.com",
-      role: "Designer",
-    },
-    {
-      id: "3",
-      name: "Carlos Pereira",
-      email: "carlos.pereira@example.com",
-      role: "Gerente de Projeto",
-    },
+    { id: "1", role: "BK", hourlyRate: 78.75, name: "Leandro Pires" },
+    { id: "2", role: "DS", hourlyRate: 48.13, name: "João Carlos" },
+    { id: "3", role: "PMO", hourlyRate: 87.50, name: "Lucca Luft" },
+    { id: "4", role: "PO", hourlyRate: 35.00, name: "Thiago Lobo" },
+    { id: "5", role: "CS", hourlyRate: 48.13, name: "Yan Antunes" },
+    { id: "6", role: "FRJ", hourlyRate: 70.00, name: "Rodolfo Rodrigues" },
+    { id: "7", role: "FRP", hourlyRate: 119.00, name: "Davi Lobo" },
+    { id: "8", role: "BKT", hourlyRate: 131.04, name: "Roger Takemiya" },
+    { id: "9", role: "ATS", hourlyRate: 65.85, name: "Ariane Souza" },
   ];
 
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -48,6 +40,13 @@ export function TeamList() {
 
   const totalPages = Math.ceil(teamMembers.length / itemsPerPage);
 
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+  };
+
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="p-6">
@@ -55,18 +54,18 @@ export function TeamList() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Cargo</TableHead>
+                <TableHead>HH</TableHead>
+                <TableHead>Squad</TableHead>
                 <TableHead className="w-[100px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedTeamMembers.map((member) => (
                 <TableRow key={member.id}>
+                  <TableCell className="font-medium">{member.role}</TableCell>
+                  <TableCell>{formatCurrency(member.hourlyRate)}</TableCell>
                   <TableCell>{member.name}</TableCell>
-                  <TableCell>{member.email}</TableCell>
-                  <TableCell>{member.role}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button variant="ghost" size="icon">
@@ -79,16 +78,6 @@ export function TeamList() {
                   </TableCell>
                 </TableRow>
               ))}
-              {teamMembers.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="text-center py-4 text-gray-500"
-                  >
-                    Nenhum membro da equipe cadastrado
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         </div>
