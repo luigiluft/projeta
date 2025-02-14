@@ -6,6 +6,7 @@ export interface Project {
   type: string;
   created_at: string;
   total_hours: number;
+  total_cost: number;
   due_date?: string;
   tasks: Task[];
   attributes: {

@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -25,6 +24,18 @@ interface ProjectFormProps {
   onSubmit: (values: Project) => void;
   initialValues?: Project;
 }
+
+const teamRates = {
+  "BK": 78.75,
+  "DS": 48.13,
+  "PMO": 87.50,
+  "PO": 35.00,
+  "CS": 48.13,
+  "FRJ": 70.00,
+  "FRP": 119.00,
+  "BKT": 131.04,
+  "ATS": 65.85,
+};
 
 export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: ProjectFormProps) {
   const { tasks, taskColumns, handleColumnsChange } = useProjectTasks([
@@ -99,13 +110,19 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
   });
 
   const handleSubmit = (values: FormValues) => {
+    const taskCosts = tasks.reduce((acc, task) => {
+      const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
+      return acc + (hourlyRate * (task.hours || 0));
+    }, 0);
+
     const projectData: Project = {
       id: editingId || crypto.randomUUID(),
       name: values.name,
-      epic: values.name, // Usando o nome como epic por padrão
+      epic: values.name,
       type: "default",
       created_at: new Date().toISOString(),
       total_hours: tasks.reduce((sum, task) => sum + (task.hours || 0), 0),
+      total_cost: taskCosts,
       tasks: tasks,
       attributes: Object.fromEntries(
         attributes.map((attr) => [
