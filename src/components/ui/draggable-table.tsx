@@ -20,16 +20,20 @@ interface DraggableTableProps<T> {
   data: T[];
   columns: ColumnDef<T>[];
   onReorder?: (startIndex: number, endIndex: number) => void;
+  onColumnsChange?: (columns: ColumnDef<T>[]) => void;
   itemsPerPage?: number;
   setItemsPerPage?: (value: number) => void;
+  formatValue?: (value: any, columnId: string, rowData?: T) => React.ReactNode;
 }
 
 export function DraggableTable<T>({
   data,
   columns,
   onReorder,
+  onColumnsChange,
   itemsPerPage,
   setItemsPerPage,
+  formatValue,
 }: DraggableTableProps<T>) {
   const table = useReactTable({
     data,
@@ -83,7 +87,13 @@ export function DraggableTable<T>({
             >
               {row.getVisibleCells().map((cell) => (
                 <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  {formatValue 
+                    ? formatValue(
+                        cell.getValue(),
+                        cell.column.id,
+                        row.original
+                      )
+                    : flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </TableCell>
               ))}
             </TableRow>

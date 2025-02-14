@@ -34,7 +34,6 @@ export function JiraImporter({ onImport }: { onImport: (projects: Project[]) => 
 
         const projects: Project[] = [];
         
-        // Skip header row, process each line
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
           
@@ -49,6 +48,7 @@ export function JiraImporter({ onImport }: { onImport: (projects: Project[]) => 
               created_at: new Date().toISOString(),
               total_hours: 0,
               tasks: [],
+              attributes: {}, // Adicionado o campo attributes obrigatório
             };
 
             projects.push(project);
