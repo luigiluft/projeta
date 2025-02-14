@@ -11,13 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Project } from "@/types/project";
 
 interface JiraImporterProps {
-  projects: any[];
-  setProjects: Function;
+  onImport: (importedProjects: Project[]) => void;
 }
 
-export function JiraImporter({ projects, setProjects }: JiraImporterProps) {
+export function JiraImporter({ onImport }: JiraImporterProps) {
   const [selectedProject, setSelectedProject] = useState<string | undefined>(
     undefined
   );
@@ -29,7 +29,7 @@ export function JiraImporter({ projects, setProjects }: JiraImporterProps) {
   const handleSync = async () => {
     if (!selectedProject) return;
 
-    const mockProject = {
+    const mockProject: Project = {
       id: crypto.randomUUID(),
       name: selectedProject,
       epic: selectedProject,
@@ -41,7 +41,7 @@ export function JiraImporter({ projects, setProjects }: JiraImporterProps) {
       attributes: {},
     };
 
-    setProjects([...projects, mockProject]);
+    onImport([mockProject]);
     toast.success("Projeto sincronizado com sucesso!");
   };
 
