@@ -36,6 +36,7 @@ export function JiraImporter({ onImport }: JiraImporterProps) {
       epic: selectedProject,
       type: "default",
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       total_hours: 0,
       total_cost: 0,
       base_cost: 0,
@@ -46,6 +47,17 @@ export function JiraImporter({ onImport }: JiraImporterProps) {
       progress: 0,
       delay_days: 0,
       attributes: {},
+      // Add missing required properties
+      favorite: false,
+      priority: 0,
+      tags: [],
+      archived: false,
+      archived_at: undefined,
+      deleted: false,
+      deleted_at: undefined,
+      version: 1,
+      metadata: {},
+      settings: {},
     };
 
     onImport([mockProject]);

@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -132,6 +131,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       epic: values.name,
       type: "default",
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       total_hours: tasks.reduce((sum, task) => sum + (task.hours || 0), 0),
       total_cost: totalCost,
       base_cost: taskCosts,
@@ -149,6 +149,16 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
             : String(values[attr.id]) || ""
         ])
       ),
+      favorite: false,
+      priority: 0,
+      tags: [],
+      archived: false,
+      archived_at: undefined,
+      deleted: false,
+      deleted_at: undefined,
+      version: 1,
+      metadata: {},
+      settings: {},
     };
     
     onSubmit(projectData);
