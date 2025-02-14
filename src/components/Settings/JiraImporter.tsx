@@ -22,7 +22,7 @@ export function JiraImporter({ onImport }: JiraImporterProps) {
     undefined
   );
 
-  const handleProjectNameChange = (e: any) => {
+  const handleProjectNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedProject(e.target.value);
   };
 
@@ -47,7 +47,6 @@ export function JiraImporter({ onImport }: JiraImporterProps) {
       progress: 0,
       delay_days: 0,
       attributes: {},
-      // Add missing required properties
       favorite: false,
       priority: 0,
       tags: [],
