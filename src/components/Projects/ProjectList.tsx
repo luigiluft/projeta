@@ -50,7 +50,7 @@ export function ProjectList({ projects }: ProjectListProps) {
                 <p className="line-clamp-2">
                   Escopo: {project.tasks.map(t => t.task_name).join(", ")}
                 </p>
-                {project.tasks.some(t => t.is_new || t.is_modified) && (
+                {project.tasks.some(t => t.is_new === true || t.is_modified === true) && (
                   <div className="text-amber-600 font-medium">
                     • Alterações recentes no escopo
                   </div>

@@ -16,6 +16,8 @@ export interface Task {
   id: string;
   order_number: number;
   is_active: boolean;
+  is_new?: boolean;
+  is_modified?: boolean;
   phase: string;
   epic: string;
   story: string;
