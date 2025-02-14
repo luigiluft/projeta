@@ -1,45 +1,76 @@
 
 import { useState } from "react";
-import { Task, View } from "@/types/project";
+import { Project, Task, View } from "@/types/project";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useProjects = () => {
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
   const [savedViews, setSavedViews] = useState<View[]>([]);
 
   const { data: projects = [] } = useQuery({
-    queryKey: ['tasks'],
+    queryKey: ['projects'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tasks')
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
         .select('*')
-        .order('order_number', { ascending: true });
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        toast.error('Erro ao carregar tarefas');
-        throw error;
+      if (projectsError) {
+        toast.error('Erro ao carregar projetos');
+        throw projectsError;
       }
 
-      return data as Task[];
+      const projectsWithTasks = await Promise.all(
+        projectsData.map(async (project) => {
+          const { data: tasks, error: tasksError } = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('epic', project.epic);
+
+          if (tasksError) {
+            toast.error(`Erro ao carregar tarefas do projeto ${project.epic}`);
+            throw tasksError;
+          }
+
+          const totalHours = tasks.reduce((sum: number, task: Task) => sum + (task.hours || 0), 0);
+
+          return {
+            ...project,
+            tasks,
+            total_hours: totalHours,
+          };
+        })
+      );
+
+      return projectsWithTasks as Project[];
     },
   });
 
-  const handleSubmit = (values: Task) => {
-    // Implementar lógica de submissão mais tarde
-    toast.success("Projeto salvo com sucesso!");
-  };
+  const handleSubmit = async (selectedTasks: Task[]) => {
+    if (selectedTasks.length === 0) {
+      toast.error("Selecione pelo menos uma tarefa");
+      return;
+    }
 
-  const handleEdit = (project: Task) => {
-    setEditingId(project.id);
-    setShowForm(true);
-  };
+    const epic = selectedTasks[0].epic;
+    const totalHours = selectedTasks.reduce((sum, task) => sum + (task.hours || 0), 0);
 
-  const handleDelete = (id: string) => {
-    // Implementar lógica de deleção mais tarde
-    toast.success("Projeto removido com sucesso!");
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .insert([{
+          epic,
+          total_hours: totalHours,
+        }]);
+
+      if (error) throw error;
+
+      toast.success("Projeto criado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao criar projeto");
+      console.error(error);
+    }
   };
 
   const handleSaveView = () => {
@@ -58,13 +89,8 @@ export const useProjects = () => {
 
   return {
     projects,
-    editingId,
-    showForm,
     savedViews,
     handleSubmit,
-    handleEdit,
-    handleDelete,
     handleSaveView,
-    setShowForm,
   };
 };

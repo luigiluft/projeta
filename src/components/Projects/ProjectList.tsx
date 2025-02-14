@@ -1,84 +1,54 @@
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
-import { Task } from "@/types/project";
-
-interface Column {
-  id: string;
-  label: string;
-  visible: boolean;
-}
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Project } from "@/types/project";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface ProjectListProps {
-  projects: Task[];
-  columns: Column[];
-  onEdit: (project: Task) => void;
-  onDelete: (id: string) => void;
+  projects: Project[];
 }
 
-export function ProjectList({ projects, columns, onEdit, onDelete }: ProjectListProps) {
-  const visibleColumns = columns.filter(col => col.visible);
-
+export function ProjectList({ projects }: ProjectListProps) {
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-6">
-        <div className="relative overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {visibleColumns.map((column) => (
-                  <TableHead key={column.id}>{column.label}</TableHead>
-                ))}
-                <TableHead className="w-[100px]">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {projects.map((project) => (
-                <TableRow key={project.id}>
-                  {visibleColumns.map((column) => (
-                    <TableCell key={`${project.id}-${column.id}`}>
-                      {project[column.id as keyof Task]}
-                    </TableCell>
-                  ))}
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEdit(project)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(project.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {projects.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={visibleColumns.length + 1} className="text-center py-4 text-gray-500">
-                    Nenhum projeto cadastrado
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {projects.map((project) => (
+        <Card key={project.id} className="hover:shadow-lg transition-all">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-primary">
+              {project.epic}
+            </CardTitle>
+            <CardDescription>
+              Criado {formatDistanceToNow(new Date(project.created_at), { 
+                addSuffix: true,
+                locale: ptBR 
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-500">Total de Tarefas:</span>
+                <span className="font-medium">{project.tasks.length}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-500">Total de Horas:</span>
+                <span className="font-medium">{project.total_hours}h</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+      {projects.length === 0 && (
+        <div className="col-span-full text-center py-8 text-gray-500">
+          Nenhum projeto cadastrado
         </div>
-      </div>
+      )}
     </div>
   );
 }
