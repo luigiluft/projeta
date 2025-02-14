@@ -25,9 +25,11 @@ export default function Projects() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between bg-white/50 backdrop-blur-xl rounded-2xl p-6 border border-gray-100">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold">Gestão de Projetos</h1>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+            Gestão de Projetos
+          </h1>
           <p className="text-sm text-gray-500">
             Gerencie seus projetos e visualize o total de horas por epic
           </p>
@@ -49,10 +51,8 @@ export default function Projects() {
         </Dialog>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="p-6">
-          <ProjectList projects={projects} />
-        </div>
+      <div className="space-y-6">
+        <ProjectList projects={projects} />
       </div>
     </div>
   );

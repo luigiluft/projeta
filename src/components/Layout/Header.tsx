@@ -1,7 +1,9 @@
-import { Bell, LogOut } from "lucide-react";
+
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
+import { NotificationsMenu } from "./NotificationsMenu";
 
 export function Header() {
   const { signOut } = useAuth();
@@ -24,13 +26,11 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-white p-4">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b bg-white/80 backdrop-blur-xl p-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-primary">Project Management</h1>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-          </Button>
+          <NotificationsMenu />
           <Button variant="ghost" size="icon" onClick={handleSignOut}>
             <LogOut className="h-5 w-5" />
           </Button>
