@@ -69,7 +69,9 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
 
   const handleEditProject = (projectId: string) => {
     navigate(`/projects/edit/${projectId}`);
-    toast.info("Redirecionando para edição do projeto");
+    toast.success("Editando projeto...", {
+      description: "Você será redirecionado para a página de edição"
+    });
   };
 
   const handleDeleteClick = (projectId: string) => {
@@ -161,7 +163,8 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEditProject(project.id)}
-                        className="hover:bg-primary/10 hover:text-primary"
+                        className="hover:bg-primary/10 hover:text-primary transition-colors duration-200"
+                        title="Editar projeto"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
