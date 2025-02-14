@@ -27,6 +27,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ProjectStats } from "@/types/project";
 
 const timeRanges = [
   { value: "7d", label: "Últimos 7 dias" },
@@ -38,7 +39,7 @@ const timeRanges = [
 const Index = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("7d");
 
-  const { data: dashboardStats } = useQuery({
+  const { data: dashboardStats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
       const { data: stats, error } = await supabase
@@ -56,8 +57,12 @@ const Index = () => {
       
       const totalHours = stats?.reduce((sum, s) => sum + (s.total_hours || 0), 0) || 0;
       const totalCost = stats?.reduce((sum, s) => sum + (s.total_cost || 0), 0) || 0;
-      const averageProgress = stats?.reduce((sum, s) => sum + (s.progress || 0), 0) / totalProjects || 0;
-      const averageAccuracy = stats?.reduce((sum, s) => sum + (s.hours_accuracy || 0), 0) / totalProjects || 0;
+      const averageProgress = totalProjects > 0 
+        ? (stats?.reduce((sum, s) => sum + (s.progress || 0), 0) || 0) / totalProjects 
+        : 0;
+      const averageAccuracy = totalProjects > 0
+        ? (stats?.reduce((sum, s) => sum + (s.hours_accuracy || 0), 0) || 0) / totalProjects
+        : 0;
 
       return {
         totalProjects,
@@ -83,6 +88,14 @@ const Index = () => {
   const formatPercentage = (value: number) => {
     return `${(value * 100).toFixed(1)}%`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex w-full">
@@ -111,7 +124,7 @@ const Index = () => {
             <div className="grid gap-4 md:grid-cols-4">
               <StatsCard
                 title="Projetos em Andamento"
-                value={dashboardStats?.inProgressProjects.toString() || "0"}
+                value={(dashboardStats?.inProgressProjects || 0).toString()}
                 icon={Target}
                 trend={{
                   value: formatPercentage(dashboardStats?.averageProgress || 0),
@@ -121,7 +134,7 @@ const Index = () => {
               />
               <StatsCard
                 title="Projetos Atrasados"
-                value={dashboardStats?.delayedProjects.toString() || "0"}
+                value={(dashboardStats?.delayedProjects || 0).toString()}
                 icon={AlertTriangle}
                 trend={{
                   value: "Ação necessária",
@@ -141,7 +154,7 @@ const Index = () => {
               />
               <StatsCard
                 title="Projetos Concluídos"
-                value={dashboardStats?.completedProjects.toString() || "0"}
+                value={(dashboardStats?.completedProjects || 0).toString()}
                 icon={CheckCircle2}
                 trend={{
                   value: "+15.3%",
