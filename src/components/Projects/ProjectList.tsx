@@ -124,8 +124,8 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
                   </TableCell>
                   <TableCell className="font-medium">
                     <div className="space-y-1">
-                      <div>{project.epic}</div>
-                      <div className="text-sm text-muted-foreground">{project.project_name}</div>
+                      <div>{project.project_name}</div>
+                      <div className="text-sm text-muted-foreground">{project.epic}</div>
                     </div>
                   </TableCell>
                   <TableCell>
