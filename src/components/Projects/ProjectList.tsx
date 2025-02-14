@@ -16,7 +16,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ProjectListProps {
   projects: Project[];
@@ -26,6 +35,7 @@ interface ProjectListProps {
 export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
   const navigate = useNavigate();
   const [expandedProjects, setExpandedProjects] = useState<string[]>([]);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   const toggleProject = (projectId: string) => {
     setExpandedProjects(prev => 
@@ -57,30 +67,19 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
     return format(estimatedDate, "dd/MM/yyyy", { locale: ptBR });
   };
 
-  const handleEditTask = (taskId: string) => {
-    navigate(`/task-management/edit/${taskId}`);
-    toast.info("Redirecionando para edição da tarefa");
-  };
-
-  const handleEditProject = async (projectId: string) => {
+  const handleEditProject = (projectId: string) => {
     navigate(`/projects/edit/${projectId}`);
     toast.info("Redirecionando para edição do projeto");
   };
 
-  const handleDeleteProject = async (projectId: string) => {
-    if (window.confirm("Tem certeza que deseja excluir este projeto?")) {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId);
+  const handleDeleteClick = (projectId: string) => {
+    setProjectToDelete(projectId);
+  };
 
-      if (error) {
-        toast.error("Erro ao excluir projeto");
-        return;
-      }
-
-      onDeleteProject(projectId);
-      toast.success("Projeto excluído com sucesso");
+  const confirmDelete = () => {
+    if (projectToDelete) {
+      onDeleteProject(projectToDelete);
+      setProjectToDelete(null);
     }
   };
 
@@ -163,7 +162,7 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeleteProject(project.id)}
+                        onClick={() => handleDeleteClick(project.id)}
                         className="hover:bg-destructive/10 hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -298,6 +297,23 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
           )}
         </TableBody>
       </Table>
+
+      <AlertDialog open={!!projectToDelete} onOpenChange={() => setProjectToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
