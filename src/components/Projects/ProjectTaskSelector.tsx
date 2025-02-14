@@ -131,7 +131,7 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione um epic" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white">
             <SelectGroup>
               <SelectLabel>Epics Disponíveis</SelectLabel>
               {epics.map((epic) => (

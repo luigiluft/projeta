@@ -7,6 +7,9 @@ export interface Project {
   created_at: string;
   total_hours: number;
   tasks: Task[];
+  attributes: {
+    [key: string]: string | number;
+  };
 }
 
 export interface Task {
