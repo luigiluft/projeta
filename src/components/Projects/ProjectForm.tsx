@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -118,6 +119,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     const projectData: Project = {
       id: editingId || crypto.randomUUID(),
       name: values.name,
+      project_name: values.name, // Adicionando project_name
       epic: values.name,
       type: "default",
       created_at: new Date().toISOString(),
