@@ -1,3 +1,4 @@
+
 import {
   Table,
   TableBody,
@@ -8,14 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
-
-interface Project {
-  id: string;
-  name: string;
-  attributes: {
-    [key: string]: string | number;
-  };
-}
+import { Task } from "@/types/project";
 
 interface Column {
   id: string;
@@ -24,9 +18,9 @@ interface Column {
 }
 
 interface ProjectListProps {
-  projects: Project[];
+  projects: Task[];
   columns: Column[];
-  onEdit: (project: Project) => void;
+  onEdit: (project: Task) => void;
   onDelete: (id: string) => void;
 }
 
@@ -36,7 +30,6 @@ export function ProjectList({ projects, columns, onEdit, onDelete }: ProjectList
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Projetos Cadastrados</h2>
         <div className="relative overflow-x-auto">
           <Table>
             <TableHeader>
@@ -52,7 +45,7 @@ export function ProjectList({ projects, columns, onEdit, onDelete }: ProjectList
                 <TableRow key={project.id}>
                   {visibleColumns.map((column) => (
                     <TableCell key={`${project.id}-${column.id}`}>
-                      {column.id === "name" ? project.name : project.attributes[column.id]}
+                      {project[column.id as keyof Task]}
                     </TableCell>
                   ))}
                   <TableCell>

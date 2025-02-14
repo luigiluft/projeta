@@ -1,13 +1,11 @@
+
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
 import { ProjectList } from "@/components/Projects/ProjectList";
-import { PROJECT_ATTRIBUTES } from "@/constants/projectAttributes";
 import { useProjects } from "@/hooks/useProjects";
 import { Column, View } from "@/types/project";
 
 export default function Projects() {
-  const navigate = useNavigate();
   const {
     projects,
     editingId,
@@ -20,12 +18,12 @@ export default function Projects() {
   } = useProjects();
 
   const [columns, setColumns] = useState<Column[]>([
-    { id: "name", label: "Nome", visible: true },
-    ...PROJECT_ATTRIBUTES.map(attr => ({
-      id: attr.id,
-      label: attr.name,
-      visible: true,
-    })),
+    { id: "task_name", label: "Nome da Tarefa", visible: true },
+    { id: "phase", label: "Fase", visible: true },
+    { id: "epic", label: "Epic", visible: true },
+    { id: "story", label: "Story", visible: true },
+    { id: "hours", label: "Horas", visible: true },
+    { id: "owner", label: "Responsável", visible: true },
   ]);
 
   const handleColumnVisibilityChange = (columnId: string) => {
