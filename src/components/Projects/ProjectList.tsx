@@ -160,99 +160,113 @@ export function ProjectList({ projects, onDeleteProject }: ProjectListProps) {
                   <TableRow>
                     <TableCell colSpan={8} className="p-0">
                       <div className="bg-muted/50 px-6 py-4">
-                        <ScrollArea className="h-[300px]">
-                          <div className="space-y-6">
-                            <div>
-                              <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-lg font-semibold text-gray-900">Escopo do Projeto</h4>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4" />
-                                    <span>Total: {formatHours(project.total_hours)}h</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4" />
-                                    <span>Conclusão: {getEstimatedDate(project)}</span>
-                                  </div>
+                        <div className="space-y-6">
+                          <div>
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="text-lg font-semibold text-gray-900">Escopo do Projeto</h4>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4" />
+                                  <span>Total: {formatHours(project.total_hours)}h</span>
                                 </div>
-                              </div>
-                              <div className="grid gap-3">
-                                {project.tasks?.map(task => (
-                                  <div 
-                                    key={task.id} 
-                                    className="flex items-center justify-between bg-background rounded-lg p-4 hover:shadow-md transition-all border border-border/50"
-                                  >
-                                    <div className="flex items-center gap-4">
-                                      <div>
-                                        <div className="font-medium text-gray-900 mb-1">
-                                          {task.task_name}
-                                        </div>
-                                        <div className="text-sm text-muted-foreground">
-                                          {task.story}
-                                        </div>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        {task.is_new && (
-                                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
-                                            Nova
-                                          </Badge>
-                                        )}
-                                        {task.is_modified && (
-                                          <Badge variant="outline" className="bg-amber-50 text-amber-700">
-                                            Modificada
-                                          </Badge>
-                                        )}
-                                        <Badge variant="outline" className="bg-gray-100 text-gray-700">
-                                          Fase: {task.phase}
-                                        </Badge>
-                                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                                          Owner: {task.owner}
-                                        </Badge>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-6">
-                                      <div className="text-sm text-muted-foreground">
-                                        <Clock className="h-4 w-4 inline-block mr-1" />
-                                        {task.hours}h
-                                      </div>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleEditTask(task.id)}
-                                        className="hover:bg-primary/10 hover:text-primary hover:border-primary"
-                                      >
-                                        <Pencil className="h-4 w-4 mr-2" />
-                                        Editar Tarefa
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ))}
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>Conclusão: {getEstimatedDate(project)}</span>
+                                </div>
                               </div>
                             </div>
 
-                            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                              <h5 className="font-medium text-blue-800 mb-2">Informações Adicionais</h5>
-                              <div className="grid grid-cols-2 gap-4 text-sm text-blue-700">
-                                <div>
-                                  <strong>Data de Criação:</strong>{' '}
-                                  {format(new Date(project.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                            <div className="grid grid-cols-1 gap-3 max-h-[700px] overflow-y-auto">
+                              {project.tasks?.map(task => (
+                                <div 
+                                  key={task.id} 
+                                  className="flex items-start justify-between bg-background rounded-lg p-4 hover:shadow-md transition-all border border-border/50"
+                                >
+                                  <div className="flex-1 space-y-3">
+                                    <div>
+                                      <div className="font-medium text-gray-900 text-lg mb-1">
+                                        {task.task_name}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {task.story}
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-3 gap-4 text-sm">
+                                      <div>
+                                        <span className="font-medium text-gray-700">Epic:</span>{' '}
+                                        <span className="text-muted-foreground">{task.epic}</span>
+                                      </div>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Fase:</span>{' '}
+                                        <span className="text-muted-foreground">{task.phase}</span>
+                                      </div>
+                                      <div>
+                                        <span className="font-medium text-gray-700">Horas:</span>{' '}
+                                        <span className="text-muted-foreground">{task.hours}h</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                      {task.is_new && (
+                                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
+                                          Nova
+                                        </Badge>
+                                      )}
+                                      {task.is_modified && (
+                                        <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                                          Modificada
+                                        </Badge>
+                                      )}
+                                      <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                        Owner: {task.owner}
+                                      </Badge>
+                                      {task.dependency && (
+                                        <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                          Dependência: {task.dependency}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="ml-4">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEditTask(task.id)}
+                                      className="hover:bg-primary/10 hover:text-primary hover:border-primary"
+                                    >
+                                      <Pencil className="h-4 w-4 mr-2" />
+                                      Editar Tarefa
+                                    </Button>
+                                  </div>
                                 </div>
-                                <div>
-                                  <strong>Média de Horas por Tarefa:</strong>{' '}
-                                  {project.tasks?.length ? (project.total_hours / project.tasks.length).toFixed(1) : 0}h
-                                </div>
-                                <div>
-                                  <strong>Total de Tarefas:</strong>{' '}
-                                  {project.tasks?.length || 0}
-                                </div>
-                                <div>
-                                  <strong>Custo Médio por Hora:</strong>{' '}
-                                  {project.total_hours ? formatCurrency(project.total_cost / project.total_hours) : 'R$ 0,00'}
-                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                            <h5 className="font-medium text-blue-800 mb-2">Informações Adicionais</h5>
+                            <div className="grid grid-cols-2 gap-4 text-sm text-blue-700">
+                              <div>
+                                <strong>Data de Criação:</strong>{' '}
+                                {format(new Date(project.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                              </div>
+                              <div>
+                                <strong>Média de Horas por Tarefa:</strong>{' '}
+                                {project.tasks?.length ? (project.total_hours / project.tasks.length).toFixed(1) : 0}h
+                              </div>
+                              <div>
+                                <strong>Total de Tarefas:</strong>{' '}
+                                {project.tasks?.length || 0}
+                              </div>
+                              <div>
+                                <strong>Custo Médio por Hora:</strong>{' '}
+                                {project.total_hours ? formatCurrency(project.total_cost / project.total_hours) : 'R$ 0,00'}
                               </div>
                             </div>
                           </div>
-                        </ScrollArea>
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>
