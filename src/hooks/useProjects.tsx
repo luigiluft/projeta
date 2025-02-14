@@ -103,6 +103,8 @@ export const useProjects = () => {
           total_cost: costs.totalCost,
           status: 'draft',
           currency: 'BRL',
+          progress: 0,
+          delay_days: 0,
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         }]);
 

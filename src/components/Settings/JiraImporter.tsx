@@ -43,6 +43,8 @@ export function JiraImporter({ onImport }: JiraImporterProps) {
       status: 'draft',
       currency: 'BRL',
       tasks: [],
+      progress: 0,
+      delay_days: 0,
       attributes: {},
     };
 

@@ -44,7 +44,24 @@ const Index = () => {
     queryFn: async () => {
       const { data: stats, error } = await supabase
         .from('project_stats')
-        .select('*');
+        .select(`
+          project_id,
+          project_name,
+          status,
+          total_tasks,
+          total_hours,
+          total_cost,
+          base_cost,
+          profit_margin,
+          due_date,
+          created_at,
+          progress,
+          delay_days,
+          completed_tasks,
+          in_progress_tasks,
+          pending_tasks,
+          hours_accuracy
+        `);
 
       if (error) {
         throw new Error('Erro ao carregar estatísticas');

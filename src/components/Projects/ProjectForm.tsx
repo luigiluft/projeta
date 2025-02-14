@@ -49,9 +49,11 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       story: "Briefing",
       task_name: "Reunião do briefing técnico",
       hours: 0,
+      actual_hours: 0,
       owner: "PO",
       dependency: null,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      status: "pending"
     },
     {
       id: "2",
@@ -62,9 +64,11 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       story: "Briefing",
       task_name: "Documentação do briefing técnico",
       hours: 0,
+      actual_hours: 0,
       owner: "PO",
       dependency: null,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      status: "pending"
     },
     {
       id: "3",
@@ -75,9 +79,11 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       story: "Briefing",
       task_name: "Definição do catálogo de produtos, categorias e atributos",
       hours: 1,
+      actual_hours: 0,
       owner: "PO",
       dependency: null,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      status: "pending"
     }
   ]);
 
@@ -133,6 +139,8 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       status: 'draft',
       currency: 'BRL',
       tasks: tasks,
+      progress: 0,
+      delay_days: 0,
       attributes: Object.fromEntries(
         attributes.map((attr) => [
           attr.id,
