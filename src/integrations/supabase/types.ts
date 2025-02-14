@@ -150,20 +150,26 @@ export type Database = {
       projects: {
         Row: {
           created_at: string
+          epic: string | null
           id: string
           name: string
+          total_hours: number | null
           type: string
         }
         Insert: {
           created_at?: string
+          epic?: string | null
           id?: string
           name: string
+          total_hours?: number | null
           type: string
         }
         Update: {
           created_at?: string
+          epic?: string | null
           id?: string
           name?: string
+          total_hours?: number | null
           type?: string
         }
         Relationships: []

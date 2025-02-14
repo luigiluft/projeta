@@ -15,7 +15,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Check, Clock } from "lucide-react";
+import { Check, Clock, Edit2, Plus, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
 
 interface ProjectTaskSelectorProps {
   onTasksSelected: (tasks: Task[]) => void;
@@ -23,9 +39,14 @@ interface ProjectTaskSelectorProps {
 
 export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProps) {
   const [selectedEpic, setSelectedEpic] = useState<string>("");
+  const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
   const [totalHours, setTotalHours] = useState(0);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [showTaskSelector, setShowTaskSelector] = useState(false);
 
-  const { data: tasks = [] } = useQuery({
+  const form = useForm<Task>();
+
+  const { data: allTasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -42,14 +63,53 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
     },
   });
 
-  const epics = [...new Set(tasks.map(task => task.epic))];
-  const filteredTasks = tasks.filter(task => task.epic === selectedEpic);
+  const epics = [...new Set(allTasks.map(task => task.epic))];
+  
+  useEffect(() => {
+    if (selectedEpic) {
+      const epicTasks = allTasks.filter(task => task.epic === selectedEpic);
+      setSelectedTasks(epicTasks);
+    }
+  }, [selectedEpic, allTasks]);
 
   useEffect(() => {
-    const total = filteredTasks.reduce((sum, task) => sum + (task.hours || 0), 0);
+    const total = selectedTasks.reduce((sum, task) => sum + (task.hours || 0), 0);
     setTotalHours(total);
-    onTasksSelected(filteredTasks);
-  }, [selectedEpic, filteredTasks, onTasksSelected]);
+    onTasksSelected(selectedTasks);
+  }, [selectedTasks, onTasksSelected]);
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    form.reset(task);
+  };
+
+  const handleSaveTask = (values: Task) => {
+    const updatedTasks = selectedTasks.map(task => 
+      task.id === values.id ? { ...task, ...values } : task
+    );
+    setSelectedTasks(updatedTasks);
+    setEditingTask(null);
+    toast.success("Tarefa atualizada com sucesso!");
+  };
+
+  const handleAddExistingTask = (task: Task) => {
+    if (!selectedTasks.find(t => t.id === task.id)) {
+      setSelectedTasks([...selectedTasks, task]);
+      setShowTaskSelector(false);
+      toast.success("Tarefa adicionada ao projeto!");
+    } else {
+      toast.error("Esta tarefa já está no projeto!");
+    }
+  };
+
+  const handleRemoveTask = (taskId: string) => {
+    setSelectedTasks(selectedTasks.filter(task => task.id !== taskId));
+    toast.success("Tarefa removida do projeto!");
+  };
+
+  const availableTasks = allTasks.filter(task => 
+    !selectedTasks.find(t => t.id === task.id)
+  );
 
   return (
     <div className="space-y-6">
@@ -85,31 +145,157 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
       </div>
 
       {selectedEpic && (
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome da Tarefa</TableHead>
-                <TableHead>Fase</TableHead>
-                <TableHead>Story</TableHead>
-                <TableHead className="text-right">Horas</TableHead>
-                <TableHead>Responsável</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTasks.map((task) => (
-                <TableRow key={task.id}>
-                  <TableCell className="font-medium">{task.task_name}</TableCell>
-                  <TableCell>{task.phase}</TableCell>
-                  <TableCell>{task.story}</TableCell>
-                  <TableCell className="text-right">{task.hours}h</TableCell>
-                  <TableCell>{task.owner}</TableCell>
+        <>
+          <div className="flex justify-between items-center">
+            <h4 className="text-sm font-medium text-gray-500">Tarefas do Projeto</h4>
+            <Dialog open={showTaskSelector} onOpenChange={setShowTaskSelector}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Tarefa
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Adicionar Tarefa Existente</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome da Tarefa</TableHead>
+                        <TableHead>Epic</TableHead>
+                        <TableHead>Horas</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {availableTasks.map((task) => (
+                        <TableRow key={task.id}>
+                          <TableCell>{task.task_name}</TableCell>
+                          <TableCell>{task.epic}</TableCell>
+                          <TableCell>{task.hours}h</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleAddExistingTask(task)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <div className="rounded-lg border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome da Tarefa</TableHead>
+                  <TableHead>Fase</TableHead>
+                  <TableHead>Story</TableHead>
+                  <TableHead className="text-right">Horas</TableHead>
+                  <TableHead>Responsável</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {selectedTasks.map((task) => (
+                  <TableRow key={task.id}>
+                    <TableCell className="font-medium">{task.task_name}</TableCell>
+                    <TableCell>{task.phase}</TableCell>
+                    <TableCell>{task.story}</TableCell>
+                    <TableCell className="text-right">{task.hours}h</TableCell>
+                    <TableCell>{task.owner}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditTask(task)}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveTask(task.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
+
+      <Dialog open={!!editingTask} onOpenChange={() => setEditingTask(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tarefa</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSaveTask)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="task_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome da Tarefa</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="hours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Horas</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        onChange={e => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="owner"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Responsável</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => setEditingTask(null)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">Salvar Alterações</Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex justify-end gap-3">
         <Button variant="outline">Cancelar</Button>
