@@ -32,12 +32,16 @@ export function JiraImporter({ onImport }: JiraImporterProps) {
     const mockProject: Project = {
       id: crypto.randomUUID(),
       name: selectedProject,
-      project_name: selectedProject, // Adicionando project_name
+      project_name: selectedProject,
       epic: selectedProject,
       type: "default",
       created_at: new Date().toISOString(),
       total_hours: 0,
       total_cost: 0,
+      base_cost: 0,
+      profit_margin: 30.00,
+      status: 'draft',
+      currency: 'BRL',
       tasks: [],
       attributes: {},
     };

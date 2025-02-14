@@ -116,15 +116,22 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       return acc + (hourlyRate * (task.hours || 0));
     }, 0);
 
+    const profitMargin = 30.00; // 30%
+    const totalCost = taskCosts * (1 + profitMargin / 100);
+
     const projectData: Project = {
       id: editingId || crypto.randomUUID(),
       name: values.name,
-      project_name: values.name, // Adicionando project_name
+      project_name: values.name,
       epic: values.name,
       type: "default",
       created_at: new Date().toISOString(),
       total_hours: tasks.reduce((sum, task) => sum + (task.hours || 0), 0),
-      total_cost: taskCosts,
+      total_cost: totalCost,
+      base_cost: taskCosts,
+      profit_margin: profitMargin,
+      status: 'draft',
+      currency: 'BRL',
       tasks: tasks,
       attributes: Object.fromEntries(
         attributes.map((attr) => [
