@@ -227,6 +227,7 @@ export type Database = {
           order_number: number | null
           owner: string | null
           phase: string | null
+          project_id: string | null
           start_date: string | null
           status: string | null
           story: string | null
@@ -245,6 +246,7 @@ export type Database = {
           order_number?: number | null
           owner?: string | null
           phase?: string | null
+          project_id?: string | null
           start_date?: string | null
           status?: string | null
           story?: string | null
@@ -263,12 +265,28 @@ export type Database = {
           order_number?: number | null
           owner?: string | null
           phase?: string | null
+          project_id?: string | null
           start_date?: string | null
           status?: string | null
           story?: string | null
           task_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_stats"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

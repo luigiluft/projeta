@@ -1,3 +1,4 @@
+
 export interface Project {
   id: string;
   name: string;
@@ -43,6 +44,7 @@ export interface Task {
   end_date?: string;
   actual_hours: number;
   estimated_completion_date?: string;
+  project_id?: string;
 }
 
 export interface Column {
