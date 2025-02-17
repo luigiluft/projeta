@@ -12,12 +12,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PricingTab } from "./PricingTab";
 import { ScopeTab } from "./ScopeTab";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
 import { Attribute, Project } from "@/types/project";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ProjectFormProps {
   editingId: string | null;
@@ -37,6 +45,14 @@ const teamRates = {
   "BKT": 131.04,
   "ATS": 65.85,
 };
+
+const projectTypes = [
+  { value: "default", label: "Padrão" },
+  { value: "consulting", label: "Consultoria" },
+  { value: "development", label: "Desenvolvimento" },
+  { value: "design", label: "Design" },
+  { value: "maintenance", label: "Manutenção" },
+];
 
 export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: ProjectFormProps) {
   const { tasks, taskColumns, handleColumnsChange } = useProjectTasks([
@@ -91,6 +107,10 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     name: z.string().min(2, {
       message: "O nome deve ter pelo menos 2 caracteres.",
     }),
+    description: z.string().optional(),
+    type: z.string(),
+    client_name: z.string().optional(),
+    due_date: z.string().optional(),
     ...Object.fromEntries(
       attributes.map((attr) => [
         attr.id,
@@ -107,6 +127,10 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialValues?.name || "",
+      description: initialValues?.description || "",
+      type: initialValues?.type || "default",
+      client_name: initialValues?.client_name || "",
+      due_date: initialValues?.due_date || "",
       ...Object.fromEntries(
         attributes.map((attr) => [
           attr.id,
@@ -130,7 +154,10 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       name: values.name,
       project_name: values.name,
       epic: values.name,
-      type: "default",
+      type: values.type,
+      description: values.description,
+      client_name: values.client_name,
+      due_date: values.due_date,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       total_hours: tasks.reduce((sum, task) => sum + (task.hours || 0), 0),
@@ -169,14 +196,87 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome do Projeto</FormLabel>
+                <FormControl>
+                  <Input placeholder="Digite o nome do projeto" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo do Projeto</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {projectTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="client_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cliente</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nome do cliente" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="due_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data de Entrega</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
-          name="name"
+          name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome do Projeto</FormLabel>
+              <FormLabel>Descrição</FormLabel>
               <FormControl>
-                <Input placeholder="Digite o nome do projeto" {...field} />
+                <Textarea 
+                  placeholder="Descreva o projeto" 
+                  className="min-h-[100px]" 
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -204,7 +304,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
 
         <div className="flex justify-end">
           <Button type="submit">
-            Salvar
+            {editingId ? "Atualizar" : "Criar"} Projeto
           </Button>
         </div>
       </form>
