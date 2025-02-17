@@ -70,9 +70,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
 
   const formSchema = createProjectFormSchema(attributes);
 
-  type FormValues = z.infer<typeof formSchema>;
-
-  const form = useForm<FormValues>({
+  const form = useForm<ProjectFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: initialValues?.name || "",
@@ -89,7 +87,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     },
   });
 
-  const handleSubmit = (values: FormValues) => {
+  const handleSubmit = (values: ProjectFormValues) => {
     const taskCosts = tasks.reduce((acc, task) => {
       const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
       return acc + (hourlyRate * (task.hours || 0));
