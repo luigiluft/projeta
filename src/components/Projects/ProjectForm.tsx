@@ -1,31 +1,16 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PricingTab } from "./PricingTab";
 import { ScopeTab } from "./ScopeTab";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
 import { Attribute, Project } from "@/types/project";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ProjectBasicInfo } from "./ProjectBasicInfo";
+import { createProjectFormSchema, ProjectFormValues } from "@/utils/projectFormSchema";
+import { DEFAULT_PROFIT_MARGIN, teamRates } from "@/constants/projectConstants";
 
 interface ProjectFormProps {
   editingId: string | null;
@@ -33,26 +18,6 @@ interface ProjectFormProps {
   onSubmit: (values: Project) => void;
   initialValues?: Project;
 }
-
-const teamRates = {
-  "BK": 78.75,
-  "DS": 48.13,
-  "PMO": 87.50,
-  "PO": 35.00,
-  "CS": 48.13,
-  "FRJ": 70.00,
-  "FRP": 119.00,
-  "BKT": 131.04,
-  "ATS": 65.85,
-};
-
-const projectTypes = [
-  { value: "default", label: "Padrão" },
-  { value: "consulting", label: "Consultoria" },
-  { value: "development", label: "Desenvolvimento" },
-  { value: "design", label: "Design" },
-  { value: "maintenance", label: "Manutenção" },
-];
 
 export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: ProjectFormProps) {
   const { tasks, taskColumns, handleColumnsChange } = useProjectTasks([
@@ -103,23 +68,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     }
   ]);
 
-  const formSchema = z.object({
-    name: z.string().min(2, {
-      message: "O nome deve ter pelo menos 2 caracteres.",
-    }),
-    description: z.string().optional(),
-    type: z.string(),
-    client_name: z.string().optional(),
-    due_date: z.string().optional(),
-    ...Object.fromEntries(
-      attributes.map((attr) => [
-        attr.id,
-        attr.type === "number"
-          ? z.number().optional()
-          : z.string().optional(),
-      ])
-    ),
-  });
+  const formSchema = createProjectFormSchema(attributes);
 
   type FormValues = z.infer<typeof formSchema>;
 
@@ -146,8 +95,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       return acc + (hourlyRate * (task.hours || 0));
     }, 0);
 
-    const profitMargin = 30.00; // 30%
-    const totalCost = taskCosts * (1 + profitMargin / 100);
+    const totalCost = taskCosts * (1 + DEFAULT_PROFIT_MARGIN / 100);
 
     const projectData: Project = {
       id: editingId || crypto.randomUUID(),
@@ -163,7 +111,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       total_hours: tasks.reduce((sum, task) => sum + (task.hours || 0), 0),
       total_cost: totalCost,
       base_cost: taskCosts,
-      profit_margin: profitMargin,
+      profit_margin: DEFAULT_PROFIT_MARGIN,
       status: 'draft',
       currency: 'BRL',
       tasks: tasks,
@@ -196,92 +144,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome do Projeto</FormLabel>
-                <FormControl>
-                  <Input placeholder="Digite o nome do projeto" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo do Projeto</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {projectTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="client_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cliente</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nome do cliente" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="due_date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data de Entrega</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descrição</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Descreva o projeto" 
-                  className="min-h-[100px]" 
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <ProjectBasicInfo form={form} />
 
         <Tabs defaultValue="pricing" className="w-full">
           <TabsList className="w-full">
