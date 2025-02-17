@@ -10,7 +10,7 @@ import { MainMetrics } from "@/components/Dashboard/MainMetrics";
 import { StatusCards } from "@/components/Dashboard/StatusCards";
 import { ChartSection } from "@/components/Dashboard/ChartSection";
 
-const Index = () => {
+const Dashboard = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("7d");
 
   const { data: dashboardStats, isLoading } = useQuery({
@@ -62,8 +62,8 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex w-full items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -80,16 +80,16 @@ const Index = () => {
               setSelectedTimeRange={setSelectedTimeRange}
             />
             
-            <MainMetrics dashboardStats={dashboardStats} />
-            
-            <StatusCards dashboardStats={dashboardStats} />
-            
-            <ChartSection />
+            <div className="grid gap-6">
+              <MainMetrics dashboardStats={dashboardStats} />
+              <StatusCards dashboardStats={dashboardStats} />
+              <ChartSection />
+            </div>
           </div>
         </main>
       </div>
     </div>
   );
-};
+}
 
-export default Index;
+export default Dashboard;
