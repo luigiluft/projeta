@@ -1,6 +1,3 @@
-
-import { AppSidebar } from "@/components/Layout/AppSidebar";
-import { Header } from "@/components/Layout/Header";
 import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,28 +90,20 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex h-screen w-full bg-gray-50/80">
-      <AppSidebar />
-      <div className="flex-1 flex flex-col">
-        <Header />
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-[1200px] w-full mx-auto px-4 lg:px-6">
-            <DashboardHeader 
-              selectedTimeRange={selectedTimeRange}
-              setSelectedTimeRange={setSelectedTimeRange}
-            />
-            
-            <div className="mt-4 grid gap-4 pb-6">
-              <MainMetrics dashboardStats={dashboardStats} />
-              <StatusCards dashboardStats={dashboardStats} />
-              <div className="grid gap-4 lg:grid-cols-2">
-                <PerformanceMetrics dashboardStats={dashboardStats} />
-                <TeamMetrics dashboardStats={dashboardStats} />
-              </div>
-              <ChartSection projectStats={dashboardStats.projectStats} />
-            </div>
-          </div>
-        </main>
+    <div className="max-w-[1200px] w-full mx-auto px-4 lg:px-6 py-6">
+      <DashboardHeader 
+        selectedTimeRange={selectedTimeRange}
+        setSelectedTimeRange={setSelectedTimeRange}
+      />
+      
+      <div className="mt-4 grid gap-4 pb-6">
+        <MainMetrics dashboardStats={dashboardStats} />
+        <StatusCards dashboardStats={dashboardStats} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <PerformanceMetrics dashboardStats={dashboardStats} />
+          <TeamMetrics dashboardStats={dashboardStats} />
+        </div>
+        <ChartSection projectStats={dashboardStats.projectStats} />
       </div>
     </div>
   );
