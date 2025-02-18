@@ -1,3 +1,4 @@
+
 import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,7 @@ import { StatusCards } from "@/components/Dashboard/StatusCards";
 import { ChartSection } from "@/components/Dashboard/ChartSection";
 import { PerformanceMetrics } from "@/components/Dashboard/PerformanceMetrics";
 import { TeamMetrics } from "@/components/Dashboard/TeamMetrics";
+import { DailyAllocationChart } from "@/components/Dashboard/DailyAllocationChart";
 
 const Dashboard = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("7d");
@@ -103,6 +105,7 @@ const Dashboard = () => {
           <PerformanceMetrics dashboardStats={dashboardStats} />
           <TeamMetrics dashboardStats={dashboardStats} />
         </div>
+        <DailyAllocationChart />
         <ChartSection projectStats={dashboardStats.projectStats} />
       </div>
     </div>
