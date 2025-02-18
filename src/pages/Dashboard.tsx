@@ -9,12 +9,14 @@ import { DashboardHeader } from "@/components/Dashboard/DashboardHeader";
 import { MainMetrics } from "@/components/Dashboard/MainMetrics";
 import { StatusCards } from "@/components/Dashboard/StatusCards";
 import { ChartSection } from "@/components/Dashboard/ChartSection";
+import { PerformanceMetrics } from "@/components/Dashboard/PerformanceMetrics";
+import { TeamMetrics } from "@/components/Dashboard/TeamMetrics";
 
 const Dashboard = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("7d");
 
   const { data: dashboardStats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats'],
+    queryKey: ['dashboard-stats', selectedTimeRange],
     queryFn: async () => {
       const { data: stats, error } = await supabase
         .from('project_stats')
@@ -24,37 +26,70 @@ const Dashboard = () => {
         throw new Error('Erro ao carregar estatísticas');
       }
 
-      const totalProjects = stats?.length || 0;
-      const activeProjects = stats?.filter(s => s.status === 'in_progress').length || 0;
-      const delayedProjects = stats?.filter(s => s.delay_days > 0).length || 0;
-      const completedProjects = stats?.filter(s => s.status === 'completed').length || 0;
-      
+      // Financial Metrics
       const totalRevenue = stats?.reduce((sum, s) => sum + (s.total_cost || 0), 0) || 0;
       const totalCost = stats?.reduce((sum, s) => sum + (s.base_cost || 0), 0) || 0;
       const totalProfit = totalRevenue - totalCost;
       const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+      const averageProjectValue = totalRevenue / (stats?.length || 1);
 
+      // Project Performance
+      const totalProjects = stats?.length || 0;
+      const activeProjects = stats?.filter(s => s.status === 'in_progress').length || 0;
+      const delayedProjects = stats?.filter(s => s.delay_days > 0).length || 0;
+      const completedProjects = stats?.filter(s => s.status === 'completed').length || 0;
+      const projectSuccessRate = (completedProjects / totalProjects) * 100;
+
+      // Time Management
       const totalHours = stats?.reduce((sum, s) => sum + (s.total_hours || 0), 0) || 0;
+      const averageProjectDuration = totalHours / totalProjects;
       const averageAccuracy = totalProjects > 0
         ? (stats?.reduce((sum, s) => sum + (s.hours_accuracy || 0), 0) || 0) / totalProjects
         : 0;
 
+      // Task Management
       const totalTasks = stats?.reduce((sum, s) => sum + (s.total_tasks || 0), 0) || 0;
       const completedTasks = stats?.reduce((sum, s) => sum + (s.completed_tasks || 0), 0) || 0;
+      const inProgressTasks = stats?.reduce((sum, s) => sum + (s.in_progress_tasks || 0), 0) || 0;
+      const pendingTasks = stats?.reduce((sum, s) => sum + (s.pending_tasks || 0), 0) || 0;
       const taskCompletionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
+      // Resource Management
+      const resourceUtilization = (inProgressTasks / (totalTasks || 1)) * 100;
+      const averageDelay = stats?.reduce((sum, s) => sum + (s.delay_days || 0), 0) / totalProjects || 0;
+
       return {
-        totalProjects,
-        activeProjects,
-        delayedProjects,
-        completedProjects,
+        // Financial
         totalRevenue,
         totalCost,
         totalProfit,
         profitMargin,
+        averageProjectValue,
+        
+        // Projects
+        totalProjects,
+        activeProjects,
+        delayedProjects,
+        completedProjects,
+        projectSuccessRate,
+        
+        // Time
         totalHours,
+        averageProjectDuration,
         averageAccuracy,
+        
+        // Tasks
+        totalTasks,
+        completedTasks,
+        inProgressTasks,
+        pendingTasks,
         taskCompletionRate,
+        
+        // Resources
+        resourceUtilization,
+        averageDelay,
+        
+        // Raw data for charts
         projectStats: stats || [],
       };
     },
@@ -83,7 +118,11 @@ const Dashboard = () => {
             <div className="grid gap-6">
               <MainMetrics dashboardStats={dashboardStats} />
               <StatusCards dashboardStats={dashboardStats} />
-              <ChartSection />
+              <div className="grid gap-6 lg:grid-cols-2">
+                <PerformanceMetrics dashboardStats={dashboardStats} />
+                <TeamMetrics dashboardStats={dashboardStats} />
+              </div>
+              <ChartSection projectStats={dashboardStats.projectStats} />
             </div>
           </div>
         </main>
