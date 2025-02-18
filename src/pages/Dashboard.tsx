@@ -93,18 +93,18 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen flex w-full bg-gray-50/80">
+    <div className="flex h-screen w-full bg-gray-50/80">
       <AppSidebar />
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col">
         <Header />
-        <main className="p-4 lg:p-6 min-h-[calc(100vh-73px)]">
-          <div className="max-w-[1600px] mx-auto space-y-4">
+        <main className="flex-1 overflow-auto">
+          <div className="max-w-[1600px] mx-auto p-4 lg:p-6">
             <DashboardHeader 
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
             />
             
-            <div className="grid gap-4">
+            <div className="mt-4 grid gap-4">
               <MainMetrics dashboardStats={dashboardStats} />
               <StatusCards dashboardStats={dashboardStats} />
               <div className="grid gap-4 lg:grid-cols-2">
