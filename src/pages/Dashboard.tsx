@@ -59,37 +59,26 @@ const Dashboard = () => {
       const averageDelay = stats?.reduce((sum, s) => sum + (s.delay_days || 0), 0) / totalProjects || 0;
 
       return {
-        // Financial
         totalRevenue,
         totalCost,
         totalProfit,
         profitMargin,
         averageProjectValue,
-        
-        // Projects
         totalProjects,
         activeProjects,
         delayedProjects,
         completedProjects,
         projectSuccessRate,
-        
-        // Time
         totalHours,
         averageProjectDuration,
         averageAccuracy,
-        
-        // Tasks
         totalTasks,
         completedTasks,
         inProgressTasks,
         pendingTasks,
         taskCompletionRate,
-        
-        // Resources
         resourceUtilization,
         averageDelay,
-        
-        // Raw data for charts
         projectStats: stats || [],
       };
     },
@@ -109,16 +98,16 @@ const Dashboard = () => {
       <div className="flex-1">
         <Header />
         <main className="p-4 lg:p-6 min-h-[calc(100vh-73px)]">
-          <div className="max-w-[1600px] mx-auto space-y-4 lg:space-y-6">
+          <div className="max-w-[1600px] mx-auto space-y-4">
             <DashboardHeader 
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
             />
             
-            <div className="grid gap-6">
+            <div className="grid gap-4">
               <MainMetrics dashboardStats={dashboardStats} />
               <StatusCards dashboardStats={dashboardStats} />
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-2">
                 <PerformanceMetrics dashboardStats={dashboardStats} />
                 <TeamMetrics dashboardStats={dashboardStats} />
               </div>
