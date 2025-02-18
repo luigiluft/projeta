@@ -98,13 +98,13 @@ const Dashboard = () => {
       <div className="flex-1 flex flex-col">
         <Header />
         <main className="flex-1 overflow-auto">
-          <div className="max-w-[1600px] mx-auto p-4 lg:p-6">
+          <div className="max-w-[1200px] w-full mx-auto px-4 lg:px-6">
             <DashboardHeader 
               selectedTimeRange={selectedTimeRange}
               setSelectedTimeRange={setSelectedTimeRange}
             />
             
-            <div className="mt-4 grid gap-4">
+            <div className="mt-4 grid gap-4 pb-6">
               <MainMetrics dashboardStats={dashboardStats} />
               <StatusCards dashboardStats={dashboardStats} />
               <div className="grid gap-4 lg:grid-cols-2">
