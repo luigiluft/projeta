@@ -40,7 +40,11 @@ export function NotificationsMenu() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="relative data-[state=open]:bg-white data-[state=open]:border-gray-200"
+        >
           <Bell className="h-5 w-5" />
           {notifications.some(n => !n.read) && (
             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
