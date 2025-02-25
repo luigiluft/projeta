@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
@@ -5,6 +6,7 @@ import Projects from "./pages/Projects";
 import ProjectAttributes from "./pages/ProjectAttributes";
 import Team from "./pages/Team";
 import TaskManagement from "./pages/TaskManagement";
+import TaskDetails from "./pages/TaskDetails";
 import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
 import Import from "./pages/Import";
@@ -36,6 +38,7 @@ function App() {
               <Route path="/team" element={<Team />} />
               <Route path="/team/new" element={<NewTeamMember />} />
               <Route path="/task-management" element={<TaskManagement />} />
+              <Route path="/task-management/:taskId" element={<TaskDetails />} />
               <Route path="/task-management/new" element={<NewTask />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/settings" element={<Settings />} />
