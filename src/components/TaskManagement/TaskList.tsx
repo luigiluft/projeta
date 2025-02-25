@@ -24,7 +24,19 @@ export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
     }
   };
 
-  const formatValue = (value: any, columnId: string) => {
+  const formatValue = (value: any, columnId: string, rowData?: Task) => {
+    if (columnId === "actions") {
+      return (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(`/task-management/${rowData?.id}`)}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      );
+    }
+
     if (value === null || value === undefined) return "";
     
     if (columnId === "created_at") {
@@ -42,22 +54,13 @@ export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
     return value;
   };
 
-  // Add a new actions column
+  // Adicione a coluna de ações no final
   const columnsWithActions = [
-    ...columns,
+    ...columns.filter(col => col.visible),
     {
       id: "actions",
       label: "Ações",
       visible: true,
-      render: (task: Task) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(`/task-management/${task.id}`)}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-      )
     }
   ];
 

@@ -9,12 +9,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { ClipboardList, Settings, Users, ListTodo, Variable, Calendar, LineChart } from "lucide-react";
+import { ClipboardList, Settings, Users, ListTodo, Variable, Calendar, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 const menuItems = [
-  { title: "Dashboard", icon: LineChart, url: "/dash" },
+  { title: "Dashboard", icon: LayoutDashboard, url: "/dash" },
   { title: "Projetos", icon: ClipboardList, url: "/projects" },
   { title: "Time", icon: Users, url: "/team" },
   { title: "Calendário", icon: Calendar, url: "/calendar" },
