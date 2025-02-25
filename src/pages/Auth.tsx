@@ -85,7 +85,7 @@ export default function Auth() {
 
       if (error) throw error;
 
-      navigate("/");
+      navigate("/dash");
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo de volta!",

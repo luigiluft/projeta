@@ -27,10 +27,10 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
-          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<Auth />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/dash" element={<Dashboard />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/new" element={<NewProject />} />
               <Route path="/project-attributes" element={<ProjectAttributes />} />

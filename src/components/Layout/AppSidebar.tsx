@@ -14,7 +14,7 @@ import { Link, useLocation } from "react-router-dom";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 const menuItems = [
-  { title: "KPI", icon: LineChart, url: "/" },
+  { title: "Dashboard", icon: LineChart, url: "/dash" },
   { title: "Projetos", icon: ClipboardList, url: "/projects" },
   { title: "Time", icon: Users, url: "/team" },
   { title: "Calendário", icon: Calendar, url: "/calendar" },

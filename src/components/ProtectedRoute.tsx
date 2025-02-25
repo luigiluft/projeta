@@ -1,3 +1,4 @@
+
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 
@@ -10,7 +11,7 @@ export default function ProtectedRoute() {
   }
 
   if (!user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   return <Outlet />;
