@@ -2,6 +2,9 @@
 import { DraggableTable } from "@/components/ui/draggable-table";
 import { format } from "date-fns";
 import { Task, Column } from "@/types/project";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface TaskListProps {
   tasks: Task[];
@@ -10,6 +13,8 @@ interface TaskListProps {
 }
 
 export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
+  const navigate = useNavigate();
+
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
     try {
@@ -37,10 +42,29 @@ export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
     return value;
   };
 
+  // Add a new actions column
+  const columnsWithActions = [
+    ...columns,
+    {
+      id: "actions",
+      label: "Ações",
+      visible: true,
+      render: (task: Task) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(`/task-management/${task.id}`)}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      )
+    }
+  ];
+
   return (
     <div className="bg-white rounded-lg shadow">
       <DraggableTable
-        columns={columns}
+        columns={columnsWithActions}
         onColumnsChange={onColumnsChange}
         data={tasks}
         formatValue={formatValue}
