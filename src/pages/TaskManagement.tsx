@@ -21,8 +21,8 @@ export default function TaskManagement() {
   } = useTaskManagement();
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      <div className="flex-none p-6">
+    <div className="h-screen flex flex-col">
+      <div className="sticky top-0 z-10 bg-background p-6 border-b">
         <TaskHeader
           columns={columns}
           savedViews={savedViews}
@@ -35,9 +35,9 @@ export default function TaskManagement() {
         />
       </div>
 
-      <div className="flex-1 overflow-hidden px-6 pb-6">
-        {showForm ? (
-          <div className="h-full overflow-auto rounded-lg bg-white shadow">
+      <div className="flex-1 p-6 overflow-hidden">
+        <div className="h-full bg-white rounded-lg shadow overflow-hidden">
+          {showForm ? (
             <div className="p-6">
               <TaskForm 
                 onSubmit={handleTaskSubmit}
@@ -45,16 +45,14 @@ export default function TaskManagement() {
                 onOpenChange={setShowForm}
               />
             </div>
-          </div>
-        ) : (
-          <div className="h-full overflow-auto rounded-lg bg-white shadow">
+          ) : (
             <TaskList 
               tasks={tasks} 
               columns={columns}
               onColumnsChange={handleColumnsChange}
             />
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

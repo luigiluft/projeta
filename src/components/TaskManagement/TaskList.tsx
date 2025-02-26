@@ -64,13 +64,15 @@ export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
   ];
 
   return (
-    <div className="overflow-x-auto">
-      <DraggableTable
-        columns={columnsWithActions}
-        onColumnsChange={onColumnsChange}
-        data={tasks}
-        formatValue={formatValue}
-      />
+    <div className="overflow-x-auto h-full">
+      <div className="min-w-full">
+        <DraggableTable
+          columns={columnsWithActions}
+          onColumnsChange={onColumnsChange}
+          data={tasks}
+          formatValue={formatValue}
+        />
+      </div>
     </div>
   );
 }
