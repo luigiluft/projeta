@@ -359,7 +359,7 @@ export default function TaskDetails() {
                               {selectedTask ? (
                                 <div className="flex items-center gap-2">
                                   <span>{selectedTask.task_name}</span>
-                                  <Badge variant={selectedTask.status === 'completed' ? 'success' : 'secondary'}>
+                                  <Badge variant={selectedTask.status === 'completed' ? 'default' : 'secondary'}>
                                     {selectedTask.status}
                                   </Badge>
                                 </div>
@@ -386,7 +386,7 @@ export default function TaskDetails() {
                                     className="flex items-center justify-between"
                                   >
                                     <span>{task.task_name}</span>
-                                    <Badge variant={task.status === 'completed' ? 'success' : 'secondary'}>
+                                    <Badge variant={task.status === 'completed' ? 'default' : 'secondary'}>
                                       {task.status}
                                     </Badge>
                                   </CommandItem>
