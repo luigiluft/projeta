@@ -13,6 +13,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormDescription,
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Task } from "@/types/project";
@@ -29,6 +30,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 export default function TaskDetails() {
   const { taskId } = useParams();
@@ -42,7 +44,7 @@ export default function TaskDetails() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')
-        .select('*')
+        .select('*, dependency_task:tasks!tasks_dependency_fkey(id, task_name, status)')
         .eq('id', taskId)
         .single();
 
@@ -52,12 +54,13 @@ export default function TaskDetails() {
   });
 
   const { data: availableTasks = [], isLoading: isLoadingTasks } = useQuery({
-    queryKey: ['available-tasks', search],
-    enabled: open,
+    queryKey: ['available-tasks', search, task?.project_id],
+    enabled: open && !!task?.project_id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')
-        .select('id, task_name')
+        .select('id, task_name, status')
+        .eq('project_id', task?.project_id)
         .neq('id', taskId)
         .ilike('task_name', `%${search}%`);
 
@@ -147,6 +150,10 @@ export default function TaskDetails() {
   }
 
   const onSubmit = (values: any) => {
+    if (values.dependency === taskId) {
+      toast.error("Uma tarefa não pode depender dela mesma");
+      return;
+    }
     updateTaskMutation.mutate(values);
   };
 
@@ -332,6 +339,10 @@ export default function TaskDetails() {
                   name="dependency"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel>Tarefa Dependente</FormLabel>
+                      <FormDescription>
+                        Esta tarefa só poderá ser iniciada após a conclusão da tarefa selecionada
+                      </FormDescription>
                       <FormControl>
                         <Popover 
                           open={open} 
@@ -345,7 +356,14 @@ export default function TaskDetails() {
                               aria-expanded={open}
                               className="w-full justify-between"
                             >
-                              {selectedTask ? selectedTask.task_name : "Selecione uma tarefa dependente..."}
+                              {selectedTask ? (
+                                <div className="flex items-center gap-2">
+                                  <span>{selectedTask.task_name}</span>
+                                  <Badge variant={selectedTask.status === 'completed' ? 'success' : 'secondary'}>
+                                    {selectedTask.status}
+                                  </Badge>
+                                </div>
+                              ) : "Selecione uma tarefa dependente..."}
                               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -361,13 +379,16 @@ export default function TaskDetails() {
                                 {availableTasks.map((task) => (
                                   <CommandItem
                                     key={task.id}
-                                    value={task.id}
                                     onSelect={() => {
                                       field.onChange(task.id);
                                       setOpen(false);
                                     }}
+                                    className="flex items-center justify-between"
                                   >
-                                    {task.task_name}
+                                    <span>{task.task_name}</span>
+                                    <Badge variant={task.status === 'completed' ? 'success' : 'secondary'}>
+                                      {task.status}
+                                    </Badge>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
