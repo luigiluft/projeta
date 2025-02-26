@@ -35,13 +35,18 @@ export default function TaskDetails() {
   const { data: taskWithProject } = useQuery({
     queryKey: ['task-with-project', id],
     queryFn: async () => {
+      console.log('Fetching task project ID for task:', id);
       const { data, error } = await supabase
         .from('tasks')
         .select('project_id')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching task project ID:', error);
+        throw error;
+      }
+      console.log('Task project data:', data);
       return data;
     },
     enabled: Boolean(id)
@@ -51,12 +56,15 @@ export default function TaskDetails() {
   const { data: projectAttributes } = useQuery({
     queryKey: ['project-attributes', taskWithProject?.project_id],
     queryFn: async () => {
-      if (!taskWithProject?.project_id) return {};
+      if (!taskWithProject?.project_id) {
+        console.log('No project ID available yet');
+        return {};
+      }
 
       console.log('Fetching attributes for project:', taskWithProject.project_id);
       const { data, error } = await supabase
         .from('project_attributes')
-        .select('*')
+        .select('name, value')
         .eq('project_id', taskWithProject.project_id);
 
       if (error) {
@@ -64,13 +72,18 @@ export default function TaskDetails() {
         throw error;
       }
 
-      console.log('Project attributes:', data);
+      console.log('Raw project attributes:', data);
 
       // Converter os atributos em um objeto
-      return data.reduce((acc: Record<string, any>, attr) => {
-        acc[attr.name] = attr.value;
+      const formattedAttributes = data?.reduce((acc: Record<string, any>, attr) => {
+        // Tentar converter para número se possível
+        const value = !isNaN(Number(attr.value)) ? Number(attr.value) : attr.value;
+        acc[attr.name] = value;
         return acc;
       }, {});
+
+      console.log('Formatted project attributes:', formattedAttributes);
+      return formattedAttributes || {};
     },
     enabled: Boolean(taskWithProject?.project_id)
   });
@@ -256,7 +269,7 @@ export default function TaskDetails() {
         <BasicInfoForm 
           task={task} 
           onSubmit={(values) => updateTaskMutation.mutate(values)}
-          projectAttributes={projectAttributes}
+          projectAttributes={projectAttributes || {}}
         />
         <DependenciesList 
           dependencies={dependencies}
