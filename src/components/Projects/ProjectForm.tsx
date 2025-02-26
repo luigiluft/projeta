@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -81,7 +82,13 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
   const handleSubmit = (values: ProjectFormValues) => {
     const taskCosts = tasks.reduce((acc, task) => {
       const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
-      return acc + (hourlyRate * (task.hours || 0));
+      const hours = task.hours_formula ? parseFloat(task.hours_formula) : 0;
+      return acc + (hourlyRate * hours);
+    }, 0);
+
+    const totalHours = tasks.reduce((sum, task) => {
+      const hours = task.hours_formula ? parseFloat(task.hours_formula) : 0;
+      return sum + hours;
     }, 0);
 
     const totalCost = taskCosts * (1 + DEFAULT_PROFIT_MARGIN / 100);
@@ -97,7 +104,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       due_date: values.due_date,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      total_hours: tasks.reduce((sum, task) => sum + (task.hours || 0), 0),
+      total_hours: totalHours,
       total_cost: totalCost,
       base_cost: taskCosts,
       profit_margin: DEFAULT_PROFIT_MARGIN,
