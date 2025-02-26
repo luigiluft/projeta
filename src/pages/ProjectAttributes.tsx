@@ -51,7 +51,9 @@ export default function ProjectAttributes() {
           .update({
             name: values.name,
             value: values.value,
-            unit: values.unit
+            unit: values.unit,
+            description: values.description,
+            default_value: values.default_value
           })
           .eq('id', editingId);
 
