@@ -66,25 +66,28 @@ export type Database = {
       project_attributes: {
         Row: {
           created_at: string
+          default_value: string | null
+          description: string | null
           id: string
           name: string
-          project_id: string
           unit: string | null
           value: string
         }
         Insert: {
           created_at?: string
+          default_value?: string | null
+          description?: string | null
           id?: string
           name: string
-          project_id: string
           unit?: string | null
           value: string
         }
         Update: {
           created_at?: string
+          default_value?: string | null
+          description?: string | null
           id?: string
           name?: string
-          project_id?: string
           unit?: string | null
           value?: string
         }

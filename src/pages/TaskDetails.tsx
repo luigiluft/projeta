@@ -39,12 +39,7 @@ export default function TaskDetails() {
 
       const { data, error } = await supabase
         .from('tasks')
-        .select(`
-          *,
-          project:project_id (
-            id
-          )
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -64,18 +59,12 @@ export default function TaskDetails() {
   });
 
   const { data: projectAttributes } = useQuery({
-    queryKey: ['project-attributes', task?.project_id],
+    queryKey: ['project-attributes'],
     queryFn: async () => {
-      if (!task?.project_id) {
-        console.log('No project ID available for task:', id);
-        return {};
-      }
-
-      console.log('Fetching attributes for project:', task.project_id);
+      console.log('Fetching global project attributes');
       const { data, error } = await supabase
         .from('project_attributes')
-        .select('name, value')
-        .eq('project_id', task.project_id);
+        .select('name, value, unit, description, default_value');
 
       if (error) {
         console.error('Error fetching project attributes:', error);
@@ -94,8 +83,7 @@ export default function TaskDetails() {
 
       console.log('Formatted project attributes:', formattedAttributes);
       return formattedAttributes || {};
-    },
-    enabled: Boolean(task?.project_id)
+    }
   });
 
   const { data: dependencies = [], isLoading: isLoadingDeps, error: depsError } = useQuery({
@@ -142,10 +130,7 @@ export default function TaskDetails() {
 
       const { error } = await supabase
         .from('tasks')
-        .update({
-          ...values,
-          project_id: task?.project_id // Manter o project_id existente
-        })
+        .update(values)
         .eq('id', id);
 
       if (error) throw error;
