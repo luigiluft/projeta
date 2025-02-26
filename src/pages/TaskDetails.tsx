@@ -1,4 +1,3 @@
-
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +34,7 @@ export default function TaskDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const { data: task, isLoading } = useQuery({
     queryKey: ['task', taskId],
@@ -51,12 +51,13 @@ export default function TaskDetails() {
   });
 
   const { data: availableTasks } = useQuery({
-    queryKey: ['available-tasks'],
+    queryKey: ['available-tasks', search],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')
         .select('id, task_name')
-        .neq('id', taskId);
+        .neq('id', taskId)
+        .ilike('task_name', `%${search}%`);
 
       if (error) throw error;
       return data || [];
@@ -125,7 +126,7 @@ export default function TaskDetails() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6 mb-24">
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate('/task-management')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -135,7 +136,7 @@ export default function TaskDetails() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="relative">
+        <form onSubmit={form.handleSubmit(onSubmit)}>
           <Card>
             <CardHeader>
               <FormField
@@ -306,10 +307,15 @@ export default function TaskDetails() {
                         <Popover open={open} onOpenChange={setOpen}>
                           <PopoverTrigger asChild>
                             <Button
+                              type="button"
                               variant="outline"
                               role="combobox"
                               aria-expanded={open}
                               className="w-full justify-between"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setOpen(true);
+                              }}
                             >
                               {field.value
                                 ? availableTasks?.find((task) => task.id === field.value)?.task_name
@@ -319,7 +325,10 @@ export default function TaskDetails() {
                           </PopoverTrigger>
                           <PopoverContent className="w-[400px] p-0">
                             <Command>
-                              <CommandInput placeholder="Pesquisar tarefas..." />
+                              <CommandInput 
+                                placeholder="Pesquisar tarefas..." 
+                                onValueChange={setSearch}
+                              />
                               <CommandEmpty>Nenhuma tarefa encontrada.</CommandEmpty>
                               <CommandGroup>
                                 {availableTasks?.map((task) => (
@@ -345,7 +354,7 @@ export default function TaskDetails() {
             </CardContent>
           </Card>
           
-          <div className="fixed bottom-6 right-6">
+          <div className="mt-6 flex justify-end">
             <Button type="submit" size="lg">
               <Save className="h-4 w-4 mr-2" />
               Salvar
