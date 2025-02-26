@@ -303,107 +303,45 @@ export type Database = {
       tasks: {
         Row: {
           created_at: string
-          end_date: string | null
           epic: string | null
-          estimated_completion_date: string | null
           hours_formula: string | null
           id: string
           is_active: boolean | null
-          order_number: number | null
           owner: string | null
           phase: string | null
-          project_id: string | null
-          start_date: string | null
           status: string | null
           story: string | null
           task_name: string
         }
         Insert: {
           created_at?: string
-          end_date?: string | null
           epic?: string | null
-          estimated_completion_date?: string | null
           hours_formula?: string | null
           id?: string
           is_active?: boolean | null
-          order_number?: number | null
           owner?: string | null
           phase?: string | null
-          project_id?: string | null
-          start_date?: string | null
           status?: string | null
           story?: string | null
           task_name: string
         }
         Update: {
           created_at?: string
-          end_date?: string | null
           epic?: string | null
-          estimated_completion_date?: string | null
           hours_formula?: string | null
           id?: string
           is_active?: boolean | null
-          order_number?: number | null
           owner?: string | null
           phase?: string | null
-          project_id?: string | null
-          start_date?: string | null
           status?: string | null
           story?: string | null
           task_name?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "tasks_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_stats"
-            referencedColumns: ["project_id"]
-          },
-          {
-            foreignKeyName: "tasks_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
-      project_stats: {
-        Row: {
-          base_cost: number | null
-          completed_tasks: number | null
-          created_at: string | null
-          delay_days: number | null
-          due_date: string | null
-          hours_accuracy: number | null
-          in_progress_tasks: number | null
-          pending_tasks: number | null
-          profit_margin: number | null
-          progress: number | null
-          project_id: string | null
-          project_name: string | null
-          status: string | null
-          total_cost: number | null
-          total_hours: number | null
-          total_tasks: number | null
-        }
-        Relationships: []
-      }
-      task_critical_path: {
-        Row: {
-          end_date: string | null
-          id: string | null
-          level: number | null
-          path: string[] | null
-          start_date: string | null
-          status: string | null
-          task_name: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_distinct_approved_roles: {
@@ -411,10 +349,6 @@ export type Database = {
         Returns: {
           role: Database["public"]["Enums"]["app_role"]
         }[]
-      }
-      get_project_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown[]
       }
       is_admin: {
         Args: {

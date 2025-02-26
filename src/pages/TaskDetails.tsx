@@ -124,12 +124,15 @@ export default function TaskDetails() {
       console.log('Updating task with values:', values);
       if (!id) throw new Error('Task ID is required');
 
-      // Remove campos que não fazem parte da tabela tasks
       const { 
         is_new, 
         is_modified,
+        created_at,
+        id: taskId,
         ...taskData 
       } = values;
+
+      console.log('Filtered task data for update:', taskData);
 
       const { error } = await supabase
         .from('tasks')

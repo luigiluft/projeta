@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   name: string;
@@ -58,7 +57,6 @@ export interface Task {
   start_date?: string;
   end_date?: string;
   estimated_completion_date?: string;
-  project_id?: string;
   depends_on?: string | null;
 }
 
@@ -100,4 +98,3 @@ export interface ProjectStats {
   pending_tasks: number;
   hours_accuracy: number;
 }
-
