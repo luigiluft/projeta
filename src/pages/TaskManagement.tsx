@@ -21,22 +21,26 @@ export default function TaskManagement() {
   } = useTaskManagement();
 
   return (
-    <div className="h-screen flex flex-col">
-      <div className="sticky top-0 z-10 bg-background p-6 border-b">
-        <TaskHeader
-          columns={columns}
-          savedViews={savedViews}
-          onColumnVisibilityChange={handleColumnVisibilityChange}
-          onSaveView={handleSaveView}
-          onLoadView={handleLoadView}
-          onImportSpreadsheet={handleImportSpreadsheet}
-          onNewTask={handleNewTask}
-          tasks={tasks}
-        />
+    <div className="h-full flex flex-col">
+      <div className="w-full sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="border-b">
+          <div className="p-4">
+            <TaskHeader
+              columns={columns}
+              savedViews={savedViews}
+              onColumnVisibilityChange={handleColumnVisibilityChange}
+              onSaveView={handleSaveView}
+              onLoadView={handleLoadView}
+              onImportSpreadsheet={handleImportSpreadsheet}
+              onNewTask={handleNewTask}
+              tasks={tasks}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="flex-1 p-6 overflow-hidden">
-        <div className="h-full bg-white rounded-lg shadow overflow-hidden">
+      <div className="flex-1 p-4">
+        <div className="h-full overflow-hidden rounded-lg bg-white shadow-sm">
           {showForm ? (
             <div className="p-6">
               <TaskForm 
@@ -46,11 +50,13 @@ export default function TaskManagement() {
               />
             </div>
           ) : (
-            <TaskList 
-              tasks={tasks} 
-              columns={columns}
-              onColumnsChange={handleColumnsChange}
-            />
+            <div className="h-full">
+              <TaskList 
+                tasks={tasks} 
+                columns={columns}
+                onColumnsChange={handleColumnsChange}
+              />
+            </div>
           )}
         </div>
       </div>
