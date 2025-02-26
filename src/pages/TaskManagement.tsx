@@ -21,7 +21,7 @@ export default function TaskManagement() {
   } = useTaskManagement();
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
       <div className="w-full flex-none bg-background border-b">
         <div className="p-4">
           <TaskHeader
@@ -37,7 +37,7 @@ export default function TaskManagement() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 p-4">
+      <div className="flex-1 overflow-hidden p-4">
         <div className="h-full rounded-lg bg-white shadow-sm">
           {showForm ? (
             <div className="p-6">
