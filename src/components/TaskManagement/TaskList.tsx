@@ -54,7 +54,6 @@ export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
     return value;
   };
 
-  // Adicione a coluna de ações no final
   const columnsWithActions = [
     ...columns.filter(col => col.visible),
     {
@@ -65,7 +64,7 @@ export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="overflow-x-auto">
       <DraggableTable
         columns={columnsWithActions}
         onColumnsChange={onColumnsChange}
