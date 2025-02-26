@@ -27,9 +27,8 @@ export const useProjects = () => {
 
     tasks.forEach(task => {
       if (task.hours_formula) {
-        // Aqui você pode adicionar a lógica para calcular as horas com base na fórmula
-        // Por enquanto vamos manter como 0
-        const calculatedHours = 0;
+        // Por enquanto vamos considerar que a fórmula é o número direto de horas
+        const calculatedHours = parseFloat(task.hours_formula) || 0;
         totalHours += calculatedHours;
         const hourlyRate = ROLE_RATES[task.owner as keyof typeof ROLE_RATES] || 0;
         totalCost += calculatedHours * hourlyRate;
@@ -46,65 +45,6 @@ export const useProjects = () => {
       profitMargin
     };
   };
-
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: async () => {
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('deleted', false)
-        .order('created_at', { ascending: false });
-
-      if (projectsError) {
-        toast.error('Erro ao carregar projetos');
-        throw projectsError;
-      }
-
-      const projectsWithTasks = await Promise.all(
-        projectsData.map(async (project) => {
-          const { data: tasksData, error: tasksError } = await supabase
-            .from('tasks')
-            .select('*')
-            .eq('epic', project.epic);
-
-          if (tasksError) {
-            toast.error(`Erro ao carregar tarefas do projeto ${project.epic}`);
-            throw tasksError;
-          }
-
-          const tasks = tasksData.map(task => ({
-            ...task,
-            actual_hours: task.actual_hours || 0,
-            is_active: task.is_active || true,
-            order_number: task.order_number || 0,
-            status: task.status as "pending" | "in_progress" | "completed",
-          })) as Task[];
-
-          const costs = calculateProjectCosts(tasks);
-
-          return {
-            ...project,
-            tasks,
-            total_hours: costs.totalHours,
-            base_cost: costs.baseCost,
-            total_cost: costs.totalCost,
-            profit_margin: costs.profitMargin,
-            favorite: project.favorite || false,
-            priority: project.priority || 0,
-            tags: project.tags || [],
-            archived: project.archived || false,
-            deleted: project.deleted || false,
-            version: project.version || 1,
-            metadata: project.metadata || {},
-            settings: project.settings || {},
-          } as Project;
-        })
-      );
-
-      return projectsWithTasks;
-    },
-  });
 
   const handleSubmit = async (selectedTasks: Task[]) => {
     if (selectedTasks.length === 0) {
@@ -124,8 +64,8 @@ export const useProjects = () => {
           type: 'default',
           total_hours: costs.totalHours,
           base_cost: costs.baseCost,
-          profit_margin: costs.profitMargin,
           total_cost: costs.totalCost,
+          profit_margin: costs.profitMargin,
           status: 'draft',
           currency: 'BRL',
           progress: 0,
