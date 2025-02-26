@@ -31,41 +31,51 @@ export default function TaskDetails() {
     );
   }
 
-  // Buscar primeiro o project_id da tarefa
-  const { data: taskWithProject } = useQuery({
-    queryKey: ['task-with-project', id],
+  const { data: task, isLoading: isLoadingTask, error: taskError } = useQuery({
+    queryKey: ['task', id],
     queryFn: async () => {
-      console.log('Fetching task project ID for task:', id);
+      console.log('Fetching task with ID:', id);
+      if (!id) throw new Error('Task ID is required');
+
       const { data, error } = await supabase
         .from('tasks')
-        .select('project_id')
+        .select(`
+          *,
+          project:project_id (
+            id
+          )
+        `)
         .eq('id', id)
         .single();
 
       if (error) {
-        console.error('Error fetching task project ID:', error);
+        console.error('Error fetching task:', error);
         throw error;
       }
-      console.log('Task project data:', data);
-      return data;
+      
+      if (!data) {
+        throw new Error('Task not found');
+      }
+
+      console.log('Task data:', data);
+      return data as Task;
     },
-    enabled: Boolean(id)
+    enabled: Boolean(id),
   });
 
-  // Depois buscar os atributos do projeto
   const { data: projectAttributes } = useQuery({
-    queryKey: ['project-attributes', taskWithProject?.project_id],
+    queryKey: ['project-attributes', task?.project_id],
     queryFn: async () => {
-      if (!taskWithProject?.project_id) {
-        console.log('No project ID available yet');
+      if (!task?.project_id) {
+        console.log('No project ID available for task:', id);
         return {};
       }
 
-      console.log('Fetching attributes for project:', taskWithProject.project_id);
+      console.log('Fetching attributes for project:', task.project_id);
       const { data, error } = await supabase
         .from('project_attributes')
         .select('name, value')
-        .eq('project_id', taskWithProject.project_id);
+        .eq('project_id', task.project_id);
 
       if (error) {
         console.error('Error fetching project attributes:', error);
@@ -85,34 +95,7 @@ export default function TaskDetails() {
       console.log('Formatted project attributes:', formattedAttributes);
       return formattedAttributes || {};
     },
-    enabled: Boolean(taskWithProject?.project_id)
-  });
-
-  const { data: task, isLoading: isLoadingTask, error: taskError } = useQuery({
-    queryKey: ['task', id],
-    queryFn: async () => {
-      console.log('Fetching task with ID:', id);
-      if (!id) throw new Error('Task ID is required');
-
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching task:', error);
-        throw error;
-      }
-      
-      if (!data) {
-        throw new Error('Task not found');
-      }
-
-      console.log('Task data:', data);
-      return data as Task;
-    },
-    enabled: Boolean(id),
+    enabled: Boolean(task?.project_id)
   });
 
   const { data: dependencies = [], isLoading: isLoadingDeps, error: depsError } = useQuery({
@@ -159,7 +142,10 @@ export default function TaskDetails() {
 
       const { error } = await supabase
         .from('tasks')
-        .update(values)
+        .update({
+          ...values,
+          project_id: task?.project_id // Manter o project_id existente
+        })
         .eq('id', id);
 
       if (error) throw error;
