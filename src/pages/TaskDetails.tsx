@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,23 +16,40 @@ export default function TaskDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: task, isLoading: isLoadingTask } = useQuery({
+  if (!taskId) {
+    console.error('No task ID provided');
+    return <div className="container mx-auto py-6">ID da tarefa não fornecido</div>;
+  }
+
+  const { data: task, isLoading: isLoadingTask, error: taskError } = useQuery({
     queryKey: ['task', taskId],
     queryFn: async () => {
+      console.log('Fetching task with ID:', taskId);
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .eq('id', taskId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching task:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('Task not found');
+      }
+
+      console.log('Task data:', data);
       return data as Task;
     },
+    enabled: !!taskId,
   });
 
-  const { data: dependencies = [], isLoading: isLoadingDeps } = useQuery({
+  const { data: dependencies = [], isLoading: isLoadingDeps, error: depsError } = useQuery({
     queryKey: ['task-dependencies', taskId],
     queryFn: async () => {
+      console.log('Fetching dependencies for task:', taskId);
       const { data, error } = await supabase
         .from('task_dependencies')
         .select(`
@@ -45,7 +61,12 @@ export default function TaskDetails() {
         `)
         .eq('task_id', taskId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching dependencies:', error);
+        throw error;
+      }
+
+      console.log('Dependencies data:', data);
       
       return data.map(dep => ({
         id: dep.id,
@@ -54,25 +75,31 @@ export default function TaskDetails() {
         created_at: dep.created_at,
         dependency: {
           ...dep.tasks,
-          is_active: dep.tasks.is_active ?? true,
-          order_number: dep.tasks.order_number ?? 0,
-          actual_hours: dep.tasks.actual_hours ?? 0,
+          is_active: dep.tasks?.is_active ?? true,
+          order_number: dep.tasks?.order_number ?? 0,
+          actual_hours: dep.tasks?.actual_hours ?? 0,
         }
       })) as TaskDependency[];
     },
+    enabled: !!taskId,
   });
 
   const form = useForm<Task>();
 
-  // Atualizar o formulário quando os dados da task forem carregados
   useEffect(() => {
     if (task) {
-      form.reset(task);
+      console.log('Resetting form with task:', task);
+      form.reset({
+        ...task,
+        hours: task.hours || 0,
+        actual_hours: task.actual_hours || 0,
+      });
     }
   }, [task, form]);
 
   const updateTaskMutation = useMutation({
     mutationFn: async (values: Task) => {
+      console.log('Updating task with values:', values);
       const { error } = await supabase
         .from('tasks')
         .update(values)
@@ -84,10 +111,15 @@ export default function TaskDetails() {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       toast.success('Tarefa atualizada com sucesso!');
     },
+    onError: (error) => {
+      console.error('Error updating task:', error);
+      toast.error('Erro ao atualizar tarefa');
+    }
   });
 
   const addDependencyMutation = useMutation({
     mutationFn: async (dependsOn: string) => {
+      console.log('Adding dependency:', { taskId, dependsOn });
       const { error } = await supabase
         .from('task_dependencies')
         .insert({
@@ -101,10 +133,15 @@ export default function TaskDetails() {
       queryClient.invalidateQueries({ queryKey: ['task-dependencies', taskId] });
       toast.success('Dependência adicionada com sucesso!');
     },
+    onError: (error) => {
+      console.error('Error adding dependency:', error);
+      toast.error('Erro ao adicionar dependência');
+    }
   });
 
   const removeDependencyMutation = useMutation({
     mutationFn: async (dependencyId: string) => {
+      console.log('Removing dependency:', dependencyId);
       const { error } = await supabase
         .from('task_dependencies')
         .delete()
@@ -116,27 +153,53 @@ export default function TaskDetails() {
       queryClient.invalidateQueries({ queryKey: ['task-dependencies', taskId] });
       toast.success('Dependência removida com sucesso!');
     },
+    onError: (error) => {
+      console.error('Error removing dependency:', error);
+      toast.error('Erro ao remover dependência');
+    }
   });
+
+  if (taskError) {
+    console.error('Task error:', taskError);
+    return <div className="container mx-auto py-6">Erro ao carregar tarefa</div>;
+  }
+
+  if (depsError) {
+    console.error('Dependencies error:', depsError);
+    return <div className="container mx-auto py-6">Erro ao carregar dependências</div>;
+  }
 
   if (isLoadingTask || isLoadingDeps) {
     return <div className="container mx-auto py-6">Carregando...</div>;
   }
 
-  if (!task) return null;
+  if (!task) {
+    return <div className="container mx-auto py-6">Tarefa não encontrada</div>;
+  }
 
   const onSubmit = (values: Task) => {
+    console.log('Form submitted with values:', values);
     updateTaskMutation.mutate(values);
   };
 
   const handleAddDependency = async () => {
-    const { data: tasks } = await supabase
+    console.log('Adding new dependency');
+    const { data: tasks, error } = await supabase
       .from('tasks')
       .select('id, task_name')
       .neq('id', taskId);
 
-    if (!tasks) return;
+    if (error) {
+      console.error('Error fetching tasks for dependency:', error);
+      toast.error('Erro ao buscar tarefas');
+      return;
+    }
 
-    // Aqui você pode implementar um modal ou dropdown para selecionar a tarefa
+    if (!tasks) {
+      toast.error('Nenhuma tarefa encontrada');
+      return;
+    }
+
     const dependsOn = window.prompt('ID da tarefa dependente:');
     if (!dependsOn) return;
 
