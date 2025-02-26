@@ -48,32 +48,39 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     }
 
     try {
-      // Primeiro vamos validar se todos os atributos mencionados existem
-      const attributes = formula.split(/[\s+\-*/()]+/).filter(Boolean);
-      const isNumber = (str: string) => !isNaN(Number(str));
-      
-      // Filtrar números e verificar apenas os nomes de atributos
-      const attributeNames = attributes.filter(attr => !isNumber(attr));
-      const validFormula = attributeNames.every(attr => projectAttributes[attr] !== undefined);
+      // Criar um mapa de atributos que inclui também versões sem espaço dos nomes
+      const attributesMap = new Map();
+      Object.entries(projectAttributes).forEach(([key, value]) => {
+        attributesMap.set(key, value);
+        // Adicionar versão sem espaços do nome do atributo
+        const keyNoSpaces = key.replace(/\s+/g, '');
+        attributesMap.set(keyNoSpaces, value);
+      });
 
-      if (!validFormula) {
-        const invalidAttributes = attributeNames.filter(attr => projectAttributes[attr] === undefined);
-        console.error('Atributos inválidos:', invalidAttributes);
-        toast.error(`Atributos inválidos na fórmula: ${invalidAttributes.join(', ')}`);
-        return null;
-      }
-
-      // Substituir os nomes dos atributos pelos seus valores
+      // Primeiro substituir os atributos originais (com espaços)
       let evaluableFormula = formula;
       Object.entries(projectAttributes).forEach(([key, value]) => {
-        // Usar uma regex que identifica palavras inteiras para evitar substituições parciais
-        const regex = new RegExp(`\\b${key}\\b`, 'g');
+        const regex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
+        evaluableFormula = evaluableFormula.replace(regex, value.toString());
+      });
+
+      // Depois substituir as versões sem espaço
+      Object.entries(projectAttributes).forEach(([key, value]) => {
+        const keyNoSpaces = key.replace(/\s+/g, '');
+        const regex = new RegExp(`\\b${keyNoSpaces}\\b`, 'g');
         evaluableFormula = evaluableFormula.replace(regex, value.toString());
       });
 
       console.log('Fórmula original:', formula);
       console.log('Atributos disponíveis:', projectAttributes);
       console.log('Fórmula para avaliação:', evaluableFormula);
+
+      // Verificar se ainda existem palavras não substituídas (exceto operadores matemáticos)
+      const remainingWords = evaluableFormula.match(/[a-zA-Z_]\w*/g);
+      if (remainingWords) {
+        toast.error(`Atributos inválidos na fórmula: ${remainingWords.join(', ')}`);
+        return null;
+      }
 
       // Avaliar a fórmula
       const result = Function(`return ${evaluableFormula}`)();
