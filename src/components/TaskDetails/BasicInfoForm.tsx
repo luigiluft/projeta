@@ -5,8 +5,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Task } from "@/types/project";
 import { useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Variable } from "lucide-react";
 
 interface BasicInfoFormProps {
   task: Task;
@@ -17,6 +24,7 @@ interface BasicInfoFormProps {
 export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFormProps) {
   const form = useForm<Task>();
   const [previewHours, setPreviewHours] = useState<number | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (task) {
@@ -66,6 +74,25 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     }
   };
 
+  const insertAttributeAtCursor = (attributeName: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = form.getValues("hours_formula") || "";
+    
+    const newValue = currentValue.slice(0, start) + attributeName + currentValue.slice(end);
+    form.setValue("hours_formula", newValue);
+    handleFormulaChange(newValue);
+
+    // Reposiciona o cursor após o atributo inserido
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + attributeName.length, start + attributeName.length);
+    }, 0);
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-lg font-semibold mb-4">Informações Básicas</h2>
@@ -92,23 +119,36 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="hours_formula">Fórmula de Horas</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="hours_formula">Fórmula de Horas</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Variable className="h-4 w-4 mr-2" />
+                  Inserir Variável
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
+                  <DropdownMenuItem
+                    key={key}
+                    onClick={() => insertAttributeAtCursor(key)}
+                    className="flex justify-between"
+                  >
+                    <span>{key}</span>
+                    <span className="text-muted-foreground">{value}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <Textarea 
             id="hours_formula" 
+            ref={textareaRef}
             {...form.register("hours_formula")}
             placeholder="Ex: ordersPerMonth * 0.5 + skuCount * 0.1"
             onChange={(e) => handleFormulaChange(e.target.value)}
           />
-          {projectAttributes && (
-            <div className="text-sm text-gray-500">
-              <p>Atributos disponíveis:</p>
-              <ul className="list-disc pl-4">
-                {Object.keys(projectAttributes).map((attr) => (
-                  <li key={attr}>{attr}: {projectAttributes[attr]}</li>
-                ))}
-              </ul>
-            </div>
-          )}
           {previewHours !== null && (
             <p className="text-sm text-blue-600">
               Horas calculadas: {previewHours}
