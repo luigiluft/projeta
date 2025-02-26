@@ -77,9 +77,9 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
   const insertAttributeAtCursor = (attributeName: string) => {
     const currentFormula = form.getValues("hours_formula") || "";
     
-    // Adiciona um operador de multiplicação se houver um número antes do cursor
+    // Apenas insere a variável, sem adicionar operadores
     const newFormula = currentFormula
-      ? `${currentFormula} + ${attributeName}`
+      ? `${currentFormula} ${attributeName}`
       : attributeName;
     
     form.setValue("hours_formula", newFormula);
