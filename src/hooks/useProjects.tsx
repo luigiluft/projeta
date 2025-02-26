@@ -21,6 +21,58 @@ export const useProjects = () => {
   const [savedViews, setSavedViews] = useState<View[]>([]);
   const queryClient = useQueryClient();
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('deleted', false)
+        .order('created_at', { ascending: false });
+
+      if (projectsError) {
+        toast.error('Erro ao carregar projetos');
+        throw projectsError;
+      }
+
+      const projectsWithTasks = await Promise.all(
+        projectsData.map(async (project) => {
+          const { data: tasksData, error: tasksError } = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('epic', project.epic);
+
+          if (tasksError) {
+            toast.error(`Erro ao carregar tarefas do projeto ${project.epic}`);
+            throw tasksError;
+          }
+
+          const tasks = tasksData.map(task => ({
+            ...task,
+            is_active: task.is_active || true,
+            order_number: task.order_number || 0,
+            status: task.status as "pending" | "in_progress" | "completed",
+          })) as Task[];
+
+          return {
+            ...project,
+            tasks,
+            favorite: project.favorite || false,
+            priority: project.priority || 0,
+            tags: project.tags || [],
+            archived: project.archived || false,
+            deleted: project.deleted || false,
+            version: project.version || 1,
+            metadata: project.metadata || {},
+            settings: project.settings || {},
+          } as Project;
+        })
+      );
+
+      return projectsWithTasks;
+    },
+  });
+
   const calculateProjectCosts = (tasks: Task[]) => {
     let totalHours = 0;
     let totalCost = 0;

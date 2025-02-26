@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,9 +54,6 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
     if (formula && projectAttributes) {
       const result = calculateHours(formula);
       setPreviewHours(result);
-      if (result !== null) {
-        setValue("hours", result);
-      }
     }
   };
 
@@ -63,7 +61,7 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
     if (values.hours_formula) {
       const calculatedHours = calculateHours(values.hours_formula);
       if (calculatedHours !== null) {
-        values.hours = calculatedHours;
+        values.hours_formula = calculatedHours.toString();
       }
     }
     onSubmit({
@@ -124,16 +122,6 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
                 Horas calculadas: {previewHours}
               </p>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="hours">Horas</Label>
-            <Input 
-              id="hours" 
-              type="number" 
-              step="0.01"
-              {...register("hours", { valueAsNumber: true })} 
-            />
           </div>
 
           <div className="space-y-2">

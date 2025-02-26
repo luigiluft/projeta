@@ -20,43 +20,45 @@ const Dashboard = () => {
     queryKey: ['dashboard-stats', selectedTimeRange],
     queryFn: async () => {
       const { data: stats, error } = await supabase
-        .rpc('get_project_stats');
+        .rpc('get_project_stats') as { data: ProjectStats[], error: Error | null };
 
       if (error) {
         throw new Error('Erro ao carregar estatísticas');
       }
 
+      const safeStats = stats || [];
+
       // Financial Metrics
-      const totalRevenue = stats?.reduce((sum, s) => sum + (s.total_cost || 0), 0) || 0;
-      const totalCost = stats?.reduce((sum, s) => sum + (s.base_cost || 0), 0) || 0;
+      const totalRevenue = safeStats.reduce((sum, s) => sum + (s.total_cost || 0), 0);
+      const totalCost = safeStats.reduce((sum, s) => sum + (s.base_cost || 0), 0);
       const totalProfit = totalRevenue - totalCost;
       const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-      const averageProjectValue = totalRevenue / (stats?.length || 1);
+      const averageProjectValue = totalRevenue / (safeStats.length || 1);
 
       // Project Performance
-      const totalProjects = stats?.length || 0;
-      const activeProjects = stats?.filter(s => s.status === 'in_progress').length || 0;
-      const delayedProjects = stats?.filter(s => s.delay_days > 0).length || 0;
-      const completedProjects = stats?.filter(s => s.status === 'completed').length || 0;
+      const totalProjects = safeStats.length;
+      const activeProjects = safeStats.filter(s => s.status === 'in_progress').length;
+      const delayedProjects = safeStats.filter(s => (s.delay_days || 0) > 0).length;
+      const completedProjects = safeStats.filter(s => s.status === 'completed').length;
       const projectSuccessRate = (completedProjects / totalProjects) * 100;
 
       // Time Management
-      const totalHours = stats?.reduce((sum, s) => sum + (s.total_hours || 0), 0) || 0;
+      const totalHours = safeStats.reduce((sum, s) => sum + (s.total_hours || 0), 0);
       const averageProjectDuration = totalHours / totalProjects;
       const averageAccuracy = totalProjects > 0
-        ? (stats?.reduce((sum, s) => sum + (s.hours_accuracy || 0), 0) || 0) / totalProjects
+        ? (safeStats.reduce((sum, s) => sum + (s.hours_accuracy || 0), 0)) / totalProjects
         : 0;
 
       // Task Management
-      const totalTasks = stats?.reduce((sum, s) => sum + (s.total_tasks || 0), 0) || 0;
-      const completedTasks = stats?.reduce((sum, s) => sum + (s.completed_tasks || 0), 0) || 0;
-      const inProgressTasks = stats?.reduce((sum, s) => sum + (s.in_progress_tasks || 0), 0) || 0;
-      const pendingTasks = stats?.reduce((sum, s) => sum + (s.pending_tasks || 0), 0) || 0;
+      const totalTasks = safeStats.reduce((sum, s) => sum + (s.total_tasks || 0), 0);
+      const completedTasks = safeStats.reduce((sum, s) => sum + (s.completed_tasks || 0), 0);
+      const inProgressTasks = safeStats.reduce((sum, s) => sum + (s.in_progress_tasks || 0), 0);
+      const pendingTasks = safeStats.reduce((sum, s) => sum + (s.pending_tasks || 0), 0);
       const taskCompletionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
       // Resource Management
       const resourceUtilization = (inProgressTasks / (totalTasks || 1)) * 100;
-      const averageDelay = stats?.reduce((sum, s) => sum + (s.delay_days || 0), 0) / totalProjects || 0;
+      const averageDelay = safeStats.reduce((sum, s) => sum + (s.delay_days || 0), 0) / totalProjects;
 
       return {
         totalRevenue,
@@ -79,7 +81,7 @@ const Dashboard = () => {
         taskCompletionRate,
         resourceUtilization,
         averageDelay,
-        projectStats: stats as ProjectStats[] || [],
+        projectStats: stats as ProjectStats[],
       };
     },
   });
@@ -108,7 +110,7 @@ const Dashboard = () => {
         </div>
         <DailyTasks />
         <DailyAllocationChart />
-        <ChartSection projectStats={dashboardStats.projectStats} />
+        <ChartSection projectStats={dashboardStats?.projectStats || []} />
       </div>
     </div>
   );
