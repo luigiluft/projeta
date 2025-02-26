@@ -72,8 +72,8 @@ export function TaskForm({ onSubmit, open, onOpenChange }: TaskFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Input id="status" {...register("status")} />
+            <Label htmlFor="dependency">Dependência</Label>
+            <Input id="dependency" {...register("dependency")} />
           </div>
 
           <Button type="submit">Criar Tarefa</Button>

@@ -45,7 +45,7 @@ export const useProjects = () => {
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
-        .eq('deleted', false)
+        .eq('deleted', false) // Only fetch non-deleted projects
         .order('created_at', { ascending: false });
 
       if (projectsError) {
@@ -65,10 +65,10 @@ export const useProjects = () => {
             throw tasksError;
           }
 
-          const tasks = tasksData?.map(task => ({
+          const tasks = (tasksData || []).map(task => ({
             ...task,
-            status: task.status as "pending" | "in_progress" | "completed"
-          })) || [];
+            status: (task.status as "pending" | "in_progress" | "completed") || "pending"
+          }));
 
           const costs = calculateProjectCosts(tasks);
 
