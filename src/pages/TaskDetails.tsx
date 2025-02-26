@@ -51,8 +51,9 @@ export default function TaskDetails() {
     },
   });
 
-  const { data: availableTasks = [] } = useQuery({
+  const { data: availableTasks = [], isLoading: isLoadingTasks } = useQuery({
     queryKey: ['available-tasks', search],
+    enabled: open,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tasks')
@@ -148,6 +149,10 @@ export default function TaskDetails() {
   const onSubmit = (values: any) => {
     updateTaskMutation.mutate(values);
   };
+
+  const selectedTask = availableTasks.find(
+    (task) => task.id === form.getValues("dependency")
+  );
 
   return (
     <div className="container mx-auto py-6 space-y-6 mb-24">
@@ -328,7 +333,15 @@ export default function TaskDetails() {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Popover open={open} onOpenChange={setOpen}>
+                        <Popover 
+                          open={open} 
+                          onOpenChange={(isOpen) => {
+                            setOpen(isOpen);
+                            if (!isOpen) {
+                              setSearch("");
+                            }
+                          }}
+                        >
                           <PopoverTrigger asChild>
                             <Button
                               type="button"
@@ -336,21 +349,16 @@ export default function TaskDetails() {
                               role="combobox"
                               aria-expanded={open}
                               className="w-full justify-between"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setOpen(true);
-                              }}
                             >
-                              {field.value && availableTasks
-                                ? availableTasks.find((task) => task.id === field.value)?.task_name || "Selecione uma tarefa dependente..."
-                                : "Selecione uma tarefa dependente..."}
+                              {selectedTask ? selectedTask.task_name : "Selecione uma tarefa dependente..."}
                               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0">
+                          <PopoverContent className="w-[400px] p-0" align="start">
                             <Command>
                               <CommandInput 
                                 placeholder="Pesquisar tarefas..." 
+                                value={search}
                                 onValueChange={setSearch}
                               />
                               <CommandEmpty>Nenhuma tarefa encontrada.</CommandEmpty>
@@ -358,6 +366,7 @@ export default function TaskDetails() {
                                 {availableTasks.map((task) => (
                                   <CommandItem
                                     key={task.id}
+                                    value={task.id}
                                     onSelect={() => {
                                       field.onChange(task.id);
                                       setOpen(false);
