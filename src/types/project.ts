@@ -52,7 +52,6 @@ export interface Task {
   task_name: string;
   hours: number;
   owner: string;
-  dependency: string | null;
   created_at: string;
   status: 'pending' | 'in_progress' | 'completed';
   start_date?: string;
@@ -60,6 +59,14 @@ export interface Task {
   actual_hours: number;
   estimated_completion_date?: string;
   project_id?: string;
+}
+
+export interface TaskDependency {
+  id: string;
+  task_id: string;
+  depends_on: string;
+  created_at: string;
+  dependency?: Task;
 }
 
 export interface Column {

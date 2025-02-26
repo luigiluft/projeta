@@ -475,12 +475,13 @@ export default function TaskDetails() {
                               variant="ghost"
                               size="sm"
                               className="text-destructive hover:text-destructive"
-                              onClick={() => {
-                                const { error } = supabase
+                              onClick={async () => {
+                                const { error } = await supabase
                                   .from('task_dependencies')
                                   .delete()
                                   .eq('task_id', taskId)
-                                  .eq('depends_on', dep.depends_on);
+                                  .eq('depends_on', dep.depends_on)
+                                  .select();
 
                                 if (error) {
                                   toast.error("Erro ao remover dependência");
