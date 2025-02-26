@@ -1,3 +1,4 @@
+
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Save, Loader2, Search } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   Form,
@@ -28,6 +29,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { format } from "date-fns";
 
 export default function TaskDetails() {
   const { taskId } = useParams();
@@ -85,20 +87,44 @@ export default function TaskDetails() {
 
   const form = useForm({
     defaultValues: {
-      task_name: task?.task_name || "",
-      phase: task?.phase || "",
-      epic: task?.epic || "",
-      story: task?.story || "",
-      owner: task?.owner || "",
-      hours: task?.hours || 0,
-      actual_hours: task?.actual_hours || 0,
-      status: task?.status || "pending",
-      dependency: task?.dependency || "",
-      start_date: task?.start_date || "",
-      end_date: task?.end_date || "",
-      estimated_completion_date: task?.estimated_completion_date || "",
+      task_name: "",
+      phase: "",
+      epic: "",
+      story: "",
+      owner: "",
+      hours: 0,
+      actual_hours: 0,
+      status: "pending",
+      dependency: "",
+      start_date: "",
+      end_date: "",
+      estimated_completion_date: "",
     },
   });
+
+  // Atualiza o formulário quando os dados da tarefa são carregados
+  useEffect(() => {
+    if (task) {
+      const formattedStartDate = task.start_date ? format(new Date(task.start_date), 'yyyy-MM-dd') : '';
+      const formattedEndDate = task.end_date ? format(new Date(task.end_date), 'yyyy-MM-dd') : '';
+      const formattedEstimatedDate = task.estimated_completion_date ? format(new Date(task.estimated_completion_date), 'yyyy-MM-dd') : '';
+
+      form.reset({
+        task_name: task.task_name || "",
+        phase: task.phase || "",
+        epic: task.epic || "",
+        story: task.story || "",
+        owner: task.owner || "",
+        hours: task.hours || 0,
+        actual_hours: task.actual_hours || 0,
+        status: task.status || "pending",
+        dependency: task.dependency || "",
+        start_date: formattedStartDate,
+        end_date: formattedEndDate,
+        estimated_completion_date: formattedEstimatedDate,
+      });
+    }
+  }, [task]);
 
   if (isLoading) {
     return (
