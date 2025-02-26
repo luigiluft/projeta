@@ -1,4 +1,3 @@
-
 import { useNavigate, useParams } from "react-router-dom";
 import { Task } from "@/types/project";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,30 +31,48 @@ export default function TaskDetails() {
     );
   }
 
-  const { data: projectAttributes } = useQuery({
-    queryKey: ['project-attributes', id],
+  // Buscar primeiro o project_id da tarefa
+  const { data: taskWithProject } = useQuery({
+    queryKey: ['task-with-project', id],
     queryFn: async () => {
-      const { data: task } = await supabase
+      const { data, error } = await supabase
         .from('tasks')
         .select('project_id')
         .eq('id', id)
         .single();
 
-      if (!task?.project_id) return {};
-
-      const { data: attributes } = await supabase
-        .from('project_attributes')
-        .select('name, value')
-        .eq('project_id', task.project_id);
-
-      if (!attributes) return {};
-
-      return attributes.reduce((acc, attr) => ({
-        ...acc,
-        [attr.name]: Number(attr.value) || attr.value
-      }), {});
+      if (error) throw error;
+      return data;
     },
     enabled: Boolean(id)
+  });
+
+  // Depois buscar os atributos do projeto
+  const { data: projectAttributes } = useQuery({
+    queryKey: ['project-attributes', taskWithProject?.project_id],
+    queryFn: async () => {
+      if (!taskWithProject?.project_id) return {};
+
+      console.log('Fetching attributes for project:', taskWithProject.project_id);
+      const { data, error } = await supabase
+        .from('project_attributes')
+        .select('*')
+        .eq('project_id', taskWithProject.project_id);
+
+      if (error) {
+        console.error('Error fetching project attributes:', error);
+        throw error;
+      }
+
+      console.log('Project attributes:', data);
+
+      // Converter os atributos em um objeto
+      return data.reduce((acc: Record<string, any>, attr) => {
+        acc[attr.name] = attr.value;
+        return acc;
+      }, {});
+    },
+    enabled: Boolean(taskWithProject?.project_id)
   });
 
   const { data: task, isLoading: isLoadingTask, error: taskError } = useQuery({
