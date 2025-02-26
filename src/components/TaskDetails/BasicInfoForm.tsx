@@ -82,7 +82,7 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
         return null;
       }
 
-      // Avaliar a fórmula
+      // Avaliar a fórmula e arredondar para 2 casas decimais
       const result = Function(`return ${evaluableFormula}`)();
       
       if (typeof result !== 'number' || isNaN(result)) {
@@ -91,7 +91,8 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
         return null;
       }
 
-      return result;
+      // Arredondar para 2 casas decimais
+      return Math.ceil(result * 100) / 100;
     } catch (e) {
       console.error('Erro ao calcular fórmula:', e);
       toast.error("Erro ao calcular fórmula. Verifique a sintaxe.");
