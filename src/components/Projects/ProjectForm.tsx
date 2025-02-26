@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -30,8 +29,6 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       epic: "Implementação Ecommerce B2C",
       story: "Briefing",
       task_name: "Reunião do briefing técnico",
-      hours: 0,
-      actual_hours: 0,
       owner: "PO",
       created_at: new Date().toISOString(),
       status: "pending"
@@ -44,8 +41,6 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       epic: "Implementação Ecommerce B2C",
       story: "Briefing",
       task_name: "Documentação do briefing técnico",
-      hours: 0,
-      actual_hours: 0,
       owner: "PO",
       created_at: new Date().toISOString(),
       status: "pending"
@@ -58,8 +53,6 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       epic: "Implementação Ecommerce B2C",
       story: "Briefing",
       task_name: "Definição do catálogo de produtos, categorias e atributos",
-      hours: 1,
-      actual_hours: 0,
       owner: "PO",
       created_at: new Date().toISOString(),
       status: "pending"

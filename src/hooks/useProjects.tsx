@@ -22,18 +22,26 @@ export const useProjects = () => {
   const queryClient = useQueryClient();
 
   const calculateProjectCosts = (tasks: Task[]) => {
-    const baseCost = tasks.reduce((sum, task) => {
-      const hourlyRate = ROLE_RATES[task.owner as keyof typeof ROLE_RATES] || 0;
-      return sum + (task.hours * hourlyRate);
-    }, 0);
+    let totalHours = 0;
+    let totalCost = 0;
+
+    tasks.forEach(task => {
+      if (task.hours_formula) {
+        // Aqui você pode adicionar a lógica para calcular as horas com base na fórmula
+        // Por enquanto vamos manter como 0
+        const calculatedHours = 0;
+        totalHours += calculatedHours;
+        const hourlyRate = ROLE_RATES[task.owner as keyof typeof ROLE_RATES] || 0;
+        totalCost += calculatedHours * hourlyRate;
+      }
+    });
 
     const profitMargin = 30.00; // 30%
-    const totalCost = baseCost * (1 + profitMargin / 100);
-    const totalHours = tasks.reduce((sum, task) => sum + (task.hours || 0), 0);
+    const finalCost = totalCost * (1 + profitMargin / 100);
 
     return {
-      baseCost,
-      totalCost,
+      baseCost: totalCost,
+      totalCost: finalCost,
       totalHours,
       profitMargin
     };

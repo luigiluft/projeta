@@ -11,6 +11,7 @@ import { PerformanceMetrics } from "@/components/Dashboard/PerformanceMetrics";
 import { TeamMetrics } from "@/components/Dashboard/TeamMetrics";
 import { DailyAllocationChart } from "@/components/Dashboard/DailyAllocationChart";
 import { DailyTasks } from "@/components/Dashboard/DailyTasks";
+import { ProjectStats } from "@/types/project";
 
 const Dashboard = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("7d");
@@ -19,8 +20,7 @@ const Dashboard = () => {
     queryKey: ['dashboard-stats', selectedTimeRange],
     queryFn: async () => {
       const { data: stats, error } = await supabase
-        .from('project_stats')
-        .select('*');
+        .rpc('get_project_stats');
 
       if (error) {
         throw new Error('Erro ao carregar estatísticas');
@@ -79,7 +79,7 @@ const Dashboard = () => {
         taskCompletionRate,
         resourceUtilization,
         averageDelay,
-        projectStats: stats || [],
+        projectStats: stats as ProjectStats[] || [],
       };
     },
   });

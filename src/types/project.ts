@@ -1,3 +1,4 @@
+
 export interface Project {
   id: string;
   name: string;
@@ -99,3 +100,4 @@ export interface ProjectStats {
   pending_tasks: number;
   hours_accuracy: number;
 }
+
