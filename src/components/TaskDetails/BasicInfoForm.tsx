@@ -128,15 +128,18 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
                   Inserir Variável
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent 
+                align="end" 
+                className="w-56 bg-[#F1F0FB] border border-gray-200"
+              >
                 {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
                   <DropdownMenuItem
                     key={key}
                     onClick={() => insertAttributeAtCursor(key)}
-                    className="flex justify-between"
+                    className="flex justify-between hover:bg-blue-50"
                   >
-                    <span>{key}</span>
-                    <span className="text-muted-foreground">{value}</span>
+                    <span className="font-medium">{key}</span>
+                    <span className="text-gray-600">{value}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
