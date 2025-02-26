@@ -62,7 +62,8 @@ export default function TaskDetails() {
         .select('id, task_name, status')
         .eq('project_id', task?.project_id)
         .neq('id', taskId)
-        .ilike('task_name', `%${search}%`);
+        .ilike('task_name', `%${search}%`)
+        .order('task_name');
 
       if (error) throw error;
       return data || [];
@@ -368,30 +369,37 @@ export default function TaskDetails() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-[400px] p-0" align="start">
-                            <Command shouldFilter={false}>
+                            <Command>
                               <CommandInput 
                                 placeholder="Pesquisar tarefas..." 
                                 value={search}
                                 onValueChange={setSearch}
                               />
-                              <CommandEmpty>Nenhuma tarefa encontrada.</CommandEmpty>
-                              <CommandGroup>
-                                {availableTasks.map((task) => (
-                                  <CommandItem
-                                    key={task.id}
-                                    onSelect={() => {
-                                      field.onChange(task.id);
-                                      setOpen(false);
-                                    }}
-                                    className="flex items-center justify-between"
-                                  >
-                                    <span>{task.task_name}</span>
-                                    <Badge variant={task.status === 'completed' ? 'default' : 'secondary'}>
-                                      {task.status}
-                                    </Badge>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
+                              {isLoadingTasks ? (
+                                <div className="p-4 text-center">
+                                  <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                                </div>
+                              ) : availableTasks.length === 0 ? (
+                                <CommandEmpty>Nenhuma tarefa encontrada.</CommandEmpty>
+                              ) : (
+                                <CommandGroup>
+                                  {availableTasks.map((task) => (
+                                    <CommandItem
+                                      key={task.id}
+                                      onSelect={() => {
+                                        field.onChange(task.id);
+                                        setOpen(false);
+                                      }}
+                                      className="flex items-center justify-between"
+                                    >
+                                      <span>{task.task_name}</span>
+                                      <Badge variant={task.status === 'completed' ? 'default' : 'secondary'}>
+                                        {task.status}
+                                      </Badge>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
                             </Command>
                           </PopoverContent>
                         </Popover>
