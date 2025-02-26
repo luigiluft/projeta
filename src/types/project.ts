@@ -1,3 +1,4 @@
+
 export interface Project {
   id: string;
   name: string;
@@ -53,7 +54,7 @@ export interface Task {
   hours: number;
   hours_formula?: string;
   owner: string;
-  dependency: string | null;
+  dependency?: string | null;  // Tornando opcional
   created_at: string;
   status: 'pending' | 'in_progress' | 'completed';
   start_date?: string;

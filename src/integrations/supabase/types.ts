@@ -305,6 +305,7 @@ export type Database = {
           epic: string | null
           estimated_completion_date: string | null
           hours: number | null
+          hours_formula: string | null
           id: string
           is_active: boolean | null
           order_number: number | null
@@ -323,6 +324,7 @@ export type Database = {
           epic?: string | null
           estimated_completion_date?: string | null
           hours?: number | null
+          hours_formula?: string | null
           id?: string
           is_active?: boolean | null
           order_number?: number | null
@@ -341,6 +343,7 @@ export type Database = {
           epic?: string | null
           estimated_completion_date?: string | null
           hours?: number | null
+          hours_formula?: string | null
           id?: string
           is_active?: boolean | null
           order_number?: number | null

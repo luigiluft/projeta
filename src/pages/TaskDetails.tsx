@@ -1,72 +1,121 @@
+
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Loader2, Search } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
 import { Task } from "@/types/project";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BasicInfoForm } from "@/components/TaskDetails/BasicInfoForm";
+import { DependenciesList } from "@/components/TaskDetails/DependenciesList";
 
 export default function TaskDetails() {
-  const { taskId } = useParams();
+  const { id: taskId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
 
-  const { data: task, isLoading } = useQuery({
+  console.log('TaskDetails rendered with ID:', taskId);
+
+  const { data: projectAttributes } = useQuery({
+    queryKey: ['project-attributes', taskId],
+    queryFn: async () => {
+      if (!taskId) return {};
+
+      const { data: task } = await supabase
+        .from('tasks')
+        .select('project_id')
+        .eq('id', taskId)
+        .single();
+
+      if (!task?.project_id) return {};
+
+      const { data: attributes } = await supabase
+        .from('project_attributes')
+        .select('name, value')
+        .eq('project_id', task.project_id);
+
+      if (!attributes) return {};
+
+      return attributes.reduce((acc, attr) => ({
+        ...acc,
+        [attr.name]: Number(attr.value) || attr.value
+      }), {});
+    },
+    enabled: Boolean(taskId)
+  });
+
+  const { data: task, isLoading: isLoadingTask, error: taskError } = useQuery({
     queryKey: ['task', taskId],
     queryFn: async () => {
+      console.log('Fetching task with ID:', taskId);
+      if (!taskId) throw new Error('Task ID is required');
+
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .eq('id', taskId)
         .single();
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching task:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('Task not found');
+      }
+
+      console.log('Task data:', data);
+      return data as Task;
     },
+    enabled: Boolean(taskId),
   });
 
-  const { data: availableTasks = [] } = useQuery({
-    queryKey: ['available-tasks', search],
+  const { data: dependencies = [], isLoading: isLoadingDeps, error: depsError } = useQuery({
+    queryKey: ['task-dependencies', taskId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('id, task_name')
-        .neq('id', taskId)
-        .ilike('task_name', `%${search}%`);
+      console.log('Fetching dependencies for task:', taskId);
+      if (!taskId) throw new Error('Task ID is required');
 
-      if (error) throw error;
-      return data || [];
+      const { data, error } = await supabase
+        .from('task_dependencies')
+        .select(`
+          id,
+          task_id,
+          depends_on,
+          created_at,
+          tasks!task_dependencies_depends_on_fkey(*)
+        `)
+        .eq('task_id', taskId);
+
+      if (error) {
+        console.error('Error fetching dependencies:', error);
+        throw error;
+      }
+
+      console.log('Dependencies data:', data);
+      return data.map(dep => ({
+        id: dep.id,
+        task_id: dep.task_id,
+        depends_on: dep.depends_on,
+        created_at: dep.created_at,
+        dependency: dep.tasks ? {
+          ...dep.tasks,
+          is_active: dep.tasks.is_active ?? true,
+          order_number: dep.tasks.order_number ?? 0,
+          actual_hours: dep.tasks.actual_hours ?? 0,
+          status: (dep.tasks.status as "pending" | "in_progress" | "completed") || "pending"
+        } : undefined
+      }));
     },
+    enabled: Boolean(taskId),
   });
 
   const updateTaskMutation = useMutation({
-    mutationFn: async (values: any) => {
+    mutationFn: async (values: Task) => {
+      console.log('Updating task with values:', values);
+      if (!taskId) throw new Error('Task ID is required');
+
       const { error } = await supabase
         .from('tasks')
         .update(values)
@@ -76,316 +125,126 @@ export default function TaskDetails() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
-      toast.success("Tarefa atualizada com sucesso!");
+      toast.success('Tarefa atualizada com sucesso!');
     },
     onError: (error) => {
-      toast.error("Erro ao atualizar tarefa");
-      console.error(error);
-    },
-  });
-
-  const form = useForm({
-    defaultValues: {
-      task_name: "",
-      phase: "",
-      epic: "",
-      story: "",
-      owner: "",
-      hours: 0,
-      actual_hours: 0,
-      status: "pending",
-      dependency: "",
-      start_date: "",
-      end_date: "",
-      estimated_completion_date: "",
-    },
-  });
-
-  useEffect(() => {
-    if (task) {
-      const formattedStartDate = task.start_date ? format(new Date(task.start_date), 'yyyy-MM-dd') : '';
-      const formattedEndDate = task.end_date ? format(new Date(task.end_date), 'yyyy-MM-dd') : '';
-      const formattedEstimatedDate = task.estimated_completion_date ? format(new Date(task.estimated_completion_date), 'yyyy-MM-dd') : '';
-
-      form.reset({
-        task_name: task.task_name || "",
-        phase: task.phase || "",
-        epic: task.epic || "",
-        story: task.story || "",
-        owner: task.owner || "",
-        hours: task.hours || 0,
-        actual_hours: task.actual_hours || 0,
-        status: task.status || "pending",
-        dependency: task.dependency || "",
-        start_date: formattedStartDate,
-        end_date: formattedEndDate,
-        estimated_completion_date: formattedEstimatedDate,
-      });
+      console.error('Error updating task:', error);
+      toast.error('Erro ao atualizar tarefa');
     }
-  }, [task]);
+  });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  const addDependencyMutation = useMutation({
+    mutationFn: async (dependsOn: string) => {
+      if (!taskId) throw new Error('Task ID is required');
+
+      const { error } = await supabase
+        .from('task_dependencies')
+        .insert({
+          task_id: taskId,
+          depends_on: dependsOn,
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['task-dependencies', taskId] });
+      toast.success('Dependência adicionada com sucesso!');
+    },
+    onError: (error) => {
+      console.error('Error adding dependency:', error);
+      toast.error('Erro ao adicionar dependência');
+    }
+  });
+
+  const removeDependencyMutation = useMutation({
+    mutationFn: async (dependencyId: string) => {
+      const { error } = await supabase
+        .from('task_dependencies')
+        .delete()
+        .eq('id', dependencyId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['task-dependencies', taskId] });
+      toast.success('Dependência removida com sucesso!');
+    },
+    onError: (error) => {
+      console.error('Error removing dependency:', error);
+      toast.error('Erro ao remover dependência');
+    }
+  });
+
+  const handleAddDependency = async () => {
+    if (!taskId) return;
+
+    const { data: tasks, error } = await supabase
+      .from('tasks')
+      .select('id, task_name')
+      .neq('id', taskId);
+
+    if (error) {
+      console.error('Error fetching tasks for dependency:', error);
+      toast.error('Erro ao buscar tarefas');
+      return;
+    }
+
+    if (!tasks) {
+      toast.error('Nenhuma tarefa encontrada');
+      return;
+    }
+
+    const dependsOn = window.prompt('ID da tarefa dependente:');
+    if (!dependsOn) return;
+
+    addDependencyMutation.mutate(dependsOn);
+  };
+
+  if (!taskId) {
+    console.error('No task ID provided');
+    return <div className="container mx-auto py-6">ID da tarefa não fornecido</div>;
+  }
+
+  if (isLoadingTask || isLoadingDeps) {
+    return <div className="container mx-auto py-6">Carregando...</div>;
+  }
+
+  if (taskError) {
+    console.error('Task error:', taskError);
+    return <div className="container mx-auto py-6">Erro ao carregar tarefa</div>;
+  }
+
+  if (depsError) {
+    console.error('Dependencies error:', depsError);
+    return <div className="container mx-auto py-6">Erro ao carregar dependências</div>;
   }
 
   if (!task) {
-    return (
-      <div className="p-6">
-        <div className="text-center">
-          <h2 className="text-lg font-medium">Tarefa não encontrada</h2>
-          <Button variant="link" onClick={() => navigate('/task-management')}>
-            Voltar para lista de tarefas
-          </Button>
-        </div>
-      </div>
-    );
+    return <div className="container mx-auto py-6">Tarefa não encontrada</div>;
   }
 
-  const onSubmit = (values: any) => {
-    updateTaskMutation.mutate(values);
-  };
-
   return (
-    <div className="container mx-auto py-6 space-y-6 mb-24">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate('/task-management')}>
+    <div className="container mx-auto py-6">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="ghost" onClick={() => navigate("/task-management")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
         </Button>
         <h1 className="text-2xl font-bold">Detalhes da Tarefa</h1>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Card>
-            <CardHeader>
-              <FormField
-                control={form.control}
-                name="task_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input 
-                        {...field} 
-                        className="text-xl font-semibold"
-                        placeholder="Nome da tarefa"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="font-medium text-gray-500">Informações Básicas</h3>
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="phase"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fase</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Fase do projeto" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="epic"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Epic</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Epic" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="story"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Story</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Story" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="owner"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Responsável</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Nome do responsável" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-medium text-gray-500">Status e Progresso</h3>
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Status da tarefa" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hours"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Horas Estimadas</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" min="0" placeholder="0" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="actual_hours"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Horas Realizadas</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" min="0" placeholder="0" />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="font-medium text-gray-500">Datas</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="start_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data de Início</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="date" />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="end_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data de Término</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="date" />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="estimated_completion_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Previsão de Conclusão</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="date" />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="font-medium text-gray-500">Dependências</h3>
-                <FormField
-                  control={form.control}
-                  name="dependency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={open}
-                              className="w-full justify-between"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setOpen(true);
-                              }}
-                            >
-                              {field.value && availableTasks
-                                ? availableTasks.find((task) => task.id === field.value)?.task_name || "Selecione uma tarefa dependente..."
-                                : "Selecione uma tarefa dependente..."}
-                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0">
-                            <Command>
-                              <CommandInput 
-                                placeholder="Pesquisar tarefas..." 
-                                onValueChange={setSearch}
-                              />
-                              <CommandEmpty>Nenhuma tarefa encontrada.</CommandEmpty>
-                              <CommandGroup>
-                                {availableTasks.map((task) => (
-                                  <CommandItem
-                                    key={task.id}
-                                    onSelect={() => {
-                                      field.onChange(task.id);
-                                      setOpen(false);
-                                    }}
-                                  >
-                                    {task.task_name}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <div className="mt-6 flex justify-end">
-            <Button type="submit" size="lg">
-              <Save className="h-4 w-4 mr-2" />
-              Salvar
-            </Button>
-          </div>
-        </form>
-      </Form>
+      <div className="space-y-6">
+        <BasicInfoForm 
+          task={task} 
+          onSubmit={(values) => updateTaskMutation.mutate(values)}
+          projectAttributes={projectAttributes}
+        />
+        <DependenciesList 
+          dependencies={dependencies}
+          onAddDependency={handleAddDependency}
+          onRemoveDependency={(id) => removeDependencyMutation.mutate(id)}
+        />
+      </div>
     </div>
   );
 }
