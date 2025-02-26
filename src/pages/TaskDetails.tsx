@@ -10,11 +10,12 @@ import { BasicInfoForm } from "@/components/TaskDetails/BasicInfoForm";
 import { DependenciesList } from "@/components/TaskDetails/DependenciesList";
 
 export default function TaskDetails() {
-  const { id: taskId } = useParams<{ id: string }>();
+  const { id: taskId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   console.log('TaskDetails rendered with ID:', taskId);
+  console.log('Current params:', useParams());
 
   if (!taskId) {
     console.error('No task ID provided');
