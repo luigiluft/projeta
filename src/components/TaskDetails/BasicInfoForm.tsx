@@ -52,29 +52,42 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
       const attributes = formula.split(/[\s+\-*/()]+/).filter(Boolean);
       const isNumber = (str: string) => !isNaN(Number(str));
       
-      const validFormula = attributes.every(attr => 
-        isNumber(attr) || projectAttributes[attr] !== undefined
-      );
+      // Filtrar números e verificar apenas os nomes de atributos
+      const attributeNames = attributes.filter(attr => !isNumber(attr));
+      const validFormula = attributeNames.every(attr => projectAttributes[attr] !== undefined);
 
       if (!validFormula) {
-        toast.error("Fórmula contém atributos inválidos");
+        const invalidAttributes = attributeNames.filter(attr => projectAttributes[attr] === undefined);
+        console.error('Atributos inválidos:', invalidAttributes);
+        toast.error(`Atributos inválidos na fórmula: ${invalidAttributes.join(', ')}`);
         return null;
       }
 
       // Substituir os nomes dos atributos pelos seus valores
       let evaluableFormula = formula;
       Object.entries(projectAttributes).forEach(([key, value]) => {
-        const regex = new RegExp(key, 'g');
+        // Usar uma regex que identifica palavras inteiras para evitar substituições parciais
+        const regex = new RegExp(`\\b${key}\\b`, 'g');
         evaluableFormula = evaluableFormula.replace(regex, value.toString());
       });
 
-      // Avaliar a fórmula
+      console.log('Fórmula original:', formula);
+      console.log('Atributos disponíveis:', projectAttributes);
       console.log('Fórmula para avaliação:', evaluableFormula);
+
+      // Avaliar a fórmula
       const result = Function(`return ${evaluableFormula}`)();
-      return typeof result === 'number' ? result : null;
+      
+      if (typeof result !== 'number' || isNaN(result)) {
+        console.error('Resultado inválido:', result);
+        toast.error("A fórmula não resultou em um número válido");
+        return null;
+      }
+
+      return result;
     } catch (e) {
       console.error('Erro ao calcular fórmula:', e);
-      toast.error("Erro ao calcular fórmula");
+      toast.error("Erro ao calcular fórmula. Verifique a sintaxe.");
       return null;
     }
   };
