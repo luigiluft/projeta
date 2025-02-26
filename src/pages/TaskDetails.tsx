@@ -1,26 +1,27 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
+
 import { useNavigate, useParams } from "react-router-dom";
-import { Task, TaskDependency } from "@/types/project";
+import { Task } from "@/types/project";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useEffect } from "react";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BasicInfoForm } from "@/components/TaskDetails/BasicInfoForm";
+import { DependenciesList } from "@/components/TaskDetails/DependenciesList";
 
 export default function TaskDetails() {
-  const { id: taskId } = useParams();
+  const { id: taskId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const form = useForm<Task>();
+
+  console.log('TaskDetails rendered with ID:', taskId);
 
   const { data: task, isLoading: isLoadingTask, error: taskError } = useQuery({
     queryKey: ['task', taskId],
     queryFn: async () => {
       console.log('Fetching task with ID:', taskId);
+      if (!taskId) throw new Error('Task ID is required');
+
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -46,6 +47,8 @@ export default function TaskDetails() {
     queryKey: ['task-dependencies', taskId],
     queryFn: async () => {
       console.log('Fetching dependencies for task:', taskId);
+      if (!taskId) throw new Error('Task ID is required');
+
       const { data, error } = await supabase
         .from('task_dependencies')
         .select(`
@@ -63,37 +66,27 @@ export default function TaskDetails() {
       }
 
       console.log('Dependencies data:', data);
-      
       return data.map(dep => ({
         id: dep.id,
         task_id: dep.task_id,
         depends_on: dep.depends_on,
         created_at: dep.created_at,
-        dependency: {
+        dependency: dep.tasks ? {
           ...dep.tasks,
-          is_active: dep.tasks?.is_active ?? true,
-          order_number: dep.tasks?.order_number ?? 0,
-          actual_hours: dep.tasks?.actual_hours ?? 0,
-        }
-      })) as TaskDependency[];
+          is_active: dep.tasks.is_active ?? true,
+          order_number: dep.tasks.order_number ?? 0,
+          actual_hours: dep.tasks.actual_hours ?? 0,
+        } : undefined,
+      }));
     },
     enabled: Boolean(taskId),
   });
 
-  useEffect(() => {
-    if (task) {
-      console.log('Resetting form with task:', task);
-      form.reset({
-        ...task,
-        hours: task.hours || 0,
-        actual_hours: task.actual_hours || 0,
-      });
-    }
-  }, [task, form]);
-
   const updateTaskMutation = useMutation({
     mutationFn: async (values: Task) => {
       console.log('Updating task with values:', values);
+      if (!taskId) throw new Error('Task ID is required');
+
       const { error } = await supabase
         .from('tasks')
         .update(values)
@@ -113,7 +106,8 @@ export default function TaskDetails() {
 
   const addDependencyMutation = useMutation({
     mutationFn: async (dependsOn: string) => {
-      console.log('Adding dependency:', { taskId, dependsOn });
+      if (!taskId) throw new Error('Task ID is required');
+
       const { error } = await supabase
         .from('task_dependencies')
         .insert({
@@ -135,7 +129,6 @@ export default function TaskDetails() {
 
   const removeDependencyMutation = useMutation({
     mutationFn: async (dependencyId: string) => {
-      console.log('Removing dependency:', dependencyId);
       const { error } = await supabase
         .from('task_dependencies')
         .delete()
@@ -153,35 +146,9 @@ export default function TaskDetails() {
     }
   });
 
-  if (!taskId) {
-    return <div className="container mx-auto py-6">ID da tarefa não fornecido</div>;
-  }
-
-  if (isLoadingTask || isLoadingDeps) {
-    return <div className="container mx-auto py-6">Carregando...</div>;
-  }
-
-  if (taskError) {
-    console.error('Task error:', taskError);
-    return <div className="container mx-auto py-6">Erro ao carregar tarefa</div>;
-  }
-
-  if (depsError) {
-    console.error('Dependencies error:', depsError);
-    return <div className="container mx-auto py-6">Erro ao carregar dependências</div>;
-  }
-
-  if (!task) {
-    return <div className="container mx-auto py-6">Tarefa não encontrada</div>;
-  }
-
-  const onSubmit = (values: Task) => {
-    console.log('Form submitted with values:', values);
-    updateTaskMutation.mutate(values);
-  };
-
   const handleAddDependency = async () => {
-    console.log('Adding new dependency');
+    if (!taskId) return;
+
     const { data: tasks, error } = await supabase
       .from('tasks')
       .select('id, task_name')
@@ -204,6 +171,29 @@ export default function TaskDetails() {
     addDependencyMutation.mutate(dependsOn);
   };
 
+  if (!taskId) {
+    console.error('No task ID provided');
+    return <div className="container mx-auto py-6">ID da tarefa não fornecido</div>;
+  }
+
+  if (isLoadingTask || isLoadingDeps) {
+    return <div className="container mx-auto py-6">Carregando...</div>;
+  }
+
+  if (taskError) {
+    console.error('Task error:', taskError);
+    return <div className="container mx-auto py-6">Erro ao carregar tarefa</div>;
+  }
+
+  if (depsError) {
+    console.error('Dependencies error:', depsError);
+    return <div className="container mx-auto py-6">Erro ao carregar dependências</div>;
+  }
+
+  if (!task) {
+    return <div className="container mx-auto py-6">Tarefa não encontrada</div>;
+  }
+
   return (
     <div className="container mx-auto py-6">
       <div className="flex items-center gap-4 mb-6">
@@ -215,91 +205,15 @@ export default function TaskDetails() {
       </div>
 
       <div className="space-y-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">Informações Básicas</h2>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="task_name">Nome da Tarefa</Label>
-              <Input id="task_name" {...form.register("task_name")} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phase">Fase</Label>
-              <Input id="phase" {...form.register("phase")} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="epic">Epic</Label>
-                <Input id="epic" {...form.register("epic")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="story">Story</Label>
-                <Input id="story" {...form.register("story")} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="hours">Horas Estimadas</Label>
-                <Input 
-                  id="hours" 
-                  type="number" 
-                  step="0.01"
-                  {...form.register("hours", { valueAsNumber: true })} 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="actual_hours">Horas Realizadas</Label>
-                <Input 
-                  id="actual_hours" 
-                  type="number" 
-                  step="0.01"
-                  {...form.register("actual_hours", { valueAsNumber: true })} 
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="owner">Responsável</Label>
-              <Input id="owner" {...form.register("owner")} />
-            </div>
-
-            <Button type="submit">Salvar Alterações</Button>
-          </form>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Dependências</h2>
-            <Button onClick={handleAddDependency} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar
-            </Button>
-          </div>
-
-          {dependencies.length > 0 ? (
-            <div className="space-y-2">
-              {dependencies.map((dep) => (
-                <div key={dep.id} className="flex items-center justify-between p-2 border rounded">
-                  <div className="flex items-center gap-2">
-                    <span>{dep.dependency?.task_name}</span>
-                    <Badge>{dep.dependency?.status}</Badge>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeDependencyMutation.mutate(dep.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500">Esta tarefa não possui dependências</p>
-          )}
-        </div>
+        <BasicInfoForm 
+          task={task} 
+          onSubmit={(values) => updateTaskMutation.mutate(values)} 
+        />
+        <DependenciesList 
+          dependencies={dependencies}
+          onAddDependency={handleAddDependency}
+          onRemoveDependency={(id) => removeDependencyMutation.mutate(id)}
+        />
       </div>
     </div>
   );
