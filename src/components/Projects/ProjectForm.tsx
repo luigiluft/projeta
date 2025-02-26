@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,6 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       hours: 0,
       actual_hours: 0,
       owner: "PO",
-      dependency: null,
       created_at: new Date().toISOString(),
       status: "pending"
     },
@@ -48,7 +46,6 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       hours: 0,
       actual_hours: 0,
       owner: "PO",
-      dependency: null,
       created_at: new Date().toISOString(),
       status: "pending"
     },
@@ -63,7 +60,6 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       hours: 1,
       actual_hours: 0,
       owner: "PO",
-      dependency: null,
       created_at: new Date().toISOString(),
       status: "pending"
     }
