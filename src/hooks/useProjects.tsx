@@ -50,7 +50,6 @@ export const useProjects = () => {
           const tasks = tasksData.map(task => ({
             ...task,
             is_active: task.is_active || true,
-            order_number: task.order_number || 0,
             status: task.status as "pending" | "in_progress" | "completed",
           })) as Task[];
 
