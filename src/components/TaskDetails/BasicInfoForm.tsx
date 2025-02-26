@@ -48,18 +48,33 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     }
 
     try {
-      const calculateSafe = new Function(...Object.keys(projectAttributes), `
-        try {
-          return ${formula};
-        } catch (e) {
-          return null;
-        }
-      `);
+      // Primeiro vamos validar se todos os atributos mencionados existem
+      const attributes = formula.split(/[\s+\-*/()]+/).filter(Boolean);
+      const isNumber = (str: string) => !isNaN(Number(str));
+      
+      const validFormula = attributes.every(attr => 
+        isNumber(attr) || projectAttributes[attr] !== undefined
+      );
 
-      const result = calculateSafe(...Object.values(projectAttributes));
+      if (!validFormula) {
+        toast.error("Fórmula contém atributos inválidos");
+        return null;
+      }
+
+      // Substituir os nomes dos atributos pelos seus valores
+      let evaluableFormula = formula;
+      Object.entries(projectAttributes).forEach(([key, value]) => {
+        const regex = new RegExp(key, 'g');
+        evaluableFormula = evaluableFormula.replace(regex, value.toString());
+      });
+
+      // Avaliar a fórmula
+      console.log('Fórmula para avaliação:', evaluableFormula);
+      const result = Function(`return ${evaluableFormula}`)();
       return typeof result === 'number' ? result : null;
     } catch (e) {
       console.error('Erro ao calcular fórmula:', e);
+      toast.error("Erro ao calcular fórmula");
       return null;
     }
   };
