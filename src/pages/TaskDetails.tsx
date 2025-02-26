@@ -76,6 +76,8 @@ export default function TaskDetails() {
           is_active: dep.tasks.is_active ?? true,
           order_number: dep.tasks.order_number ?? 0,
           actual_hours: dep.tasks.actual_hours ?? 0,
+          // Garantir que o status seja um dos valores permitidos
+          status: (dep.tasks.status as "pending" | "in_progress" | "completed") || "pending"
         } : undefined,
       }));
     },
