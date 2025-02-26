@@ -1,3 +1,4 @@
+
 import { useNavigate, useParams } from "react-router-dom";
 import { Task } from "@/types/project";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +15,6 @@ export default function TaskDetails() {
   const queryClient = useQueryClient();
 
   console.log('TaskDetails rendered with ID:', id);
-  console.log('Current params:', useParams());
 
   if (!id) {
     console.error('No task ID provided');
@@ -61,7 +61,7 @@ export default function TaskDetails() {
   const { data: projectAttributes } = useQuery({
     queryKey: ['project-attributes'],
     queryFn: async () => {
-      console.log('Fetching global project attributes');
+      console.log('Fetching project attributes');
       const { data, error } = await supabase
         .from('project_attributes')
         .select('name, value, unit, description, default_value');
@@ -71,11 +71,7 @@ export default function TaskDetails() {
         throw error;
       }
 
-      console.log('Raw project attributes:', data);
-
-      // Converter os atributos em um objeto
       const formattedAttributes = data?.reduce((acc: Record<string, any>, attr) => {
-        // Tentar converter para número se possível
         const value = !isNaN(Number(attr.value)) ? Number(attr.value) : attr.value;
         acc[attr.name] = value;
         return acc;
@@ -128,12 +124,22 @@ export default function TaskDetails() {
       console.log('Updating task with values:', values);
       if (!id) throw new Error('Task ID is required');
 
+      // Remove campos que não fazem parte da tabela tasks
+      const { 
+        is_new, 
+        is_modified,
+        ...taskData 
+      } = values;
+
       const { error } = await supabase
         .from('tasks')
-        .update(values)
+        .update(taskData)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating task:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', id] });
