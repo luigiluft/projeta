@@ -50,14 +50,12 @@ export interface Task {
   epic: string;
   story: string;
   task_name: string;
-  hours: number;
   hours_formula?: string;
   owner: string;
   created_at: string;
   status: 'pending' | 'in_progress' | 'completed';
   start_date?: string;
   end_date?: string;
-  actual_hours: number;
   estimated_completion_date?: string;
   project_id?: string;
   depends_on?: string | null;

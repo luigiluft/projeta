@@ -302,12 +302,10 @@ export type Database = {
       }
       tasks: {
         Row: {
-          actual_hours: number | null
           created_at: string
           end_date: string | null
           epic: string | null
           estimated_completion_date: string | null
-          hours: number | null
           hours_formula: string | null
           id: string
           is_active: boolean | null
@@ -321,12 +319,10 @@ export type Database = {
           task_name: string
         }
         Insert: {
-          actual_hours?: number | null
           created_at?: string
           end_date?: string | null
           epic?: string | null
           estimated_completion_date?: string | null
-          hours?: number | null
           hours_formula?: string | null
           id?: string
           is_active?: boolean | null
@@ -340,12 +336,10 @@ export type Database = {
           task_name: string
         }
         Update: {
-          actual_hours?: number | null
           created_at?: string
           end_date?: string | null
           epic?: string | null
           estimated_completion_date?: string | null
-          hours?: number | null
           hours_formula?: string | null
           id?: string
           is_active?: boolean | null
@@ -363,13 +357,6 @@ export type Database = {
             foreignKeyName: "tasks_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "project_stats"
-            referencedColumns: ["project_id"]
-          },
-          {
-            foreignKeyName: "tasks_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -377,27 +364,6 @@ export type Database = {
       }
     }
     Views: {
-      project_stats: {
-        Row: {
-          base_cost: number | null
-          completed_tasks: number | null
-          created_at: string | null
-          delay_days: number | null
-          due_date: string | null
-          hours_accuracy: number | null
-          in_progress_tasks: number | null
-          pending_tasks: number | null
-          profit_margin: number | null
-          progress: number | null
-          project_id: string | null
-          project_name: string | null
-          status: string | null
-          total_cost: number | null
-          total_hours: number | null
-          total_tasks: number | null
-        }
-        Relationships: []
-      }
       task_critical_path: {
         Row: {
           end_date: string | null
