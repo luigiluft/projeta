@@ -60,6 +60,7 @@ export interface Task {
   actual_hours: number;
   estimated_completion_date?: string;
   project_id?: string;
+  depends_on?: string | null;
 }
 
 export interface Column {

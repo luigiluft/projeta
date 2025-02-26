@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -140,11 +139,6 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
           <div className="space-y-2">
             <Label htmlFor="owner">Responsável</Label>
             <Input id="owner" {...register("owner")} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="dependency">Dependência</Label>
-            <Input id="dependency" {...register("dependency")} />
           </div>
 
           <Button type="submit">Criar Tarefa</Button>
