@@ -124,7 +124,7 @@ export function ProjectListItem({
       {isExpanded && (
         <TableRow>
           <TableCell colSpan={9} className="p-0">
-            <ProjectTaskList project={project} />
+            <ProjectTaskList tasks={project.tasks} />
           </TableCell>
         </TableRow>
       )}
