@@ -45,7 +45,7 @@ export const useProjects = () => {
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
-        .eq('deleted', false) // Only fetch non-deleted projects
+        .eq('deleted', false)
         .order('created_at', { ascending: false });
 
       if (projectsError) {
@@ -65,10 +65,13 @@ export const useProjects = () => {
             throw tasksError;
           }
 
-          const tasks = (tasksData || []).map(task => ({
+          const tasks = tasksData.map(task => ({
             ...task,
-            status: (task.status as "pending" | "in_progress" | "completed") || "pending"
-          }));
+            actual_hours: task.actual_hours || 0,
+            is_active: task.is_active || true,
+            order_number: task.order_number || 0,
+            status: task.status as "pending" | "in_progress" | "completed",
+          })) as Task[];
 
           const costs = calculateProjectCosts(tasks);
 
@@ -87,11 +90,11 @@ export const useProjects = () => {
             version: project.version || 1,
             metadata: project.metadata || {},
             settings: project.settings || {},
-          };
+          } as Project;
         })
       );
 
-      return projectsWithTasks as Project[];
+      return projectsWithTasks;
     },
   });
 
@@ -127,6 +130,7 @@ export const useProjects = () => {
           version: 1,
           metadata: {},
           settings: {},
+          project_name: epic,
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         }]);
 
