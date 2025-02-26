@@ -3,10 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Save, Loader2, Search } from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -18,13 +16,25 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { Textarea } from "@/components/ui/textarea";
+import { Task } from "@/types/project";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function TaskDetails() {
   const { taskId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isEditing, setIsEditing] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const { data: task, isLoading } = useQuery({
     queryKey: ['task', taskId],
@@ -40,6 +50,19 @@ export default function TaskDetails() {
     },
   });
 
+  const { data: availableTasks } = useQuery({
+    queryKey: ['available-tasks'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('id, task_name')
+        .neq('id', taskId);
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const updateTaskMutation = useMutation({
     mutationFn: async (values: any) => {
       const { error } = await supabase
@@ -52,7 +75,6 @@ export default function TaskDetails() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       toast.success("Tarefa atualizada com sucesso!");
-      setIsEditing(false);
     },
     onError: (error) => {
       toast.error("Erro ao atualizar tarefa");
@@ -104,28 +126,16 @@ export default function TaskDetails() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate('/task-management')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-          <h1 className="text-2xl font-bold">Detalhes da Tarefa</h1>
-        </div>
-        <Button onClick={() => isEditing ? form.handleSubmit(onSubmit)() : setIsEditing(true)}>
-          {isEditing ? (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Salvar
-            </>
-          ) : (
-            "Editar"
-          )}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/task-management')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar
         </Button>
+        <h1 className="text-2xl font-bold">Detalhes da Tarefa</h1>
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="relative">
           <Card>
             <CardHeader>
               <FormField
@@ -136,8 +146,8 @@ export default function TaskDetails() {
                     <FormControl>
                       <Input 
                         {...field} 
-                        disabled={!isEditing}
                         className="text-xl font-semibold"
+                        placeholder="Nome da tarefa"
                       />
                     </FormControl>
                   </FormItem>
@@ -156,7 +166,7 @@ export default function TaskDetails() {
                         <FormItem>
                           <FormLabel>Fase</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={!isEditing} />
+                            <Input {...field} placeholder="Fase do projeto" />
                           </FormControl>
                         </FormItem>
                       )}
@@ -168,7 +178,7 @@ export default function TaskDetails() {
                         <FormItem>
                           <FormLabel>Epic</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={!isEditing} />
+                            <Input {...field} placeholder="Epic" />
                           </FormControl>
                         </FormItem>
                       )}
@@ -180,7 +190,7 @@ export default function TaskDetails() {
                         <FormItem>
                           <FormLabel>Story</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={!isEditing} />
+                            <Input {...field} placeholder="Story" />
                           </FormControl>
                         </FormItem>
                       )}
@@ -192,7 +202,7 @@ export default function TaskDetails() {
                         <FormItem>
                           <FormLabel>Responsável</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={!isEditing} />
+                            <Input {...field} placeholder="Nome do responsável" />
                           </FormControl>
                         </FormItem>
                       )}
@@ -210,7 +220,7 @@ export default function TaskDetails() {
                         <FormItem>
                           <FormLabel>Status</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={!isEditing} />
+                            <Input {...field} placeholder="Status da tarefa" />
                           </FormControl>
                         </FormItem>
                       )}
@@ -222,7 +232,7 @@ export default function TaskDetails() {
                         <FormItem>
                           <FormLabel>Horas Estimadas</FormLabel>
                           <FormControl>
-                            <Input {...field} type="number" disabled={!isEditing} />
+                            <Input {...field} type="number" min="0" placeholder="0" />
                           </FormControl>
                         </FormItem>
                       )}
@@ -234,7 +244,7 @@ export default function TaskDetails() {
                         <FormItem>
                           <FormLabel>Horas Realizadas</FormLabel>
                           <FormControl>
-                            <Input {...field} type="number" disabled={!isEditing} />
+                            <Input {...field} type="number" min="0" placeholder="0" />
                           </FormControl>
                         </FormItem>
                       )}
@@ -253,7 +263,7 @@ export default function TaskDetails() {
                       <FormItem>
                         <FormLabel>Data de Início</FormLabel>
                         <FormControl>
-                          <Input {...field} type="date" disabled={!isEditing} />
+                          <Input {...field} type="date" />
                         </FormControl>
                       </FormItem>
                     )}
@@ -265,7 +275,7 @@ export default function TaskDetails() {
                       <FormItem>
                         <FormLabel>Data de Término</FormLabel>
                         <FormControl>
-                          <Input {...field} type="date" disabled={!isEditing} />
+                          <Input {...field} type="date" />
                         </FormControl>
                       </FormItem>
                     )}
@@ -277,7 +287,7 @@ export default function TaskDetails() {
                       <FormItem>
                         <FormLabel>Previsão de Conclusão</FormLabel>
                         <FormControl>
-                          <Input {...field} type="date" disabled={!isEditing} />
+                          <Input {...field} type="date" />
                         </FormControl>
                       </FormItem>
                     )}
@@ -293,7 +303,40 @@ export default function TaskDetails() {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Textarea {...field} disabled={!isEditing} />
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={open}
+                              className="w-full justify-between"
+                            >
+                              {field.value
+                                ? availableTasks?.find((task) => task.id === field.value)?.task_name
+                                : "Selecione uma tarefa dependente..."}
+                              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0">
+                            <Command>
+                              <CommandInput placeholder="Pesquisar tarefas..." />
+                              <CommandEmpty>Nenhuma tarefa encontrada.</CommandEmpty>
+                              <CommandGroup>
+                                {availableTasks?.map((task) => (
+                                  <CommandItem
+                                    key={task.id}
+                                    onSelect={() => {
+                                      field.onChange(task.id);
+                                      setOpen(false);
+                                    }}
+                                  >
+                                    {task.task_name}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </FormControl>
                     </FormItem>
                   )}
@@ -301,6 +344,13 @@ export default function TaskDetails() {
               </div>
             </CardContent>
           </Card>
+          
+          <div className="fixed bottom-6 right-6">
+            <Button type="submit" size="lg">
+              <Save className="h-4 w-4 mr-2" />
+              Salvar
+            </Button>
+          </div>
         </form>
       </Form>
     </div>
