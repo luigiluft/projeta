@@ -341,7 +341,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      task_critical_path: {
+        Row: {
+          depth: number | null
+          epic: string | null
+          estimated_hours: string | null
+          id: string | null
+          owner: string | null
+          path: string[] | null
+          phase: string | null
+          status: string | null
+          story: string | null
+          task_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_distinct_approved_roles: {
