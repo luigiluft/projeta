@@ -14,6 +14,7 @@ interface TaskListProps {
 
 export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
   const navigate = useNavigate();
+  console.log('TaskList - tasks:', tasks); // Debug log
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
@@ -54,20 +55,17 @@ export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
     return value;
   };
 
-  // Adicione a coluna de ações no final
-  const columnsWithActions = [
-    ...columns.filter(col => col.visible),
-    {
-      id: "actions",
-      label: "Ações",
-      visible: true,
-    }
-  ];
+  // Filtre apenas as colunas visíveis e adicione a coluna de ações
+  const visibleColumns = [...columns.filter(col => col.visible), {
+    id: "actions",
+    label: "Ações",
+    visible: true,
+  }];
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="rounded-lg shadow">
       <DraggableTable
-        columns={columnsWithActions}
+        columns={visibleColumns}
         onColumnsChange={onColumnsChange}
         data={tasks}
         formatValue={formatValue}
