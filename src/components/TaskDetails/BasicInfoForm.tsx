@@ -29,11 +29,7 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
   useEffect(() => {
     if (task) {
       console.log('Resetting form with task:', task);
-      form.reset({
-        ...task,
-        hours: task.hours || 0,
-        actual_hours: task.actual_hours || 0,
-      });
+      form.reset(task);
 
       if (task.hours_formula) {
         handleFormulaChange(task.hours_formula);
@@ -104,9 +100,6 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     if (formula && projectAttributes) {
       const result = calculateHours(formula);
       setPreviewHours(result);
-      if (result !== null) {
-        form.setValue("hours", result);
-      }
     }
   };
 
@@ -164,7 +157,7 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-56 bg-white border border-gray-200"
+                className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
               >
                 {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
                   <DropdownMenuItem
@@ -191,27 +184,6 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
               Horas calculadas: {previewHours}
             </p>
           )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="hours">Horas</Label>
-            <Input 
-              id="hours" 
-              type="number" 
-              step="0.01"
-              {...form.register("hours", { valueAsNumber: true })} 
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="actual_hours">Horas Realizadas</Label>
-            <Input 
-              id="actual_hours" 
-              type="number" 
-              step="0.01"
-              {...form.register("actual_hours", { valueAsNumber: true })} 
-            />
-          </div>
         </div>
 
         <div className="space-y-2">
