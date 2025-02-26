@@ -8,7 +8,6 @@ import { Task, TaskDependency } from "@/types/project";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -41,12 +40,21 @@ export default function TaskDetails() {
           task_id,
           depends_on,
           created_at,
-          dependency:depends_on(id, task_name, status)
+          tasks!task_dependencies_depends_on_fkey(
+            id,
+            task_name,
+            status
+          )
         `)
         .eq('task_id', taskId);
 
       if (error) throw error;
-      return data as TaskDependency[];
+      
+      // Transformar os dados para corresponder ao tipo TaskDependency
+      return data.map(dep => ({
+        ...dep,
+        dependency: dep.tasks
+      })) as TaskDependency[];
     },
   });
 
@@ -123,8 +131,8 @@ export default function TaskDetails() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="container mx-auto py-6">
+      <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" onClick={() => navigate("/task-management")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
@@ -132,7 +140,7 @@ export default function TaskDetails() {
         <h1 className="text-2xl font-bold">Detalhes da Tarefa</h1>
       </div>
 
-      <div className="grid gap-6">
+      <div className="space-y-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-4">Informações Básicas</h2>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
