@@ -261,11 +261,46 @@ export type Database = {
         }
         Relationships: []
       }
+      task_dependencies: {
+        Row: {
+          created_at: string
+          depends_on: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          depends_on: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          depends_on?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_dependencies_depends_on_fkey"
+            columns: ["depends_on"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_dependencies_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           actual_hours: number | null
           created_at: string
-          dependency: string | null
           end_date: string | null
           epic: string | null
           estimated_completion_date: string | null
@@ -284,7 +319,6 @@ export type Database = {
         Insert: {
           actual_hours?: number | null
           created_at?: string
-          dependency?: string | null
           end_date?: string | null
           epic?: string | null
           estimated_completion_date?: string | null
@@ -303,7 +337,6 @@ export type Database = {
         Update: {
           actual_hours?: number | null
           created_at?: string
-          dependency?: string | null
           end_date?: string | null
           epic?: string | null
           estimated_completion_date?: string | null
@@ -356,6 +389,18 @@ export type Database = {
           total_cost: number | null
           total_hours: number | null
           total_tasks: number | null
+        }
+        Relationships: []
+      }
+      task_critical_path: {
+        Row: {
+          end_date: string | null
+          id: string | null
+          level: number | null
+          path: string[] | null
+          start_date: string | null
+          status: string | null
+          task_name: string | null
         }
         Relationships: []
       }
