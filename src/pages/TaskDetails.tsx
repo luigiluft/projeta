@@ -10,13 +10,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useEffect } from "react";
 
 export default function TaskDetails() {
   const { id: taskId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: task } = useQuery({
+  const { data: task, isLoading: isLoadingTask } = useQuery({
     queryKey: ['task', taskId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -30,7 +31,7 @@ export default function TaskDetails() {
     },
   });
 
-  const { data: dependencies = [] } = useQuery({
+  const { data: dependencies = [], isLoading: isLoadingDeps } = useQuery({
     queryKey: ['task-dependencies', taskId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -61,9 +62,14 @@ export default function TaskDetails() {
     },
   });
 
-  const form = useForm<Task>({
-    defaultValues: task,
-  });
+  const form = useForm<Task>();
+
+  // Atualizar o formulário quando os dados da task forem carregados
+  useEffect(() => {
+    if (task) {
+      form.reset(task);
+    }
+  }, [task, form]);
 
   const updateTaskMutation = useMutation({
     mutationFn: async (values: Task) => {
@@ -111,6 +117,10 @@ export default function TaskDetails() {
       toast.success('Dependência removida com sucesso!');
     },
   });
+
+  if (isLoadingTask || isLoadingDeps) {
+    return <div className="container mx-auto py-6">Carregando...</div>;
+  }
 
   if (!task) return null;
 
