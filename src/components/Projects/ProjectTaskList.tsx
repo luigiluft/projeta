@@ -1,5 +1,5 @@
 
-import { Project } from "@/types/project";
+import { Project, Task } from "@/types/project";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Calendar } from "lucide-react";
 import { format } from "date-fns";
@@ -81,9 +81,9 @@ export function ProjectTaskList({ project }: ProjectTaskListProps) {
                     <Badge variant="outline" className="bg-blue-50 text-blue-700">
                       Owner: {task.owner}
                     </Badge>
-                    {task.dependency && (
+                    {task.depends_on && (
                       <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                        Dependência: {task.dependency}
+                        Dependência: {task.depends_on}
                       </Badge>
                     )}
                   </div>
