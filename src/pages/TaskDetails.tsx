@@ -10,14 +10,14 @@ import { BasicInfoForm } from "@/components/TaskDetails/BasicInfoForm";
 import { DependenciesList } from "@/components/TaskDetails/DependenciesList";
 
 export default function TaskDetails() {
-  const { id: taskId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  console.log('TaskDetails rendered with ID:', taskId);
+  console.log('TaskDetails rendered with ID:', id);
   console.log('Current params:', useParams());
 
-  if (!taskId) {
+  if (!id) {
     console.error('No task ID provided');
     return (
       <div className="container mx-auto py-6">
@@ -33,12 +33,12 @@ export default function TaskDetails() {
   }
 
   const { data: projectAttributes } = useQuery({
-    queryKey: ['project-attributes', taskId],
+    queryKey: ['project-attributes', id],
     queryFn: async () => {
       const { data: task } = await supabase
         .from('tasks')
         .select('project_id')
-        .eq('id', taskId)
+        .eq('id', id)
         .single();
 
       if (!task?.project_id) return {};
@@ -55,19 +55,19 @@ export default function TaskDetails() {
         [attr.name]: Number(attr.value) || attr.value
       }), {});
     },
-    enabled: Boolean(taskId)
+    enabled: Boolean(id)
   });
 
   const { data: task, isLoading: isLoadingTask, error: taskError } = useQuery({
-    queryKey: ['task', taskId],
+    queryKey: ['task', id],
     queryFn: async () => {
-      console.log('Fetching task with ID:', taskId);
-      if (!taskId) throw new Error('Task ID is required');
+      console.log('Fetching task with ID:', id);
+      if (!id) throw new Error('Task ID is required');
 
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
-        .eq('id', taskId)
+        .eq('id', id)
         .single();
 
       if (error) {
@@ -82,14 +82,14 @@ export default function TaskDetails() {
       console.log('Task data:', data);
       return data as Task;
     },
-    enabled: Boolean(taskId),
+    enabled: Boolean(id),
   });
 
   const { data: dependencies = [], isLoading: isLoadingDeps, error: depsError } = useQuery({
-    queryKey: ['task-dependencies', taskId],
+    queryKey: ['task-dependencies', id],
     queryFn: async () => {
-      console.log('Fetching dependencies for task:', taskId);
-      if (!taskId) throw new Error('Task ID is required');
+      console.log('Fetching dependencies for task:', id);
+      if (!id) throw new Error('Task ID is required');
 
       const { data, error } = await supabase
         .from('task_dependencies')
@@ -100,7 +100,7 @@ export default function TaskDetails() {
           created_at,
           tasks!task_dependencies_depends_on_fkey(*)
         `)
-        .eq('task_id', taskId);
+        .eq('task_id', id);
 
       if (error) {
         console.error('Error fetching dependencies:', error);
@@ -119,23 +119,23 @@ export default function TaskDetails() {
         } : undefined
       }));
     },
-    enabled: Boolean(taskId),
+    enabled: Boolean(id),
   });
 
   const updateTaskMutation = useMutation({
     mutationFn: async (values: Task) => {
       console.log('Updating task with values:', values);
-      if (!taskId) throw new Error('Task ID is required');
+      if (!id) throw new Error('Task ID is required');
 
       const { error } = await supabase
         .from('tasks')
         .update(values)
-        .eq('id', taskId);
+        .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['task', id] });
       toast.success('Tarefa atualizada com sucesso!');
     },
     onError: (error) => {
@@ -146,19 +146,19 @@ export default function TaskDetails() {
 
   const addDependencyMutation = useMutation({
     mutationFn: async (dependsOn: string) => {
-      if (!taskId) throw new Error('Task ID is required');
+      if (!id) throw new Error('Task ID is required');
 
       const { error } = await supabase
         .from('task_dependencies')
         .insert({
-          task_id: taskId,
+          task_id: id,
           depends_on: dependsOn,
         });
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task-dependencies', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['task-dependencies', id] });
       toast.success('Dependência adicionada com sucesso!');
     },
     onError: (error) => {
@@ -177,7 +177,7 @@ export default function TaskDetails() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task-dependencies', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['task-dependencies', id] });
       toast.success('Dependência removida com sucesso!');
     },
     onError: (error) => {
@@ -187,12 +187,12 @@ export default function TaskDetails() {
   });
 
   const handleAddDependency = async () => {
-    if (!taskId) return;
+    if (!id) return;
 
     const { data: tasks, error } = await supabase
       .from('tasks')
       .select('id, task_name')
-      .neq('id', taskId);
+      .neq('id', id);
 
     if (error) {
       console.error('Error fetching tasks for dependency:', error);
