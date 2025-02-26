@@ -15,11 +15,7 @@ export default function TaskDetails() {
   const { id: taskId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  if (!taskId) {
-    console.error('No task ID provided');
-    return <div className="container mx-auto py-6">ID da tarefa não fornecido</div>;
-  }
+  const form = useForm<Task>();
 
   const { data: task, isLoading: isLoadingTask, error: taskError } = useQuery({
     queryKey: ['task', taskId],
@@ -43,7 +39,7 @@ export default function TaskDetails() {
       console.log('Task data:', data);
       return data as Task;
     },
-    enabled: !!taskId,
+    enabled: Boolean(taskId),
   });
 
   const { data: dependencies = [], isLoading: isLoadingDeps, error: depsError } = useQuery({
@@ -81,10 +77,8 @@ export default function TaskDetails() {
         }
       })) as TaskDependency[];
     },
-    enabled: !!taskId,
+    enabled: Boolean(taskId),
   });
-
-  const form = useForm<Task>();
 
   useEffect(() => {
     if (task) {
@@ -159,6 +153,14 @@ export default function TaskDetails() {
     }
   });
 
+  if (!taskId) {
+    return <div className="container mx-auto py-6">ID da tarefa não fornecido</div>;
+  }
+
+  if (isLoadingTask || isLoadingDeps) {
+    return <div className="container mx-auto py-6">Carregando...</div>;
+  }
+
   if (taskError) {
     console.error('Task error:', taskError);
     return <div className="container mx-auto py-6">Erro ao carregar tarefa</div>;
@@ -167,10 +169,6 @@ export default function TaskDetails() {
   if (depsError) {
     console.error('Dependencies error:', depsError);
     return <div className="container mx-auto py-6">Erro ao carregar dependências</div>;
-  }
-
-  if (isLoadingTask || isLoadingDeps) {
-    return <div className="container mx-auto py-6">Carregando...</div>;
   }
 
   if (!task) {
