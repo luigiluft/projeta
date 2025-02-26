@@ -61,6 +61,12 @@ export function ProjectTasksTable({ tasks = [], projectId, epic }: ProjectTasksT
     return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
   };
 
+  const getHoursFromFormula = (formula: string | undefined) => {
+    if (!formula) return 0;
+    const hours = parseFloat(formula);
+    return isNaN(hours) ? 0 : hours;
+  };
+
   return (
     <div className="bg-muted/50 p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -128,13 +134,13 @@ export function ProjectTasksTable({ tasks = [], projectId, epic }: ProjectTasksT
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
                   <Clock className="h-4 w-4 text-gray-500" />
-                  {task.hours}h
+                  {getHoursFromFormula(task.hours_formula)}h
                 </div>
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
                   <Clock className="h-4 w-4 text-gray-500" />
-                  {task.actual_hours}h
+                  {getHoursFromFormula(task.hours_formula)}h
                 </div>
               </TableCell>
             </TableRow>

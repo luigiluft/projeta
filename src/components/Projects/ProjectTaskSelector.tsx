@@ -36,7 +36,10 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
 
   const epics = Array.from(new Set(tasks.map(task => task.epic))).filter(Boolean);
   const selectedTasks = tasks.filter(task => task.epic === selectedEpic);
-  const totalHours = selectedTasks.reduce((sum, task) => sum + (task.hours || 0), 0);
+  const totalHours = selectedTasks.reduce((sum, task) => {
+    const hours = task.hours_formula ? parseFloat(task.hours_formula) : 0;
+    return sum + (isNaN(hours) ? 0 : hours);
+  }, 0);
 
   const handleSubmit = async () => {
     if (!projectName.trim()) {

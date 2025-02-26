@@ -24,9 +24,10 @@ export function ScopeTab({ tasks, columns, onColumnsChange }: ScopeTabProps) {
   const calculateCosts = () => {
     const costs = tasks.reduce((acc, task) => {
       const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
-      const taskCost = hourlyRate * (task.hours || 0);
+      const hours = task.hours_formula ? parseFloat(task.hours_formula) : 0;
+      const taskCost = hourlyRate * hours;
       return {
-        hours: acc.hours + (task.hours || 0),
+        hours: acc.hours + hours,
         cost: acc.cost + taskCost
       };
     }, { hours: 0, cost: 0 });
