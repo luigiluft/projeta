@@ -1,4 +1,3 @@
-
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,7 +51,7 @@ export default function TaskDetails() {
     },
   });
 
-  const { data: availableTasks } = useQuery({
+  const { data: availableTasks = [] } = useQuery({
     queryKey: ['available-tasks', search],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -102,7 +101,6 @@ export default function TaskDetails() {
     },
   });
 
-  // Atualiza o formulário quando os dados da tarefa são carregados
   useEffect(() => {
     if (task) {
       const formattedStartDate = task.start_date ? format(new Date(task.start_date), 'yyyy-MM-dd') : '';
@@ -343,8 +341,8 @@ export default function TaskDetails() {
                                 setOpen(true);
                               }}
                             >
-                              {field.value
-                                ? availableTasks?.find((task) => task.id === field.value)?.task_name
+                              {field.value && availableTasks
+                                ? availableTasks.find((task) => task.id === field.value)?.task_name || "Selecione uma tarefa dependente..."
                                 : "Selecione uma tarefa dependente..."}
                               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -357,7 +355,7 @@ export default function TaskDetails() {
                               />
                               <CommandEmpty>Nenhuma tarefa encontrada.</CommandEmpty>
                               <CommandGroup>
-                                {availableTasks?.map((task) => (
+                                {availableTasks.map((task) => (
                                   <CommandItem
                                     key={task.id}
                                     onSelect={() => {
