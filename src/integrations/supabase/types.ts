@@ -264,45 +264,10 @@ export type Database = {
         }
         Relationships: []
       }
-      task_dependencies: {
-        Row: {
-          created_at: string
-          depends_on: string
-          id: string
-          task_id: string
-        }
-        Insert: {
-          created_at?: string
-          depends_on: string
-          id?: string
-          task_id: string
-        }
-        Update: {
-          created_at?: string
-          depends_on?: string
-          id?: string
-          task_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "task_dependencies_depends_on_fkey"
-            columns: ["depends_on"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_dependencies_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tasks: {
         Row: {
           created_at: string
+          depends_on: string | null
           epic: string | null
           hours_formula: string | null
           id: string
@@ -315,6 +280,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          depends_on?: string | null
           epic?: string | null
           hours_formula?: string | null
           id?: string
@@ -327,6 +293,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          depends_on?: string | null
           epic?: string | null
           hours_formula?: string | null
           id?: string
@@ -337,7 +304,15 @@ export type Database = {
           story?: string | null
           task_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_depends_on_fkey"
+            columns: ["depends_on"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

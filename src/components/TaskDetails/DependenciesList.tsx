@@ -4,22 +4,22 @@ import { Plus, Trash2 } from "lucide-react";
 
 interface Dependency {
   id: string;
-  task_id: string;
-  depends_on: string;
-  created_at: string;
-  dependency?: {
-    task_name: string;
-    [key: string]: any;
-  };
+  task_name: string;
 }
 
 interface DependenciesListProps {
-  dependencies: Dependency[];
+  taskId: string;
+  dependencyTask?: Dependency;
   onAddDependency: () => void;
-  onRemoveDependency: (id: string) => void;
+  onRemoveDependency: () => void;
 }
 
-export function DependenciesList({ dependencies, onAddDependency, onRemoveDependency }: DependenciesListProps) {
+export function DependenciesList({ 
+  taskId, 
+  dependencyTask, 
+  onAddDependency, 
+  onRemoveDependency 
+}: DependenciesListProps) {
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <div className="flex items-center justify-between mb-4">
@@ -30,25 +30,21 @@ export function DependenciesList({ dependencies, onAddDependency, onRemoveDepend
         </Button>
       </div>
 
-      {dependencies.length === 0 ? (
+      {!dependencyTask ? (
         <p className="text-muted-foreground text-sm">Nenhuma dependência cadastrada.</p>
       ) : (
-        <ul className="space-y-2">
-          {dependencies.map((dep) => (
-            <li key={dep.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <span className="text-sm">
-                {dep.dependency?.task_name || dep.depends_on}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onRemoveDependency(dep.id)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+            <span className="text-sm">{dependencyTask.task_name}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRemoveDependency}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

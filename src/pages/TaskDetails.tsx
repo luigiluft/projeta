@@ -8,11 +8,13 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BasicInfoForm } from "@/components/TaskDetails/BasicInfoForm";
 import { DependenciesList } from "@/components/TaskDetails/DependenciesList";
+import { useState } from "react";
 
 export default function TaskDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [isSelectingDependency, setIsSelectingDependency] = useState(false);
 
   console.log('TaskDetails rendered with ID:', id);
 
@@ -39,7 +41,13 @@ export default function TaskDetails() {
 
       const { data, error } = await supabase
         .from('tasks')
-        .select('*')
+        .select(`
+          *,
+          dependency:tasks!tasks_depends_on_fkey(
+            id,
+            task_name
+          )
+        `)
         .eq('id', id)
         .single();
 
@@ -53,7 +61,7 @@ export default function TaskDetails() {
       }
 
       console.log('Task data:', data);
-      return data as Task;
+      return data as Task & { dependency?: { id: string; task_name: string } };
     },
     enabled: Boolean(id),
   });
@@ -80,43 +88,6 @@ export default function TaskDetails() {
       console.log('Formatted project attributes:', formattedAttributes);
       return formattedAttributes || {};
     }
-  });
-
-  const { data: dependencies = [], isLoading: isLoadingDeps, error: depsError } = useQuery({
-    queryKey: ['task-dependencies', id],
-    queryFn: async () => {
-      console.log('Fetching dependencies for task:', id);
-      if (!id) throw new Error('Task ID is required');
-
-      const { data, error } = await supabase
-        .from('task_dependencies')
-        .select(`
-          id,
-          task_id,
-          depends_on,
-          created_at,
-          tasks!task_dependencies_depends_on_fkey(*)
-        `)
-        .eq('task_id', id);
-
-      if (error) {
-        console.error('Error fetching dependencies:', error);
-        throw error;
-      }
-
-      console.log('Dependencies data:', data);
-      return data.map(dep => ({
-        id: dep.id,
-        task_id: dep.task_id,
-        depends_on: dep.depends_on,
-        created_at: dep.created_at,
-        dependency: dep.tasks ? {
-          ...dep.tasks,
-          task_name: dep.tasks.task_name
-        } : undefined
-      }));
-    },
-    enabled: Boolean(id),
   });
 
   const updateTaskMutation = useMutation({
@@ -154,45 +125,25 @@ export default function TaskDetails() {
     }
   });
 
-  const addDependencyMutation = useMutation({
-    mutationFn: async (dependsOn: string) => {
+  const updateDependencyMutation = useMutation({
+    mutationFn: async (dependsOn: string | null) => {
       if (!id) throw new Error('Task ID is required');
 
       const { error } = await supabase
-        .from('task_dependencies')
-        .insert({
-          task_id: id,
-          depends_on: dependsOn,
-        });
+        .from('tasks')
+        .update({ depends_on: dependsOn })
+        .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task-dependencies', id] });
-      toast.success('Dependência adicionada com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['task', id] });
+      setIsSelectingDependency(false);
+      toast.success('Dependência atualizada com sucesso!');
     },
     onError: (error) => {
-      console.error('Error adding dependency:', error);
-      toast.error('Erro ao adicionar dependência');
-    }
-  });
-
-  const removeDependencyMutation = useMutation({
-    mutationFn: async (dependencyId: string) => {
-      const { error } = await supabase
-        .from('task_dependencies')
-        .delete()
-        .eq('id', dependencyId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task-dependencies', id] });
-      toast.success('Dependência removida com sucesso!');
-    },
-    onError: (error) => {
-      console.error('Error removing dependency:', error);
-      toast.error('Erro ao remover dependência');
+      console.error('Error updating dependency:', error);
+      toast.error('Erro ao atualizar dependência');
     }
   });
 
@@ -218,16 +169,15 @@ export default function TaskDetails() {
     const dependsOn = window.prompt('ID da tarefa dependente:');
     if (!dependsOn) return;
 
-    addDependencyMutation.mutate(dependsOn);
+    updateDependencyMutation.mutate(dependsOn);
   };
 
-  if (isLoadingTask || isLoadingDeps) {
+  if (isLoadingTask) {
     return <div className="container mx-auto py-6">Carregando...</div>;
   }
 
-  if (taskError || depsError) {
+  if (taskError) {
     console.error('Task error:', taskError);
-    console.error('Dependencies error:', depsError);
     return <div className="container mx-auto py-6">Erro ao carregar dados da tarefa</div>;
   }
 
@@ -252,9 +202,10 @@ export default function TaskDetails() {
           projectAttributes={projectAttributes || {}}
         />
         <DependenciesList 
-          dependencies={dependencies}
+          taskId={id}
+          dependencyTask={task.dependency}
           onAddDependency={handleAddDependency}
-          onRemoveDependency={(id) => removeDependencyMutation.mutate(id)}
+          onRemoveDependency={() => updateDependencyMutation.mutate(null)}
         />
       </div>
     </div>
