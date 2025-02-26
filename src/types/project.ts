@@ -51,6 +51,7 @@ export interface Task {
   story: string;
   task_name: string;
   hours: number;
+  hours_formula?: string;
   owner: string;
   dependency: string | null;
   created_at: string;
