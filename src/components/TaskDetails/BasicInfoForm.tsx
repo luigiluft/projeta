@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,22 +75,20 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
   };
 
   const insertAttributeAtCursor = (attributeName: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const currentValue = form.getValues("hours_formula") || "";
+    const currentFormula = form.getValues("hours_formula") || "";
     
-    const newValue = currentValue.slice(0, start) + attributeName + currentValue.slice(end);
-    form.setValue("hours_formula", newValue);
-    handleFormulaChange(newValue);
+    // Adiciona um operador de multiplicação se houver um número antes do cursor
+    const newFormula = currentFormula
+      ? `${currentFormula} + ${attributeName}`
+      : attributeName;
+    
+    form.setValue("hours_formula", newFormula);
+    handleFormulaChange(newFormula);
 
-    // Reposiciona o cursor após o atributo inserido
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + attributeName.length, start + attributeName.length);
-    }, 0);
+    // Foca o textarea após inserir a variável
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
   };
 
   return (
