@@ -40,20 +40,23 @@ export default function TaskDetails() {
           task_id,
           depends_on,
           created_at,
-          tasks!task_dependencies_depends_on_fkey(
-            id,
-            task_name,
-            status
-          )
+          tasks!task_dependencies_depends_on_fkey(*)
         `)
         .eq('task_id', taskId);
 
       if (error) throw error;
       
-      // Transformar os dados para corresponder ao tipo TaskDependency
       return data.map(dep => ({
-        ...dep,
-        dependency: dep.tasks
+        id: dep.id,
+        task_id: dep.task_id,
+        depends_on: dep.depends_on,
+        created_at: dep.created_at,
+        dependency: {
+          ...dep.tasks,
+          is_active: dep.tasks.is_active ?? true,
+          order_number: dep.tasks.order_number ?? 0,
+          actual_hours: dep.tasks.actual_hours ?? 0,
+        }
       })) as TaskDependency[];
     },
   });
