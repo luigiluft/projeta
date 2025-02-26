@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -130,7 +129,7 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-56 bg-[#F1F0FB] border border-gray-200"
+                className="w-56 bg-white border border-gray-200"
               >
                 {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
                   <DropdownMenuItem
