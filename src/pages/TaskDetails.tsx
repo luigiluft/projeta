@@ -335,12 +335,7 @@ export default function TaskDetails() {
                       <FormControl>
                         <Popover 
                           open={open} 
-                          onOpenChange={(isOpen) => {
-                            setOpen(isOpen);
-                            if (!isOpen) {
-                              setSearch("");
-                            }
-                          }}
+                          onOpenChange={setOpen}
                         >
                           <PopoverTrigger asChild>
                             <Button
@@ -355,7 +350,7 @@ export default function TaskDetails() {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-[400px] p-0" align="start">
-                            <Command>
+                            <Command shouldFilter={false}>
                               <CommandInput 
                                 placeholder="Pesquisar tarefas..." 
                                 value={search}
