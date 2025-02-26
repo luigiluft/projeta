@@ -16,11 +16,24 @@ export default function TaskDetails() {
 
   console.log('TaskDetails rendered with ID:', taskId);
 
+  if (!taskId) {
+    console.error('No task ID provided');
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" onClick={() => navigate("/task-management")}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <h1 className="text-2xl font-bold">ID da tarefa não fornecido</h1>
+        </div>
+      </div>
+    );
+  }
+
   const { data: projectAttributes } = useQuery({
     queryKey: ['project-attributes', taskId],
     queryFn: async () => {
-      if (!taskId) return {};
-
       const { data: task } = await supabase
         .from('tasks')
         .select('project_id')
@@ -101,10 +114,7 @@ export default function TaskDetails() {
         created_at: dep.created_at,
         dependency: dep.tasks ? {
           ...dep.tasks,
-          is_active: dep.tasks.is_active ?? true,
-          order_number: dep.tasks.order_number ?? 0,
-          actual_hours: dep.tasks.actual_hours ?? 0,
-          status: (dep.tasks.status as "pending" | "in_progress" | "completed") || "pending"
+          task_name: dep.tasks.task_name
         } : undefined
       }));
     },
@@ -200,23 +210,14 @@ export default function TaskDetails() {
     addDependencyMutation.mutate(dependsOn);
   };
 
-  if (!taskId) {
-    console.error('No task ID provided');
-    return <div className="container mx-auto py-6">ID da tarefa não fornecido</div>;
-  }
-
   if (isLoadingTask || isLoadingDeps) {
     return <div className="container mx-auto py-6">Carregando...</div>;
   }
 
-  if (taskError) {
+  if (taskError || depsError) {
     console.error('Task error:', taskError);
-    return <div className="container mx-auto py-6">Erro ao carregar tarefa</div>;
-  }
-
-  if (depsError) {
     console.error('Dependencies error:', depsError);
-    return <div className="container mx-auto py-6">Erro ao carregar dependências</div>;
+    return <div className="container mx-auto py-6">Erro ao carregar dados da tarefa</div>;
   }
 
   if (!task) {
