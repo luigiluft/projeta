@@ -60,10 +60,12 @@ export default function TaskDetails() {
         throw new Error('Task not found');
       }
 
+      console.log('Raw task data from DB:', data);
+
       // Transformar os dados do Supabase para corresponder à interface Task
       const transformedTask: Task & { dependency?: { id: string; task_name: string } } = {
         id: data.id,
-        order_number: data.order_number || 0, // Valor padrão se não existir
+        order_number: 0, // Definimos um valor padrão, já que não existe no banco
         is_active: data.is_active || true,
         phase: data.phase || '',
         epic: data.epic || '',
@@ -72,13 +74,15 @@ export default function TaskDetails() {
         hours_formula: data.hours_formula,
         owner: data.owner || '',
         created_at: data.created_at,
-        status: data.status || 'pending',
-        start_date: data.start_date,
-        end_date: data.end_date,
-        estimated_completion_date: data.estimated_completion_date,
+        // Garantir que o status seja um dos valores permitidos
+        status: (data.status as 'pending' | 'in_progress' | 'completed') || 'pending',
+        // Campos que podem não existir no banco
+        start_date: undefined,
+        end_date: undefined,
+        estimated_completion_date: undefined,
         depends_on: data.depends_on,
         // Transformar o array de dependency em um único objeto se existir
-        dependency: data.dependency && data.dependency[0] ? {
+        dependency: data.dependency && data.dependency.length > 0 ? {
           id: data.dependency[0].id,
           task_name: data.dependency[0].task_name
         } : undefined
