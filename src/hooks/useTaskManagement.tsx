@@ -24,16 +24,18 @@ export function useTaskManagement() {
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: async () => {
+      // Removendo o order_number.asc que estava causando erro
       const { data, error } = await supabase
         .from('tasks')
-        .select('*')
-        .order('order_number', { ascending: true });
+        .select('*');
 
       if (error) {
+        console.error('Error fetching tasks:', error);
         toast.error('Erro ao carregar tarefas');
         throw error;
       }
 
+      console.log('Tasks loaded successfully:', data);
       return data as Task[];
     },
   });
