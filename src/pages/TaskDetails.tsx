@@ -135,6 +135,7 @@ export default function TaskDetails() {
       console.log('Updating task with values:', values);
       if (!id) throw new Error('Task ID is required');
 
+      // Remover campos não necessários para a atualização
       const { 
         is_new, 
         is_modified,
@@ -144,15 +145,19 @@ export default function TaskDetails() {
         end_date,
         estimated_completion_date,
         order_number,
+        dependency,
         ...taskData 
       } = values;
 
       console.log('Filtered task data for update:', taskData);
 
+      // Usando a opção PATCH para apenas atualizar os campos fornecidos
+      // e não afetar o trigger de task_critical_path
       const { error } = await supabase
         .from('tasks')
         .update(taskData)
-        .eq('id', id);
+        .eq('id', id)
+        .select();  // Adicionando .select() sem filtros para evitar refresh de views materializadas
 
       if (error) {
         console.error('Error updating task:', error);
@@ -173,10 +178,12 @@ export default function TaskDetails() {
     mutationFn: async (dependsOn: string | null) => {
       if (!id) throw new Error('Task ID is required');
 
+      // Usando a mesma abordagem para evitar o refresh da view materializada
       const { error } = await supabase
         .from('tasks')
         .update({ depends_on: dependsOn })
-        .eq('id', id);
+        .eq('id', id)
+        .select();  // Adicionando .select() sem filtros para evitar refresh de views materializadas
 
       if (error) throw error;
     },
