@@ -15,7 +15,6 @@ export function useTaskManagement() {
     { id: "story", label: "Story", visible: true },
     { id: "hours", label: "Horas", visible: true },
     { id: "owner", label: "Responsável", visible: true },
-    { id: "dependency", label: "Dependência", visible: true },
     { id: "created_at", label: "Criado em", visible: true },
   ]);
   const [savedViews, setSavedViews] = useState<View[]>([]);
@@ -24,7 +23,6 @@ export function useTaskManagement() {
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: async () => {
-      // Removendo o order_number.asc que estava causando erro
       const { data, error } = await supabase
         .from('tasks')
         .select('*');

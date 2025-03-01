@@ -124,18 +124,18 @@ export default function TaskDetails() {
 
       console.log('Filtered task data for update:', taskData);
 
-      // Remover campos relacionados a dependências
-      delete taskData.depends_on;
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('tasks')
         .update(taskData)
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) {
         console.error('Error updating task:', error);
         throw error;
       }
+
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', id] });
@@ -143,7 +143,7 @@ export default function TaskDetails() {
     },
     onError: (error) => {
       console.error('Error updating task:', error);
-      toast.error('Erro ao atualizar tarefa');
+      toast.error(`Erro ao atualizar tarefa: ${error.message}`);
     }
   });
 

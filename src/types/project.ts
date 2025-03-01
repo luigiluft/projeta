@@ -58,7 +58,6 @@ export interface Task {
   start_date?: string;
   end_date?: string;
   estimated_completion_date?: string;
-  depends_on?: string | null;
 }
 
 export interface Column {
