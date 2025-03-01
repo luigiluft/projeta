@@ -7,14 +7,11 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BasicInfoForm } from "@/components/TaskDetails/BasicInfoForm";
-import { DependenciesList } from "@/components/TaskDetails/DependenciesList";
-import { useState } from "react";
 
 export default function TaskDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isSelectingDependency, setIsSelectingDependency] = useState(false);
 
   console.log('TaskDetails rendered with ID:', id);
 
@@ -39,7 +36,6 @@ export default function TaskDetails() {
       console.log('Fetching task with ID:', id);
       if (!id) throw new Error('Task ID is required');
 
-      // Primeiro, busque a tarefa principal
       const { data: taskData, error: taskError } = await supabase
         .from('tasks')
         .select('*')
@@ -56,23 +52,6 @@ export default function TaskDetails() {
       }
       
       console.log('Raw task data from Supabase:', taskData);
-
-      // Se a tarefa tiver uma dependência, busque essa dependência separadamente
-      let dependencyTask = null;
-      if (taskData.depends_on) {
-        const { data: dependencyData, error: dependencyError } = await supabase
-          .from('tasks')
-          .select('id, task_name')
-          .eq('id', taskData.depends_on)
-          .single();
-          
-        if (!dependencyError && dependencyData) {
-          dependencyTask = dependencyData;
-          console.log('Dependency task found:', dependencyTask);
-        } else if (dependencyError) {
-          console.error('Error fetching dependency task:', dependencyError);
-        }
-      }
 
       // Transformar os dados do Supabase para corresponder à interface Task
       const transformedTask: Task = {
@@ -92,12 +71,7 @@ export default function TaskDetails() {
           : 'pending',
         start_date: undefined, // Estes campos não existem no banco de dados atual
         end_date: undefined,
-        estimated_completion_date: undefined,
-        depends_on: taskData.depends_on,
-        dependency: dependencyTask ? {
-          id: dependencyTask.id,
-          task_name: dependencyTask.task_name
-        } : undefined
+        estimated_completion_date: undefined
       };
 
       console.log('Transformed task data:', transformedTask);
@@ -145,19 +119,18 @@ export default function TaskDetails() {
         end_date,
         estimated_completion_date,
         order_number,
-        dependency,
         ...taskData 
       } = values;
 
       console.log('Filtered task data for update:', taskData);
 
-      // Usando a opção PATCH para apenas atualizar os campos fornecidos
-      // e não afetar o trigger de task_critical_path
+      // Remover campos relacionados a dependências
+      delete taskData.depends_on;
+
       const { error } = await supabase
         .from('tasks')
         .update(taskData)
-        .eq('id', id)
-        .select();  // Adicionando .select() sem filtros para evitar refresh de views materializadas
+        .eq('id', id);
 
       if (error) {
         console.error('Error updating task:', error);
@@ -173,55 +146,6 @@ export default function TaskDetails() {
       toast.error('Erro ao atualizar tarefa');
     }
   });
-
-  const updateDependencyMutation = useMutation({
-    mutationFn: async (dependsOn: string | null) => {
-      if (!id) throw new Error('Task ID is required');
-
-      // Usando a mesma abordagem para evitar o refresh da view materializada
-      const { error } = await supabase
-        .from('tasks')
-        .update({ depends_on: dependsOn })
-        .eq('id', id)
-        .select();  // Adicionando .select() sem filtros para evitar refresh de views materializadas
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task', id] });
-      setIsSelectingDependency(false);
-      toast.success('Dependência atualizada com sucesso!');
-    },
-    onError: (error) => {
-      console.error('Error updating dependency:', error);
-      toast.error('Erro ao atualizar dependência');
-    }
-  });
-
-  const handleAddDependency = async () => {
-    if (!id) return;
-
-    const { data: tasks, error } = await supabase
-      .from('tasks')
-      .select('id, task_name')
-      .neq('id', id);
-
-    if (error) {
-      console.error('Error fetching tasks for dependency:', error);
-      toast.error('Erro ao buscar tarefas');
-      return;
-    }
-
-    if (!tasks) {
-      toast.error('Nenhuma tarefa encontrada');
-      return;
-    }
-
-    const dependsOn = window.prompt('ID da tarefa dependente:');
-    if (!dependsOn) return;
-
-    updateDependencyMutation.mutate(dependsOn);
-  };
 
   if (isLoadingTask) {
     return <div className="container mx-auto py-6">Carregando...</div>;
@@ -251,12 +175,6 @@ export default function TaskDetails() {
           task={task} 
           onSubmit={(values) => updateTaskMutation.mutate(values)}
           projectAttributes={projectAttributes || {}}
-        />
-        <DependenciesList 
-          taskId={id}
-          dependencyTask={task.dependency}
-          onAddDependency={handleAddDependency}
-          onRemoveDependency={() => updateDependencyMutation.mutate(null)}
         />
       </div>
     </div>

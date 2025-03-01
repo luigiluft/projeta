@@ -1,3 +1,4 @@
+
 export interface Project {
   id: string;
   name: string;
@@ -58,10 +59,6 @@ export interface Task {
   end_date?: string;
   estimated_completion_date?: string;
   depends_on?: string | null;
-  dependency?: {
-    id: string;
-    task_name: string;
-  };
 }
 
 export interface Column {
