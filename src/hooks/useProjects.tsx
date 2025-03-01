@@ -37,30 +37,45 @@ export const useProjects = () => {
 
       const projectsWithTasks = await Promise.all(
         projectsData.map(async (project) => {
-          const { data: tasksData, error: tasksError } = await supabase
-            .from('tasks')
-            .select('*')
-            .eq('epic', project.epic);
+          // Lidar com múltiplos epics
+          const epicList = project.epic ? project.epic.split(', ') : [];
+          
+          let allTasks: Task[] = [];
+          
+          // Buscar tarefas para cada epic
+          for (const epic of epicList) {
+            const { data: tasksData, error: tasksError } = await supabase
+              .from('tasks')
+              .select('*')
+              .eq('epic', epic);
 
-          if (tasksError) {
-            toast.error(`Erro ao carregar tarefas do projeto ${project.epic}`);
-            throw tasksError;
+            if (tasksError) {
+              toast.error(`Erro ao carregar tarefas do epic ${epic}`);
+              throw tasksError;
+            }
+
+            if (tasksData && tasksData.length > 0) {
+              const tasks = tasksData.map((task, index) => ({
+                ...task,
+                order_number: allTasks.length + index + 1, // Ordem contínua para todos os epics
+                is_active: task.is_active || true,
+                phase: task.phase || '',
+                epic: task.epic || '',
+                story: task.story || '',
+                owner: task.owner || '',
+                status: (task.status as "pending" | "in_progress" | "completed") || "pending",
+              })) as Task[];
+              
+              allTasks = [...allTasks, ...tasks];
+            }
           }
 
-          const tasks = tasksData.map((task, index) => ({
-            ...task,
-            order_number: index + 1, // Adiciona order_number com base no índice
-            is_active: task.is_active || true,
-            phase: task.phase || '',
-            epic: task.epic || '',
-            story: task.story || '',
-            owner: task.owner || '',
-            status: (task.status as "pending" | "in_progress" | "completed") || "pending",
-          })) as Task[];
+          // Extrair valores dos atributos
+          const attributeValues = project.metadata?.attribute_values || {};
 
           return {
             ...project,
-            tasks,
+            tasks: allTasks,
             favorite: project.favorite || false,
             priority: project.priority || 0,
             tags: project.tags || [],
@@ -69,6 +84,7 @@ export const useProjects = () => {
             version: project.version || 1,
             metadata: project.metadata || {},
             settings: project.settings || {},
+            attribute_values: attributeValues
           } as Project;
         })
       );
@@ -77,17 +93,30 @@ export const useProjects = () => {
     },
   });
 
-  const calculateProjectCosts = (tasks: Task[]) => {
+  const calculateProjectCosts = (tasks: Task[], attributeValues: Record<string, number> = {}) => {
     let totalHours = 0;
     let totalCost = 0;
 
     tasks.forEach(task => {
       if (task.hours_formula) {
-        // Por enquanto vamos considerar que a fórmula é o número direto de horas
-        const calculatedHours = parseFloat(task.hours_formula) || 0;
-        totalHours += calculatedHours;
-        const hourlyRate = ROLE_RATES[task.owner as keyof typeof ROLE_RATES] || 0;
-        totalCost += calculatedHours * hourlyRate;
+        try {
+          // Substituir atributos com valores
+          let formula = task.hours_formula;
+          Object.entries(attributeValues).forEach(([key, value]) => {
+            const regex = new RegExp(`\\b${key}\\b`, 'g');
+            formula = formula.replace(regex, value.toString());
+          });
+          
+          // Calcular horas
+          const calculatedHours = eval(formula);
+          const hours = isNaN(calculatedHours) ? 0 : calculatedHours;
+          
+          totalHours += hours;
+          const hourlyRate = ROLE_RATES[task.owner as keyof typeof ROLE_RATES] || 0;
+          totalCost += hours * hourlyRate;
+        } catch (error) {
+          console.error('Erro ao calcular fórmula:', task.hours_formula, error);
+        }
       }
     });
 
@@ -102,21 +131,24 @@ export const useProjects = () => {
     };
   };
 
-  const handleSubmit = async (selectedTasks: Task[]) => {
+  const handleSubmit = async (selectedTasks: Task[], attributeValues: Record<string, number> = {}) => {
     if (selectedTasks.length === 0) {
       toast.error("Selecione pelo menos uma tarefa");
       return;
     }
 
-    const epic = selectedTasks[0].epic;
-    const costs = calculateProjectCosts(selectedTasks);
+    // Para múltiplos epics
+    const epics = Array.from(new Set(selectedTasks.map(task => task.epic))).filter(Boolean);
+    const epicNames = epics.join(', ');
+    
+    const costs = calculateProjectCosts(selectedTasks, attributeValues);
 
     try {
       const { error: projectError } = await supabase
         .from('projects')
         .insert([{
-          name: epic,
-          epic,
+          name: epicNames,
+          epic: epicNames,
           type: 'default',
           total_hours: costs.totalHours,
           base_cost: costs.baseCost,
@@ -132,9 +164,9 @@ export const useProjects = () => {
           archived: false,
           deleted: false,
           version: 1,
-          metadata: {},
+          metadata: { attribute_values: attributeValues },
           settings: {},
-          project_name: epic,
+          project_name: epicNames,
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         }]);
 

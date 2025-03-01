@@ -24,6 +24,7 @@ export interface Project {
   attributes: {
     [key: string]: string | number;
   };
+  attribute_values?: Record<string, number>; // Novo campo para valores dos atributos
   client_id?: string;
   workspace_id?: string;
   team_id?: string;

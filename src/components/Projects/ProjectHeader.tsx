@@ -1,42 +1,56 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ProjectTaskSelector } from "@/components/Projects/ProjectTaskSelector";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { Task } from "@/types/project";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { ProjectTaskSelector } from "./ProjectTaskSelector";
 
 interface ProjectHeaderProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  onTasksSelected: (tasks: Task[]) => void;
+  onTasksSelected: (tasks: Task[], attributeValues: Record<string, number>) => void;
 }
 
 export function ProjectHeader({ open, setOpen, onTasksSelected }: ProjectHeaderProps) {
   return (
-    <div className="flex items-center justify-between bg-white/50 backdrop-blur-xl rounded-2xl p-6 border border-gray-100">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-          Gestão de Projetos
-        </h1>
-        <p className="text-sm text-gray-500">
-          Visualize e gerencie seus projetos
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-lg shadow">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Projetos</h1>
+        <p className="text-gray-500 dark:text-gray-400">
+          Gerencie todos os seus projetos aqui
         </p>
       </div>
-      
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button className="bg-primary hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Projeto
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Criar Novo Projeto</DialogTitle>
-          </DialogHeader>
-          <ProjectTaskSelector onTasksSelected={onTasksSelected} />
-        </DialogContent>
-      </Dialog>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Button variant="outline" asChild>
+          <a href="/project-attributes">
+            Gerenciar Atributos
+          </a>
+        </Button>
+        <Button
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setOpen(true)}
+        >
+          Novo Projeto
+        </Button>
+      </div>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent className="sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Criar Novo Projeto</SheetTitle>
+            <SheetDescription>
+              Selecione as tarefas e defina os atributos para criar seu projeto
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-4">
+            <ProjectTaskSelector onTasksSelected={onTasksSelected} />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

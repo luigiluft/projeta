@@ -22,9 +22,9 @@ export default function Projects() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const handleTasksSelected = async (tasks: Task[]) => {
+  const handleTasksSelected = async (tasks: Task[], attributeValues: Record<string, number> = {}) => {
     try {
-      await handleSubmit(tasks);
+      await handleSubmit(tasks, attributeValues);
       setOpen(false);
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success("Projeto criado com sucesso");
