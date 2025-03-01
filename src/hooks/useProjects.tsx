@@ -70,8 +70,16 @@ export const useProjects = () => {
             }
           }
 
-          // Extrair valores dos atributos
-          const attributeValues = project.metadata?.attribute_values || {};
+          // Extrair valores dos atributos do campo metadata
+          let attributeValues: Record<string, number> = {};
+          
+          if (project.metadata && typeof project.metadata === 'object') {
+            // Verifica se metadata é um objeto e se contém attribute_values
+            const metadata = project.metadata as Record<string, any>;
+            if (metadata.attribute_values && typeof metadata.attribute_values === 'object') {
+              attributeValues = metadata.attribute_values as Record<string, number>;
+            }
+          }
 
           return {
             ...project,
