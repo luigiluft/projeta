@@ -39,54 +39,64 @@ export default function TaskDetails() {
       console.log('Fetching task with ID:', id);
       if (!id) throw new Error('Task ID is required');
 
-      const { data, error } = await supabase
+      // Primeiro, busque a tarefa principal
+      const { data: taskData, error: taskError } = await supabase
         .from('tasks')
-        .select(`
-          *,
-          dependency:tasks!tasks_depends_on_fkey(
-            id,
-            task_name
-          )
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
-      if (error) {
-        console.error('Error fetching task:', error);
-        throw error;
+      if (taskError) {
+        console.error('Error fetching task:', taskError);
+        throw taskError;
       }
       
-      if (!data) {
+      if (!taskData) {
         throw new Error('Task not found');
       }
+      
+      console.log('Raw task data from Supabase:', taskData);
 
-      console.log('Raw task data from Supabase:', data);
+      // Se a tarefa tiver uma dependência, busque essa dependência separadamente
+      let dependencyTask = null;
+      if (taskData.depends_on) {
+        const { data: dependencyData, error: dependencyError } = await supabase
+          .from('tasks')
+          .select('id, task_name')
+          .eq('id', taskData.depends_on)
+          .single();
+          
+        if (!dependencyError && dependencyData) {
+          dependencyTask = dependencyData;
+          console.log('Dependency task found:', dependencyTask);
+        } else if (dependencyError) {
+          console.error('Error fetching dependency task:', dependencyError);
+        }
+      }
 
       // Transformar os dados do Supabase para corresponder à interface Task
-      // Definindo valores padrão para propriedades que podem estar faltando
-      const transformedTask: Task & { dependency?: { id: string; task_name: string } } = {
-        id: data.id,
-        order_number: data.order_number || 0, // Valor padrão se não existir
-        is_active: data.is_active !== undefined ? data.is_active : true,
-        phase: data.phase || '',
-        epic: data.epic || '',
-        story: data.story || '',
-        task_name: data.task_name || '',
-        hours_formula: data.hours_formula,
-        owner: data.owner || '',
-        created_at: data.created_at,
+      const transformedTask: Task = {
+        id: taskData.id,
+        order_number: 0, // Valor padrão
+        is_active: taskData.is_active !== undefined ? taskData.is_active : true,
+        phase: taskData.phase || '',
+        epic: taskData.epic || '',
+        story: taskData.story || '',
+        task_name: taskData.task_name || '',
+        hours_formula: taskData.hours_formula,
+        owner: taskData.owner || '',
+        created_at: taskData.created_at,
         // Garantir que status seja um dos valores esperados
-        status: (data.status === 'pending' || data.status === 'in_progress' || data.status === 'completed') 
-          ? data.status as 'pending' | 'in_progress' | 'completed'
+        status: (taskData.status === 'pending' || taskData.status === 'in_progress' || taskData.status === 'completed') 
+          ? taskData.status as 'pending' | 'in_progress' | 'completed'
           : 'pending',
-        start_date: data.start_date,
-        end_date: data.end_date,
-        estimated_completion_date: data.estimated_completion_date,
-        depends_on: data.depends_on,
-        // Transformar o array de dependency em um único objeto se existir
-        dependency: data.dependency && data.dependency.length > 0 ? {
-          id: data.dependency[0].id,
-          task_name: data.dependency[0].task_name
+        start_date: undefined, // Estes campos não existem no banco de dados atual
+        end_date: undefined,
+        estimated_completion_date: undefined,
+        depends_on: taskData.depends_on,
+        dependency: dependencyTask ? {
+          id: dependencyTask.id,
+          task_name: dependencyTask.task_name
         } : undefined
       };
 
@@ -130,6 +140,10 @@ export default function TaskDetails() {
         is_modified,
         created_at,
         id: taskId,
+        start_date,
+        end_date,
+        estimated_completion_date,
+        order_number,
         ...taskData 
       } = values;
 
