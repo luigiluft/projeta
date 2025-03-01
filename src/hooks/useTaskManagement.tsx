@@ -34,7 +34,18 @@ export function useTaskManagement() {
       }
 
       console.log('Tasks loaded successfully:', data);
-      return data as Task[];
+      // Transformar os dados para incluir order_number
+      const transformedTasks: Task[] = data.map((task, index) => ({
+        ...task,
+        order_number: index + 1, // Adiciona order_number com base no índice
+        phase: task.phase || '',
+        epic: task.epic || '',
+        story: task.story || '',
+        owner: task.owner || '',
+        status: (task.status as 'pending' | 'in_progress' | 'completed') || 'pending'
+      }));
+      
+      return transformedTasks;
     },
   });
 

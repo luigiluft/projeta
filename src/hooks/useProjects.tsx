@@ -47,10 +47,15 @@ export const useProjects = () => {
             throw tasksError;
           }
 
-          const tasks = tasksData.map(task => ({
+          const tasks = tasksData.map((task, index) => ({
             ...task,
+            order_number: index + 1, // Adiciona order_number com base no índice
             is_active: task.is_active || true,
-            status: task.status as "pending" | "in_progress" | "completed",
+            phase: task.phase || '',
+            epic: task.epic || '',
+            story: task.story || '',
+            owner: task.owner || '',
+            status: (task.status as "pending" | "in_progress" | "completed") || "pending",
           })) as Task[];
 
           return {

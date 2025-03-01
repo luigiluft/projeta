@@ -17,7 +17,7 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
   const [selectedEpic, setSelectedEpic] = useState<string>("");
   const [projectName, setProjectName] = useState<string>("");
 
-  const { data: tasks = [] } = useQuery({
+  const { data: fetchedTasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -30,12 +30,22 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
         throw error;
       }
 
-      return data as Task[];
+      // Transformar os dados para incluir order_number
+      return data.map((task, index) => ({
+        ...task,
+        order_number: index + 1, // Adiciona order_number com base no índice
+        phase: task.phase || '',
+        epic: task.epic || '',
+        story: task.story || '',
+        owner: task.owner || '',
+        status: (task.status as 'pending' | 'in_progress' | 'completed') || 'pending',
+        is_active: task.is_active !== undefined ? task.is_active : true,
+      })) as Task[];
     },
   });
 
-  const epics = Array.from(new Set(tasks.map(task => task.epic))).filter(Boolean);
-  const selectedTasks = tasks.filter(task => task.epic === selectedEpic);
+  const epics = Array.from(new Set(fetchedTasks.map(task => task.epic))).filter(Boolean);
+  const selectedTasks = fetchedTasks.filter(task => task.epic === selectedEpic);
   const totalHours = selectedTasks.reduce((sum, task) => {
     const hours = task.hours_formula ? parseFloat(task.hours_formula) : 0;
     return sum + (isNaN(hours) ? 0 : hours);
