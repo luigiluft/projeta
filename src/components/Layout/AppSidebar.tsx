@@ -15,11 +15,11 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/dashboard" },
-  { title: "Projetos", icon: ClipboardList, url: "/dashboard/projects" },
-  { title: "Time", icon: Users, url: "/dashboard/team" },
-  { title: "Calendário", icon: Calendar, url: "/dashboard/calendar" },
-  { title: "Gestão de Tarefas", icon: ListTodo, url: "/dashboard/task-management" },
-  { title: "Atributos do Projeto", icon: Variable, url: "/dashboard/project-attributes" },
+  { title: "Projetos", icon: ClipboardList, url: "/projects" },
+  { title: "Time", icon: Users, url: "/team" },
+  { title: "Calendário", icon: Calendar, url: "/calendar" },
+  { title: "Gestão de Tarefas", icon: ListTodo, url: "/task-management" },
+  { title: "Atributos do Projeto", icon: Variable, url: "/project-attributes" },
 ];
 
 export function AppSidebar() {
@@ -58,19 +58,19 @@ export function AppSidebar() {
                   <HoverCardContent side="right" align="start" className="w-48 bg-white">
                     <nav className="space-y-2">
                       <Link 
-                        to="/dashboard/settings/import" 
+                        to="/import" 
                         className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
                         Importação de dados
                       </Link>
                       <Link 
-                        to="/dashboard/settings/user-approval" 
+                        to="/user-approval" 
                         className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
                         Usuários
                       </Link>
                       <Link 
-                        to="/dashboard/settings/roles" 
+                        to="/role-management" 
                         className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
                         Permissões

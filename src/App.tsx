@@ -34,24 +34,24 @@ function App() {
         <Routes>
           <Route path="/" element={<Auth />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="/dashboard/projects" element={<Projects />} />
-              <Route path="/dashboard/projects/new" element={<NewProject />} />
-              <Route path="/dashboard/task-management" element={<TaskManagement />} />
-              <Route path="/dashboard/task-management/:id" element={<TaskDetails />} />
-              <Route path="/dashboard/task-management/new" element={<NewTask />} />
-              <Route path="/dashboard/task-management/bulk-import" element={<BulkTaskCreation />} />
-              <Route path="/dashboard/team" element={<Team />} />
-              <Route path="/dashboard/team/new" element={<NewTeamMember />} />
-              <Route path="/dashboard/calendar" element={<Calendar />} />
-              <Route path="/dashboard/settings" element={<Settings />} />
-              <Route path="/dashboard/role-management" element={<RoleManagement />} />
-              <Route path="/dashboard/user-approval" element={<UserApproval />} />
-              <Route path="/dashboard/role-permissions" element={<RolePermissions />} />
-              <Route path="/dashboard/import" element={<Import />} />
-              <Route path="/dashboard/project-attributes" element={<ProjectAttributes />} />
-              <Route path="/dashboard/project-attributes/new" element={<NewAttribute />} />
+            <Route element={<Layout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/new" element={<NewProject />} />
+              <Route path="/task-management" element={<TaskManagement />} />
+              <Route path="/task-management/:id" element={<TaskDetails />} />
+              <Route path="/task-management/new" element={<NewTask />} />
+              <Route path="/task-management/bulk-import" element={<BulkTaskCreation />} />
+              <Route path="/team" element={<Team />} />
+              <Route path="/team/new" element={<NewTeamMember />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/role-management" element={<RoleManagement />} />
+              <Route path="/user-approval" element={<UserApproval />} />
+              <Route path="/role-permissions" element={<RolePermissions />} />
+              <Route path="/import" element={<Import />} />
+              <Route path="/project-attributes" element={<ProjectAttributes />} />
+              <Route path="/project-attributes/new" element={<NewAttribute />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Route>

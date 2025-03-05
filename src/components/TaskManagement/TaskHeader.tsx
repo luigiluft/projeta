@@ -1,109 +1,90 @@
+// Corrigindo as importações
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import ColumnManager from "./ColumnManager";
-import ViewManager from "./ViewManager";
-import { Column, Task, View } from "@/types/project";
-import { 
-  DownloadIcon, 
-  PlusIcon, 
-  TableIcon,
-  UploadIcon,
-  FileSpreadsheetIcon
-} from "lucide-react";
-import { exportToCSV } from "@/utils/csvExport";
-import { Link } from "react-router-dom";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useTaskManagement } from '@/hooks/useTaskManagement';
+import { useToast } from '@/components/ui/use-toast';
+import { ColumnManager } from "@/components/TaskManagement/ColumnManager";
+import { ViewManager } from "@/components/TaskManagement/ViewManager";
 
 interface TaskHeaderProps {
-  columns: Column[];
-  savedViews: View[];
-  onColumnVisibilityChange: (columnId: string) => void;
-  onSaveView: () => void;
-  onLoadView: (view: View) => void;
-  onImportSpreadsheet: () => void;
-  onNewTask: () => void;
-  tasks: Task[];
+  selectedTasks: string[];
+  onDeleteTasks: (taskIds: string[]) => void;
 }
 
-export function TaskHeader({ 
-  columns, 
-  savedViews, 
-  onColumnVisibilityChange, 
-  onSaveView, 
-  onLoadView,
-  onImportSpreadsheet,
-  onNewTask,
-  tasks
-}: TaskHeaderProps) {
-  const handleExportCSV = () => {
-    const visibleColumns = columns.filter(col => col.visible);
-    
-    const exportData = tasks.map(task => {
-      const row: Record<string, any> = {};
-      
-      visibleColumns.forEach(col => {
-        const colId = col.id;
-        if (colId in task) {
-          row[col.label] = (task as any)[colId];
-        }
-      });
-      
-      return row;
-    });
+export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteTasks }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { deleteTasks } = useTaskManagement();
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
-    exportToCSV(exportData, "tarefas");
+  const handleDelete = async () => {
+    try {
+      await deleteTasks(selectedTasks);
+      onDeleteTasks(selectedTasks);
+      toast({
+        title: "Tarefas excluídas com sucesso!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir tarefas",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setOpenDeleteDialog(false);
+    }
+  };
+
+  const handleDeleteConfirmation = () => {
+    if (selectedTasks.length === 0) {
+      toast({
+        title: "Nenhuma tarefa selecionada",
+        description: "Selecione as tarefas que deseja excluir.",
+        variant: "warning",
+      });
+      return;
+    }
+    setOpenDeleteDialog(true);
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <h2 className="text-xl font-bold">Gerenciamento de Tarefas</h2>
-      
-      <div className="flex items-center gap-2">
-        <ColumnManager 
-          columns={columns}
-          onColumnVisibilityChange={onColumnVisibilityChange}
-        />
-        
-        <ViewManager 
-          views={savedViews}
-          onSaveView={onSaveView}
-          onLoadView={onLoadView}
-        />
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <TableIcon className="h-4 w-4 mr-2" />
-              Ações
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleExportCSV}>
-              <DownloadIcon className="h-4 w-4 mr-2" />
-              Exportar para CSV
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onImportSpreadsheet}>
-              <UploadIcon className="h-4 w-4 mr-2" />
-              Importar Planilha
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/task-management/bulk-import">
-                <FileSpreadsheetIcon className="h-4 w-4 mr-2" />
-                Importação em Lote
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        
-        <Button size="sm" onClick={onNewTask}>
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Nova Tarefa
+    <div className="flex justify-between items-center mb-4">
+      <div className="flex items-center space-x-2">
+        <Button variant="outline" size="sm" onClick={() => navigate('/task-management/new')}>
+          Criar Tarefa
         </Button>
+        <Button variant="outline" size="sm" onClick={() => navigate('/task-management/bulk-import')}>
+          Importar Tarefas
+        </Button>
+        <Button variant="destructive" size="sm" onClick={handleDeleteConfirmation} disabled={selectedTasks.length === 0}>
+          Excluir Tarefas
+        </Button>
+        <ColumnManager />
+        <ViewManager />
       </div>
+
+      <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir as tarefas selecionadas? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="secondary" onClick={() => setOpenDeleteDialog(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
