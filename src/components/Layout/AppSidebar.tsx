@@ -14,12 +14,12 @@ import { Link, useLocation } from "react-router-dom";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 const menuItems = [
-  { title: "Dashboard", icon: LayoutDashboard, url: "/dash" },
-  { title: "Projetos", icon: ClipboardList, url: "/projects" },
-  { title: "Time", icon: Users, url: "/team" },
-  { title: "Calendário", icon: Calendar, url: "/calendar" },
-  { title: "Gestão de Tarefas", icon: ListTodo, url: "/task-management" },
-  { title: "Atributos do Projeto", icon: Variable, url: "/project-attributes" },
+  { title: "Dashboard", icon: LayoutDashboard, url: "/dashboard" },
+  { title: "Projetos", icon: ClipboardList, url: "/dashboard/projects" },
+  { title: "Time", icon: Users, url: "/dashboard/team" },
+  { title: "Calendário", icon: Calendar, url: "/dashboard/calendar" },
+  { title: "Gestão de Tarefas", icon: ListTodo, url: "/dashboard/task-management" },
+  { title: "Atributos do Projeto", icon: Variable, url: "/dashboard/project-attributes" },
 ];
 
 export function AppSidebar() {
@@ -58,19 +58,19 @@ export function AppSidebar() {
                   <HoverCardContent side="right" align="start" className="w-48 bg-white">
                     <nav className="space-y-2">
                       <Link 
-                        to="/settings/import" 
+                        to="/dashboard/settings/import" 
                         className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
                         Importação de dados
                       </Link>
                       <Link 
-                        to="/settings/user-approval" 
+                        to="/dashboard/settings/user-approval" 
                         className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
                         Usuários
                       </Link>
                       <Link 
-                        to="/settings/roles" 
+                        to="/dashboard/settings/roles" 
                         className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                       >
                         Permissões

@@ -11,6 +11,7 @@ export default function ProtectedRoute() {
   }
 
   if (!user) {
+    // Redirecionando para a raiz, onde agora está o Auth
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 

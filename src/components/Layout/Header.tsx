@@ -29,7 +29,7 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b bg-white/80 backdrop-blur-xl p-4">
       <div className="flex items-center justify-between">
-        <Link to="/" className="text-xl font-semibold text-primary hover:opacity-80 transition-opacity">
+        <Link to="/dashboard" className="text-xl font-semibold text-primary hover:opacity-80 transition-opacity">
           Project Management
         </Link>
         <div className="flex items-center gap-4">
