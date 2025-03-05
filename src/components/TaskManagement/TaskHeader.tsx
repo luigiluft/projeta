@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -6,8 +5,8 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { ColumnManager } from "./ColumnManager";
-import { ViewManager } from "./ViewManager";
+import ColumnManager from "./ColumnManager";
+import ViewManager from "./ViewManager";
 import { Column, Task, View } from "@/types/project";
 import { 
   DownloadIcon, 
@@ -70,7 +69,7 @@ export function TaskHeader({
         />
         
         <ViewManager 
-          savedViews={savedViews}
+          views={savedViews}
           onSaveView={onSaveView}
           onLoadView={onLoadView}
         />
