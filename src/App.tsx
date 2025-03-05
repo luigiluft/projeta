@@ -1,6 +1,7 @@
+
 import { Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from "@/components/theme-provider"
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from 'sonner';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -28,7 +29,7 @@ import NewAttribute from './pages/NewAttribute';
 function App() {
   return (
     <AuthProvider>
-      <ThemeProvider>
+      <ThemeProvider defaultTheme="system">
         <Toaster closeButton richColors />
         <Routes>
           <Route path="/auth" element={<Auth />} />
