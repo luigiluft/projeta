@@ -15,6 +15,7 @@ export default function ProjectAttributes() {
   const [loading, setLoading] = useState(true);
   const [columns, setColumns] = useState<Column[]>([
     { id: "name", label: "Nome", visible: true },
+    { id: "code", label: "Código", visible: true },
     { id: "value", label: "Valor", visible: true },
     { id: "unit", label: "Unidade", visible: true },
   ]);
@@ -50,6 +51,7 @@ export default function ProjectAttributes() {
           .from('project_attributes')
           .update({
             name: values.name,
+            code: values.code,
             value: values.value,
             unit: values.unit,
             description: values.description,

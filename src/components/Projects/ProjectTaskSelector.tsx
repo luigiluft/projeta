@@ -10,6 +10,7 @@ import { Clock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ProjectAttributeValueInput } from "./ProjectAttributeValueInput";
+import { ProjectAttribute } from "@/types/database";
 
 interface ProjectTaskSelectorProps {
   onTasksSelected: (tasks: Task[], attributeValues: Record<string, number>) => void;
@@ -69,7 +70,8 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
     if (projectAttributes.length > 0) {
       const initialValues: Record<string, number> = {};
       projectAttributes.forEach(attr => {
-        initialValues[attr.name] = parseFloat(attr.default_value || '0');
+        const code = attr.code || attr.name;
+        initialValues[code] = parseFloat(attr.default_value || '0');
       });
       setAttributeValues(initialValues);
     }
@@ -123,10 +125,10 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
     setSelectedEpics(selectedEpics.filter(e => e !== epic));
   };
 
-  const handleAttributeValueChange = (name: string, value: number) => {
+  const handleAttributeValueChange = (code: string, value: number) => {
     setAttributeValues(prev => ({
       ...prev,
-      [name]: value
+      [code]: value
     }));
   };
 
@@ -252,8 +254,8 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
                   <ProjectAttributeValueInput
                     key={attr.id}
                     attribute={attr}
-                    value={attributeValues[attr.name] || 0}
-                    onChange={(value) => handleAttributeValueChange(attr.name, value)}
+                    value={attributeValues[attr.code || attr.name] || 0}
+                    onChange={handleAttributeValueChange}
                   />
                 ))}
               </div>

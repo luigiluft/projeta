@@ -7,17 +7,19 @@ interface ProjectAttributeValueInputProps {
   attribute: {
     id: string;
     name: string;
+    code: string | null;
     value: string;
     unit: string;
     description?: string;
     default_value?: string;
   };
   value: number;
-  onChange: (value: number) => void;
+  onChange: (code: string, value: number) => void;
 }
 
 export function ProjectAttributeValueInput({ attribute, value, onChange }: ProjectAttributeValueInputProps) {
   const [inputValue, setInputValue] = useState(value.toString());
+  const code = attribute.code || attribute.id;
 
   useEffect(() => {
     setInputValue(value.toString());
@@ -30,7 +32,7 @@ export function ProjectAttributeValueInput({ attribute, value, onChange }: Proje
     // Tentar converter para número
     const numericValue = parseFloat(newValue);
     if (!isNaN(numericValue)) {
-      onChange(numericValue);
+      onChange(code, numericValue);
     }
   };
 
@@ -48,7 +50,7 @@ export function ProjectAttributeValueInput({ attribute, value, onChange }: Proje
   return (
     <div className="space-y-2">
       <div className="flex justify-between">
-        <Label htmlFor={`attr-${attribute.id}`} className="text-sm font-medium">
+        <Label htmlFor={`attr-${code}`} className="text-sm font-medium">
           {attribute.name}
         </Label>
         {attribute.unit && (
@@ -61,7 +63,7 @@ export function ProjectAttributeValueInput({ attribute, value, onChange }: Proje
       )}
       
       <Input
-        id={`attr-${attribute.id}`}
+        id={`attr-${code}`}
         type="number"
         value={inputValue}
         onChange={handleInputChange}

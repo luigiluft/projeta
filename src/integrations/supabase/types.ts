@@ -65,31 +65,31 @@ export type Database = {
       }
       project_attributes: {
         Row: {
+          code: string | null
           created_at: string
           default_value: string | null
           description: string | null
           id: string
           name: string
           unit: string | null
-          value: string
         }
         Insert: {
+          code?: string | null
           created_at?: string
           default_value?: string | null
           description?: string | null
           id?: string
           name: string
           unit?: string | null
-          value: string
         }
         Update: {
+          code?: string | null
           created_at?: string
           default_value?: string | null
           description?: string | null
           id?: string
           name?: string
           unit?: string | null
-          value?: string
         }
         Relationships: []
       }
@@ -319,6 +319,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_attribute_code: {
+        Args: {
+          name_input: string
+        }
+        Returns: string
+      }
       get_distinct_approved_roles: {
         Args: Record<PropertyKey, never>
         Returns: {

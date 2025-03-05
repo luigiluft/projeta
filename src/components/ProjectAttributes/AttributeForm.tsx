@@ -21,6 +21,7 @@ interface AttributeFormProps {
 export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeFormProps) {
   const [values, setValues] = useState({
     name: initialValues?.name || "",
+    code: initialValues?.code || "",
     value: initialValues?.value || "",
     unit: initialValues?.unit || "",
     description: initialValues?.description || "",
@@ -32,6 +33,24 @@ export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeF
     onSubmit(values);
   };
 
+  // Função para gerar código a partir do nome
+  const generateCode = (name: string) => {
+    return name
+      .toUpperCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^A-Z0-9_]/g, '');
+  };
+
+  // Atualizar o código quando o nome mudar, se o código não tiver sido editado manualmente
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
+    setValues({
+      ...values,
+      name: newName,
+      code: generateCode(newName)
+    });
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow">
       <div className="space-y-2">
@@ -39,9 +58,22 @@ export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeF
         <Input
           id="name"
           value={values.name}
-          onChange={(e) => setValues({ ...values, name: e.target.value })}
+          onChange={handleNameChange}
           required
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="code">Código</Label>
+        <Input
+          id="code"
+          value={values.code}
+          onChange={(e) => setValues({ ...values, code: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '') })}
+          required
+          placeholder="CÓDIGO_DO_ATRIBUTO"
+          className="uppercase"
+        />
+        <p className="text-xs text-gray-500">Somente letras maiúsculas, números e underscore (_)</p>
       </div>
 
       <div className="space-y-2">
