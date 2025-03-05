@@ -104,7 +104,7 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
             <Textarea 
               id="hours_formula" 
               {...register("hours_formula")}
-              placeholder="Ex: ordersPerMonth * 0.5 + skuCount * 0.1"
+              placeholder="Ex: ORDERS_PER_MONTH * 0.5 + SKU_COUNT * 0.1"
               onChange={(e) => handleFormulaChange(e.target.value)}
             />
             {projectAttributes && (

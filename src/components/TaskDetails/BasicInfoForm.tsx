@@ -53,17 +53,10 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
         attributesMap.set(keyNoSpaces, value);
       });
 
-      // Primeiro substituir os atributos originais (com espaços)
+      // Primeiro substituir os atributos pelos seus valores
       let evaluableFormula = formula;
       Object.entries(projectAttributes).forEach(([key, value]) => {
         const regex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
-        evaluableFormula = evaluableFormula.replace(regex, value.toString());
-      });
-
-      // Depois substituir as versões sem espaço
-      Object.entries(projectAttributes).forEach(([key, value]) => {
-        const keyNoSpaces = key.replace(/\s+/g, '');
-        const regex = new RegExp(`\\b${keyNoSpaces}\\b`, 'g');
         evaluableFormula = evaluableFormula.replace(regex, value.toString());
       });
 
@@ -103,13 +96,13 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     }
   };
 
-  const insertAttributeAtCursor = (attributeName: string) => {
+  const insertAttributeAtCursor = (attributeCode: string) => {
     const currentFormula = form.getValues("hours_formula") || "";
     
     // Apenas insere a variável, sem adicionar operadores
     const newFormula = currentFormula
-      ? `${currentFormula} ${attributeName}`
-      : attributeName;
+      ? `${currentFormula} ${attributeCode}`
+      : attributeCode;
     
     form.setValue("hours_formula", newFormula);
     handleFormulaChange(newFormula);
@@ -176,7 +169,7 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
             id="hours_formula" 
             ref={textareaRef}
             {...form.register("hours_formula")}
-            placeholder="Ex: ordersPerMonth * 0.5 + skuCount * 0.1"
+            placeholder="Ex: ORDERS_PER_MONTH * 0.5 + SKU_COUNT * 0.1"
             onChange={(e) => handleFormulaChange(e.target.value)}
           />
           {previewHours !== null && (

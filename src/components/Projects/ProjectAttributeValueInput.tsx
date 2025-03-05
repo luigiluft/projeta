@@ -70,6 +70,10 @@ export function ProjectAttributeValueInput({ attribute, value, onChange }: Proje
         min="0"
         step="0.01"
       />
+      
+      <div className="text-xs text-gray-400">
+        Código: {code}
+      </div>
     </div>
   );
 }
