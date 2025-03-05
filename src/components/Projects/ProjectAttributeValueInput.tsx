@@ -8,7 +8,6 @@ interface ProjectAttributeValueInputProps {
     id: string;
     name: string;
     code: string | null;
-    value: string;
     unit: string;
     description?: string;
     default_value?: string;

@@ -86,7 +86,7 @@ export default function TaskDetails() {
       console.log('Fetching project attributes');
       const { data, error } = await supabase
         .from('project_attributes')
-        .select('name, value, unit, description, default_value');
+        .select('name, code, unit, description, default_value');
 
       if (error) {
         console.error('Error fetching project attributes:', error);
@@ -94,8 +94,8 @@ export default function TaskDetails() {
       }
 
       const formattedAttributes = data?.reduce((acc: Record<string, any>, attr) => {
-        const value = !isNaN(Number(attr.value)) ? Number(attr.value) : attr.value;
-        acc[attr.name] = value;
+        const defaultValue = !isNaN(Number(attr.default_value)) ? Number(attr.default_value) : attr.default_value;
+        acc[attr.code || attr.name] = defaultValue;
         return acc;
       }, {});
 

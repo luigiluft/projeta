@@ -16,8 +16,8 @@ export default function ProjectAttributes() {
   const [columns, setColumns] = useState<Column[]>([
     { id: "name", label: "Nome", visible: true },
     { id: "code", label: "Código", visible: true },
-    { id: "value", label: "Valor", visible: true },
     { id: "unit", label: "Unidade", visible: true },
+    { id: "default_value", label: "Valor Padrão", visible: true },
   ]);
   const [savedViews, setSavedViews] = useState<View[]>([]);
 
@@ -52,7 +52,6 @@ export default function ProjectAttributes() {
           .update({
             name: values.name,
             code: values.code,
-            value: values.value,
             unit: values.unit,
             description: values.description,
             default_value: values.default_value

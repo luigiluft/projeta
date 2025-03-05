@@ -42,11 +42,11 @@ export function AttributeList({
       );
     }
 
-    if (columnId === "value" && rowData?.unit === "percentage") {
+    if (columnId === "default_value" && rowData?.unit === "percentage") {
       return `${value}%`;
     }
 
-    if (columnId === "value" && rowData?.unit === "currency") {
+    if (columnId === "default_value" && rowData?.unit === "currency") {
       return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL'

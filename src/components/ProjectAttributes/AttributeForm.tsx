@@ -22,7 +22,6 @@ export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeF
   const [values, setValues] = useState({
     name: initialValues?.name || "",
     code: initialValues?.code || "",
-    value: initialValues?.value || "",
     unit: initialValues?.unit || "",
     description: initialValues?.description || "",
     default_value: initialValues?.default_value || "",
@@ -74,16 +73,6 @@ export function AttributeForm({ editingId, onSubmit, initialValues }: AttributeF
           className="uppercase"
         />
         <p className="text-xs text-gray-500">Somente letras maiúsculas, números e underscore (_)</p>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="value">Valor</Label>
-        <Input
-          id="value"
-          value={values.value}
-          onChange={(e) => setValues({ ...values, value: e.target.value })}
-          required
-        />
       </div>
 
       <div className="space-y-2">

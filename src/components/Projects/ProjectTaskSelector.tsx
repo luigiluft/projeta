@@ -253,7 +253,14 @@ export function ProjectTaskSelector({ onTasksSelected }: ProjectTaskSelectorProp
                 {projectAttributes.map(attr => (
                   <ProjectAttributeValueInput
                     key={attr.id}
-                    attribute={attr}
+                    attribute={{
+                      id: attr.id,
+                      name: attr.name,
+                      code: attr.code,
+                      unit: attr.unit || '',
+                      description: attr.description || '',
+                      default_value: attr.default_value || '',
+                    }}
                     value={attributeValues[attr.code || attr.name] || 0}
                     onChange={handleAttributeValueChange}
                   />
