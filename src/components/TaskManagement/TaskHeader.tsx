@@ -70,7 +70,7 @@ export function TaskHeader({
         />
         
         <ViewManager 
-          views={savedViews}
+          savedViews={savedViews}
           onSaveView={onSaveView}
           onLoadView={onLoadView}
         />

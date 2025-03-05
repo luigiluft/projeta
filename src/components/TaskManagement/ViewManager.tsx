@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,7 +14,7 @@ import { View } from "@/types/project";
 interface ViewManagerProps {
   onSaveView: () => void;
   onLoadView: (view: View) => void;
-  savedViews: View[];
+  savedViews: View[]; // Changed from "views" to "savedViews" to match usage in TaskHeader
 }
 
 export function ViewManager({ onSaveView, onLoadView, savedViews }: ViewManagerProps) {
