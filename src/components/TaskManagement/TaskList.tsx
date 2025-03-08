@@ -145,12 +145,13 @@ export function TaskList({
     { id: "actions", label: "Ações", visible: true },
   ];
   
-  console.log("All task columns in TaskList:", allTaskColumns.map(c => c.id));
+  // Usamos as colunas passadas como prop em vez de todas as colunas
+  console.log("Columns in TaskList:", columns.map(c => `${c.id} (${c.visible ? 'visible' : 'hidden'})`));
 
   return (
     <div className="h-full overflow-auto">
       <DraggableTable
-        columns={allTaskColumns}
+        columns={columns}
         onColumnsChange={onColumnsChange}
         data={tasks}
         formatValue={formatValue}
