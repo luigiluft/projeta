@@ -28,8 +28,8 @@ import NewAttribute from './pages/NewAttribute';
 
 function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider defaultTheme="system">
+    <ThemeProvider defaultTheme="system">
+      <AuthProvider>
         <Toaster closeButton richColors />
         <Routes>
           <Route path="/" element={<Auth />} />
@@ -56,8 +56,8 @@ function App() {
             </Route>
           </Route>
         </Routes>
-      </ThemeProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

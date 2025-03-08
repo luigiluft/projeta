@@ -1,12 +1,13 @@
-// Corrigindo as importações
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { ColumnManager } from "@/components/TaskManagement/ColumnManager";
 import { ViewManager } from "@/components/TaskManagement/ViewManager";
+import { type Column, type View, type Task } from '@/types/project';
 
 interface TaskHeaderProps {
   selectedTasks: string[];
@@ -16,12 +17,12 @@ interface TaskHeaderProps {
 export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteTasks }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { deleteTasks } = useTaskManagement();
+  const taskManagement = useTaskManagement();
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   const handleDelete = async () => {
     try {
-      await deleteTasks(selectedTasks);
+      await taskManagement.deleteTasks(selectedTasks);
       onDeleteTasks(selectedTasks);
       toast({
         title: "Tarefas excluídas com sucesso!",
@@ -42,7 +43,7 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteT
       toast({
         title: "Nenhuma tarefa selecionada",
         description: "Selecione as tarefas que deseja excluir.",
-        variant: "warning",
+        variant: "destructive",
       });
       return;
     }
@@ -61,8 +62,6 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteT
         <Button variant="destructive" size="sm" onClick={handleDeleteConfirmation} disabled={selectedTasks.length === 0}>
           Excluir Tarefas
         </Button>
-        <ColumnManager />
-        <ViewManager />
       </div>
 
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>

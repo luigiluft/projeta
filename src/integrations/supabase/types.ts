@@ -154,6 +154,7 @@ export type Database = {
         Row: {
           archived: boolean | null
           archived_at: string | null
+          attributes: Json | null
           base_cost: number | null
           category_id: string | null
           client_id: string | null
@@ -178,19 +179,20 @@ export type Database = {
           project_name: string
           settings: Json | null
           start_date: string | null
-          status: string | null
+          status: Database["public"]["Enums"]["project_status"] | null
           tags: string[] | null
           team_id: string | null
           total_cost: number | null
           total_hours: number | null
           type: string
-          updated_at: string | null
+          updated_at: string
           version: number | null
           workspace_id: string | null
         }
         Insert: {
           archived?: boolean | null
           archived_at?: string | null
+          attributes?: Json | null
           base_cost?: number | null
           category_id?: string | null
           client_id?: string | null
@@ -212,22 +214,23 @@ export type Database = {
           priority?: number | null
           profit_margin?: number | null
           progress?: number | null
-          project_name?: string
+          project_name: string
           settings?: Json | null
           start_date?: string | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
           tags?: string[] | null
           team_id?: string | null
           total_cost?: number | null
           total_hours?: number | null
           type: string
-          updated_at?: string | null
+          updated_at?: string
           version?: number | null
           workspace_id?: string | null
         }
         Update: {
           archived?: boolean | null
           archived_at?: string | null
+          attributes?: Json | null
           base_cost?: number | null
           category_id?: string | null
           client_id?: string | null
@@ -252,13 +255,13 @@ export type Database = {
           project_name?: string
           settings?: Json | null
           start_date?: string | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
           tags?: string[] | null
           team_id?: string | null
           total_cost?: number | null
           total_hours?: number | null
           type?: string
-          updated_at?: string | null
+          updated_at?: string
           version?: number | null
           workspace_id?: string | null
         }
@@ -269,9 +272,12 @@ export type Database = {
           created_at: string
           depends_on: string | null
           epic: string | null
+          fixed_hours: number | null
           hours_formula: string | null
+          hours_type: string
           id: string
           is_active: boolean | null
+          order: number | null
           owner: string | null
           phase: string | null
           status: string | null
@@ -282,9 +288,12 @@ export type Database = {
           created_at?: string
           depends_on?: string | null
           epic?: string | null
+          fixed_hours?: number | null
           hours_formula?: string | null
+          hours_type: string
           id?: string
           is_active?: boolean | null
+          order?: number | null
           owner?: string | null
           phase?: string | null
           status?: string | null
@@ -295,9 +304,12 @@ export type Database = {
           created_at?: string
           depends_on?: string | null
           epic?: string | null
+          fixed_hours?: number | null
           hours_formula?: string | null
+          hours_type?: string
           id?: string
           is_active?: boolean | null
+          order?: number | null
           owner?: string | null
           phase?: string | null
           status?: string | null
@@ -346,6 +358,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "developer" | "financial" | "user"
+      order_status:
+        | "draft"
+        | "pending"
+        | "approved"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+      payment_status: "pending" | "paid" | "cancelled"
       project_status: "draft" | "in_progress" | "completed" | "cancelled"
     }
     CompositeTypes: {
