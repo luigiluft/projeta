@@ -25,6 +25,7 @@ export function useTaskManagement() {
     { id: "depends_on", label: "Dependência", visible: true },
     { id: "hours_type", label: "Tipo de Horas", visible: true },
     { id: "created_at", label: "Criado em", visible: true },
+    { id: "actions", label: "Ações", visible: true },
   ]);
   
   const [savedViews, setSavedViews] = useState<View[]>([]);
@@ -122,10 +123,13 @@ export function useTaskManagement() {
   };
 
   const handleColumnVisibilityChange = (columnId: string) => {
-    setColumns(prevColumns => prevColumns.map(col => 
-      col.id === columnId ? { ...col, visible: !col.visible } : col
-    ));
-    console.log("Column visibility changed for:", columnId);
+    setColumns(prevColumns => {
+      const updatedColumns = prevColumns.map(col => 
+        col.id === columnId ? { ...col, visible: !col.visible } : col
+      );
+      console.log("Column visibility changed for:", columnId, "New state:", updatedColumns.find(c => c.id === columnId)?.visible);
+      return updatedColumns;
+    });
   };
 
   const handleColumnsChange = (newColumns: Column[]) => {

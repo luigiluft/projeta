@@ -42,7 +42,9 @@ export default function TaskManagement() {
           <CardTitle>Gestão de Tarefas</CardTitle>
           <TaskHeader 
             selectedTasks={selectedTasks} 
-            onDeleteTasks={handleDeleteTasks} 
+            onDeleteTasks={handleDeleteTasks}
+            columns={columns}
+            onColumnVisibilityChange={handleColumnVisibilityChange}
           />
         </CardHeader>
         <CardContent>

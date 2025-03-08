@@ -12,17 +12,26 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Column } from '@/types/project';
 
 interface TaskHeaderProps {
   selectedTasks: string[];
   onDeleteTasks: (taskIds: string[]) => void;
+  columns: Column[];
+  onColumnVisibilityChange: (columnId: string) => void;
 }
 
-export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteTasks }) => {
+export const TaskHeader: React.FC<TaskHeaderProps> = ({ 
+  selectedTasks, 
+  onDeleteTasks,
+  columns,
+  onColumnVisibilityChange
+}) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { deleteTasks, columns, handleColumnVisibilityChange } = useTaskManagement();
+  const { deleteTasks } = useTaskManagement();
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [isColumnsMenuOpen, setIsColumnsMenuOpen] = useState(false);
 
   const handleDelete = async () => {
     try {
@@ -54,10 +63,15 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteT
     setOpenDeleteDialog(true);
   };
 
+  const handleColumnToggle = (columnId: string) => {
+    onColumnVisibilityChange(columnId);
+    // Não fecha o menu para permitir múltiplas seleções
+  };
+
   return (
     <div className="flex justify-between items-center mb-4">
       <div className="flex items-center space-x-2">
-        <Popover>
+        <Popover open={isColumnsMenuOpen} onOpenChange={setIsColumnsMenuOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="gap-2">
               <Filter className="h-4 w-4" />
@@ -69,12 +83,12 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteT
               {columns.map((column) => (
                 <div key={column.id} className="flex items-center space-x-2">
                   <Checkbox 
-                    id={column.id}
+                    id={`column-${column.id}`}
                     checked={column.visible}
-                    onCheckedChange={() => handleColumnVisibilityChange(column.id)}
+                    onCheckedChange={() => handleColumnToggle(column.id)}
                   />
                   <label 
-                    htmlFor={column.id}
+                    htmlFor={`column-${column.id}`}
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                   >
                     {column.label}
