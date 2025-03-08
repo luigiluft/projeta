@@ -74,12 +74,21 @@ export function TaskList({
       return value ? "Sim" : "Não";
     }
     
+    if (columnId === "depends_on" && value) {
+      // Exibir o ID da dependência de forma simplificada
+      return typeof value === 'string' ? value.substring(0, 8) + '...' : value;
+    }
+    
     if (Array.isArray(value)) {
       return value.join(", ");
     }
     
     if (typeof value === "number") {
       return value.toString();
+    }
+    
+    if (typeof value === "object") {
+      return JSON.stringify(value);
     }
     
     return value;
