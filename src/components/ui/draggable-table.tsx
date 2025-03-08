@@ -40,8 +40,10 @@ export function DraggableTable<T>({
     }
   };
 
-  // Filtrar apenas colunas visíveis
+  // Filtrar apenas colunas visíveis para exibição
   const visibleColumns = columns.filter(col => col.visible);
+  
+  console.log("Visible columns in table:", visibleColumns.map(c => c.id));
 
   return (
     <div className="rounded-md border">

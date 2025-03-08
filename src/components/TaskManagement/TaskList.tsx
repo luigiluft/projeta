@@ -79,6 +79,11 @@ export function TaskList({
       return typeof value === 'string' ? value.substring(0, 8) + '...' : value;
     }
     
+    if (columnId === "hours_formula") {
+      // Renderizar a fórmula de horas adequadamente
+      return value || '';
+    }
+    
     if (Array.isArray(value)) {
       return value.join(", ");
     }
@@ -94,7 +99,7 @@ export function TaskList({
     return value;
   };
 
-  // Incluir as colunas visíveis do array original, e sempre adicionar a coluna de ações
+  // Incluir a coluna de ações nas colunas com visibilidade
   const columnsWithActions = [
     ...columns,
     {
@@ -103,6 +108,8 @@ export function TaskList({
       visible: true,
     }
   ];
+  
+  console.log("Columns in TaskList:", columnsWithActions.filter(c => c.visible).map(c => c.id));
 
   return (
     <div className="h-full overflow-auto">

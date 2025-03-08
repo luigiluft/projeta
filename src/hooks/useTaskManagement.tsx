@@ -123,10 +123,14 @@ export function useTaskManagement() {
   };
 
   const handleColumnVisibilityChange = (columnId: string) => {
-    setColumns(columns.map(col => 
+    setColumns(prevColumns => prevColumns.map(col => 
       col.id === columnId ? { ...col, visible: !col.visible } : col
     ));
     console.log("Column visibility changed for:", columnId);
+    // Debug para verificar o estado atual das colunas após a mudança
+    setTimeout(() => {
+      console.log("Current visible columns:", columns.filter(c => c.visible).map(c => c.id));
+    }, 0);
   };
 
   const handleColumnsChange = (newColumns: Column[]) => {
