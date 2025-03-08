@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Column, Task, View } from "@/types/project";
 import { toast } from "sonner";
@@ -127,6 +126,13 @@ export function useTaskManagement() {
       const updatedColumns = prevColumns.map(col => 
         col.id === columnId ? { ...col, visible: !col.visible } : col
       );
+      
+      // Always keep the "actions" column visible
+      const actionsColumn = updatedColumns.find(col => col.id === "actions");
+      if (actionsColumn && !actionsColumn.visible) {
+        actionsColumn.visible = true;
+      }
+      
       console.log("Column visibility changed for:", columnId, "New state:", updatedColumns.find(c => c.id === columnId)?.visible);
       return updatedColumns;
     });

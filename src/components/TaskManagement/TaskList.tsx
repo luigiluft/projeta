@@ -1,4 +1,3 @@
-
 import { DraggableTable } from "@/components/ui/draggable-table";
 import { format } from "date-fns";
 import { Task, Column } from "@/types/project";
@@ -126,28 +125,8 @@ export function TaskList({
     return value;
   };
 
-  // Definir todas as colunas disponíveis na tabela tasks
-  const allTaskColumns = [
-    { id: "id", label: "ID", visible: true },
-    { id: "task_name", label: "Tarefa", visible: true },
-    { id: "phase", label: "Fase", visible: true },
-    { id: "epic", label: "Epic", visible: true },
-    { id: "story", label: "Story", visible: true },
-    { id: "hours_formula", label: "Fórmula de Horas", visible: true },
-    { id: "fixed_hours", label: "Horas Fixas", visible: true },
-    { id: "owner", label: "Responsável", visible: true },
-    { id: "is_active", label: "Ativo", visible: true },
-    { id: "status", label: "Status", visible: true },
-    { id: "order", label: "Ordem", visible: true },
-    { id: "depends_on", label: "Dependência", visible: true },
-    { id: "hours_type", label: "Tipo de Horas", visible: true },
-    { id: "created_at", label: "Criado em", visible: true },
-    { id: "actions", label: "Ações", visible: true },
-  ];
+  console.log("TaskList received columns:", columns.map(c => `${c.id} (${c.visible ? 'visible' : 'hidden'})`));
   
-  // Usamos as colunas passadas como prop em vez de todas as colunas
-  console.log("Columns in TaskList:", columns.map(c => `${c.id} (${c.visible ? 'visible' : 'hidden'})`));
-
   return (
     <div className="h-full overflow-auto">
       <DraggableTable

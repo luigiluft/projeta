@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -64,6 +63,7 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({
   };
 
   const handleColumnToggle = (columnId: string) => {
+    console.log(`Toggling column visibility for ${columnId}`);
     onColumnVisibilityChange(columnId);
     // Não fecha o menu para permitir múltiplas seleções
   };

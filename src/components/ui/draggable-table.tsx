@@ -43,7 +43,7 @@ export function DraggableTable<T>({
   // Filtrar apenas colunas visíveis
   const visibleColumns = columns.filter(column => column.visible);
   
-  console.log("Visible columns in table:", visibleColumns.map(c => c.id));
+  console.log("Rendering DraggableTable with visible columns:", visibleColumns.map(c => c.id));
 
   return (
     <div className="rounded-md border">
@@ -63,7 +63,7 @@ export function DraggableTable<T>({
         <TableBody ref={setNodeRef}>
           {data.map((row: any, rowIndex) => (
             <TableRow
-              key={row.id}
+              key={row.id || rowIndex}
               draggable
               onDragStart={() => handleReorder(rowIndex, rowIndex)}
               onDragOver={(e) => {
