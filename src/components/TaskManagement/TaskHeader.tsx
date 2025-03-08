@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { useToast } from '@/hooks/use-toast';
+import { Filter, Eye, Download, Plus, Trash2 } from "lucide-react";
 
 interface TaskHeaderProps {
   selectedTasks: string[];
@@ -50,16 +51,28 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteT
   return (
     <div className="flex justify-between items-center mb-4">
       <div className="flex items-center space-x-2">
-        <Button variant="outline" size="sm" onClick={() => navigate('/task-management/new')}>
-          Criar Tarefa
+        <Button variant="outline" onClick={() => navigate('/task-management/new')} className="gap-2">
+          <Filter className="h-4 w-4" />
+          Colunas
         </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate('/task-management/bulk-import')}>
-          Importar Tarefas
+        <Button variant="outline" className="gap-2">
+          <Eye className="h-4 w-4" />
+          Visualização
         </Button>
-        <Button variant="destructive" size="sm" onClick={handleDeleteConfirmation} disabled={selectedTasks.length === 0}>
-          Excluir Tarefas
+        <Button variant="outline" className="gap-2">
+          <Download className="h-4 w-4" />
+          Exportar CSV
+        </Button>
+        <Button className="gap-2 bg-primary text-white" onClick={() => navigate('/task-management/new')}>
+          <Plus className="h-4 w-4" />
+          Nova Tarefa
         </Button>
       </div>
+
+      <Button variant="destructive" size="sm" onClick={handleDeleteConfirmation} disabled={selectedTasks.length === 0} className="gap-2">
+        <Trash2 className="h-4 w-4" />
+        Excluir Tarefas
+      </Button>
 
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
         <DialogContent className="sm:max-w-[425px]">
