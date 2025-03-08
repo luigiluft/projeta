@@ -64,8 +64,8 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteT
               Colunas
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-56 p-0" align="start">
-            <div className="p-2 grid gap-2">
+          <PopoverContent className="w-56 p-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg" align="start">
+            <div className="p-3 grid gap-2">
               {columns.map((column) => (
                 <div key={column.id} className="flex items-center space-x-2">
                   <Checkbox 
