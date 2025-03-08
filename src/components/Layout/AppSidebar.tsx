@@ -29,7 +29,7 @@ export function AppSidebar() {
     <Sidebar className="bg-white border-r fixed h-full" variant="sidebar" collapsible="none">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-gray-700 font-medium">Menu Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -37,10 +37,10 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <Link 
                       to={item.url} 
-                      className="flex items-center gap-2"
+                      className={`flex items-center gap-2 ${location.pathname === item.url ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-blue-50'}`}
                       data-active={location.pathname === item.url}
                     >
-                      <item.icon className="h-5 w-5" />
+                      <item.icon className={`h-5 w-5 ${location.pathname === item.url ? 'text-blue-700' : 'text-gray-600'}`} />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -50,8 +50,8 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <HoverCard>
                   <HoverCardTrigger asChild>
-                    <SidebarMenuButton className="flex items-center gap-2">
-                      <Settings className="h-5 w-5" />
+                    <SidebarMenuButton className="flex items-center gap-2 text-gray-700 hover:bg-blue-50">
+                      <Settings className="h-5 w-5 text-gray-600" />
                       <span>Configurações</span>
                     </SidebarMenuButton>
                   </HoverCardTrigger>
@@ -59,19 +59,19 @@ export function AppSidebar() {
                     <nav className="space-y-2">
                       <Link 
                         to="/import" 
-                        className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                        className="block w-full p-2 text-sm rounded-md hover:bg-blue-50 hover:text-blue-700 transition-colors"
                       >
                         Importação de dados
                       </Link>
                       <Link 
                         to="/user-approval" 
-                        className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                        className="block w-full p-2 text-sm rounded-md hover:bg-blue-50 hover:text-blue-700 transition-colors"
                       >
                         Usuários
                       </Link>
                       <Link 
                         to="/role-management" 
-                        className="block w-full p-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                        className="block w-full p-2 text-sm rounded-md hover:bg-blue-50 hover:text-blue-700 transition-colors"
                       >
                         Permissões
                       </Link>
