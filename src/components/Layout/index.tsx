@@ -12,7 +12,7 @@ export default function Layout() {
         <SidebarProvider>
           <div className="flex w-full">
             <AppSidebar />
-            <main className="flex-1 p-6 ml-0 md:ml-[16rem] bg-gray-50 dark:bg-gray-900 min-h-[calc(100vh-72px)]">
+            <main className="flex-1 p-6 ml-0 md:ml-[16rem] bg-gray-50 dark:bg-gray-900 min-h-[calc(100vh-72px)] overflow-x-auto">
               <Outlet />
             </main>
           </div>

@@ -26,7 +26,7 @@ export function AppSidebar() {
   const location = useLocation();
 
   return (
-    <Sidebar className="bg-white dark:bg-gray-900 border-r fixed h-full" variant="sidebar" collapsible="none">
+    <Sidebar className="bg-white dark:bg-gray-900 border-r fixed h-full shadow-md z-20" variant="sidebar" collapsible="none">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-gray-700 dark:text-gray-300 font-medium">Menu Principal</SidebarGroupLabel>

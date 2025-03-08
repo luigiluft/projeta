@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tooltip } from "@/components/ui/tooltip";
+import { 
+  Tooltip,
+  TooltipProvider,
+  TooltipTrigger,
+  TooltipContent
+} from "@/components/ui/tooltip";
 
 export interface TaskListProps {
   tasks: Task[];
@@ -83,9 +88,16 @@ export function TaskList({
       // Render truncated value with tooltip for full content
       if (value && value.length > 20) {
         return (
-          <Tooltip content={value}>
-            <span>{value.substring(0, 20)}...</span>
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>{value.substring(0, 20)}...</span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {value}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         );
       }
       return value || '';
