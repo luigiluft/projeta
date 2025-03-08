@@ -92,7 +92,7 @@ export function ActionButtons({
             {newButtonText}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
+        <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem onClick={() => navigate(getNavigationPath())}>
             <Plus className="mr-2 h-4 w-4" />
             {getActionText(newButtonText)}

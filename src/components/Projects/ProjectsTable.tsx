@@ -1,7 +1,5 @@
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Project, Column } from "@/types/project";
-import { ProjectRow } from "./ProjectRow";
 import { ProjectTasksTable } from "./ProjectTasksTable";
 import { DraggableTable } from "@/components/ui/draggable-table";
 

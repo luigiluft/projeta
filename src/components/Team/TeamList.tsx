@@ -7,9 +7,12 @@ import { Column } from "@/types/project";
 
 interface TeamMember {
   id: string;
-  role: string;
-  hourlyRate: number;
   name: string;
+  role: string;
+  email: string;
+  department: string;
+  status: "active" | "inactive";
+  hourlyRate: number;
 }
 
 interface TeamListProps {
@@ -60,6 +63,9 @@ export function TeamList({ teamMembers, columns, onColumnsChange }: TeamListProp
     });
   };
 
+  // Filtramos as colunas visíveis para uso no DraggableTable
+  const visibleColumns = columns.filter(column => column.visible);
+  
   console.log("TeamList received columns:", columns.map(c => `${c.id} (${c.visible ? 'visible' : 'hidden'})`));
 
   return (

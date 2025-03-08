@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -33,7 +34,7 @@ export function ViewManager({ onSaveView, onLoadView, savedViews }: ViewManagerP
           Visualização
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem onClick={handleSaveView}>
           Salvar Visualização Atual
         </DropdownMenuItem>

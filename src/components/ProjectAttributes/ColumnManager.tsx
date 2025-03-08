@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,14 +21,14 @@ interface ColumnManagerProps {
 
 export function ColumnManager({ columns, onColumnVisibilityChange }: ColumnManagerProps) {
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm">
           <Filter className="mr-2 h-4 w-4" />
           Colunas
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-gray-800 border shadow-lg">
+      <DropdownMenuContent align="end" className="w-56">
         {columns.map((column) => (
           <DropdownMenuCheckboxItem
             key={column.id}
