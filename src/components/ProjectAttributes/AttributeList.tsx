@@ -60,6 +60,8 @@ export function AttributeList({
     ...attr,
     actions: attr.id,
   }));
+  
+  console.log("AttributeList received columns:", columns.map(c => `${c.id} (${c.visible ? 'visible' : 'hidden'})`));
 
   return (
     <div className="bg-white rounded-lg shadow">

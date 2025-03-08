@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Plus, FilePlus, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -39,7 +40,8 @@ export function ActionButtons({
 
   const handleExport = () => {
     if (data.length === 0) return;
-    exportToCSV(data, exportFilename);
+    // Exportar apenas as colunas visíveis
+    exportToCSV(data, exportFilename, columns);
   };
 
   const getActionText = (buttonText: string) => {

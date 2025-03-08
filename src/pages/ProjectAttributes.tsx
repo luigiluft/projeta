@@ -101,9 +101,14 @@ export default function ProjectAttributes() {
   };
 
   const handleColumnVisibilityChange = (columnId: string) => {
-    setColumns(columns.map(col => 
-      col.id === columnId ? { ...col, visible: !col.visible } : col
-    ));
+    setColumns(prevColumns => {
+      const updatedColumns = prevColumns.map(col => 
+        col.id === columnId ? { ...col, visible: !col.visible } : col
+      );
+      
+      console.log("Column visibility changed for:", columnId, "New state:", updatedColumns.find(c => c.id === columnId)?.visible);
+      return updatedColumns;
+    });
   };
 
   const handleSaveView = () => {
@@ -114,26 +119,29 @@ export default function ProjectAttributes() {
     const newView: View = {
       id: crypto.randomUUID(),
       name: `Visualização ${savedViews.length + 1}`,
-      columns: columns.filter(col => col.visible),
+      columns: [...columns],
     };
     setSavedViews([...savedViews, newView]);
     toast.success("Visualização salva com sucesso");
   };
 
   const handleLoadView = (view: View) => {
-    setColumns(columns.map(col => ({
-      ...col,
-      visible: view.columns.some(viewCol => viewCol.id === col.id),
-    })));
+    setColumns(prev => 
+      prev.map(col => {
+        const viewCol = view.columns.find(vc => vc.id === col.id);
+        return viewCol ? { ...col, visible: viewCol.visible } : col;
+      })
+    );
+    toast.success(`Visualização "${view.name}" carregada`);
+  };
+
+  const handleColumnsChange = (newColumns: Column[]) => {
+    setColumns(newColumns);
   };
 
   const handleImportSpreadsheet = () => {
     // Implement spreadsheet import logic here
     console.log("Import spreadsheet clicked");
-  };
-
-  const handleColumnsChange = (newColumns: Column[]) => {
-    setColumns(newColumns);
   };
 
   return (

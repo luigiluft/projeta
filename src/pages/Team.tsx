@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
 import { TeamList } from "@/components/Team/TeamList";
+import { Column, View } from "@/types/project";
+import { toast } from "sonner";
 
 interface TeamMember {
   id: string;
@@ -32,27 +34,61 @@ const mockTeamMembers: TeamMember[] = [
 
 export default function Team() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
-  const [savedViews, setSavedViews] = useState<any[]>([]); // Adjust type as necessary
-  const [columns, setColumns] = useState<any[]>([ // Adjust type as necessary
+  const [savedViews, setSavedViews] = useState<View[]>([]);
+  const [columns, setColumns] = useState<Column[]>([
     { id: "name", label: "Nome", visible: true },
     { id: "role", label: "Cargo", visible: true },
     { id: "email", label: "Email", visible: true },
     { id: "department", label: "Departamento", visible: true },
     { id: "status", label: "Status", visible: true },
+    { id: "actions", label: "Ações", visible: true },
   ]);
 
   const handleColumnVisibilityChange = (columnId: string) => {
-    setColumns(columns.map(col => 
-      col.id === columnId ? { ...col, visible: !col.visible } : col
-    ));
+    setColumns(prevColumns => {
+      const updatedColumns = prevColumns.map(col => 
+        col.id === columnId ? { ...col, visible: !col.visible } : col
+      );
+      
+      // Always keep the "actions" column visible
+      const actionsColumn = updatedColumns.find(col => col.id === "actions");
+      if (actionsColumn && !actionsColumn.visible) {
+        actionsColumn.visible = true;
+      }
+      
+      console.log("Column visibility changed for:", columnId, "New state:", updatedColumns.find(c => c.id === columnId)?.visible);
+      return updatedColumns;
+    });
   };
 
   const handleSaveView = () => {
-    console.log("Save view clicked");
+    if (savedViews.length >= 5) {
+      toast.error("Limite máximo de 5 visualizações atingido");
+      return;
+    }
+    
+    const newView: View = {
+      id: crypto.randomUUID(),
+      name: `Visualização ${savedViews.length + 1}`,
+      columns: [...columns],
+    };
+    
+    setSavedViews(prev => [...prev, newView]);
+    toast.success("Visualização salva com sucesso");
   };
 
-  const handleLoadView = (view: any) => {
-    console.log("Load view clicked", view);
+  const handleLoadView = (view: View) => {
+    setColumns(prev => 
+      prev.map(col => {
+        const viewCol = view.columns.find(vc => vc.id === col.id);
+        return viewCol ? { ...col, visible: viewCol.visible } : col;
+      })
+    );
+    toast.success(`Visualização "${view.name}" carregada`);
+  };
+
+  const handleColumnsChange = (newColumns: Column[]) => {
+    setColumns(newColumns);
   };
 
   const handleImportSpreadsheet = () => {
@@ -76,7 +112,11 @@ export default function Team() {
         />
       </div>
 
-      <TeamList />
+      <TeamList 
+        teamMembers={teamMembers} 
+        columns={columns}
+        onColumnsChange={handleColumnsChange}
+      />
     </div>
   );
 }
