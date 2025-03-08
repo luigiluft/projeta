@@ -1,5 +1,5 @@
 
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from '@/components/AuthProvider';
 import { Toaster } from 'sonner';
@@ -33,6 +33,7 @@ function App() {
         <Toaster closeButton richColors />
         <Routes>
           <Route path="/" element={<Auth />} />
+          <Route path="/dash" element={<Navigate to="/dashboard" replace />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<Dashboard />} />

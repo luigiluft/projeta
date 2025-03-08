@@ -1,3 +1,4 @@
+
 import { Outlet } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
 import { Header } from "./Header";
@@ -11,7 +12,7 @@ export default function Layout() {
         <SidebarProvider>
           <div className="flex w-full">
             <AppSidebar />
-            <main className="flex-1 p-6">
+            <main className="flex-1 p-6 ml-0 md:ml-[16rem]">
               <Outlet />
             </main>
           </div>
