@@ -51,7 +51,10 @@ export function DraggableTable<T>({
         <TableHeader>
           <TableRow>
             {visibleColumns.map((column) => (
-              <TableHead key={column.id}>
+              <TableHead 
+                key={column.id}
+                className="max-w-[200px] truncate overflow-hidden whitespace-nowrap"
+              >
                 {column.label}
               </TableHead>
             ))}
@@ -76,7 +79,10 @@ export function DraggableTable<T>({
               }}
             >
               {visibleColumns.map((column) => (
-                <TableCell key={column.id}>
+                <TableCell 
+                  key={column.id}
+                  className="max-w-[200px] truncate overflow-hidden whitespace-nowrap"
+                >
                   {formatValue 
                     ? formatValue(row[column.id], column.id, row)
                     : row[column.id]?.toString() || ''}
