@@ -94,9 +94,9 @@ export function TaskList({
     return value;
   };
 
-  // Adicionar a coluna de ações apenas se não existir entre as colunas visíveis
+  // Incluir as colunas visíveis do array original, e sempre adicionar a coluna de ações
   const columnsWithActions = [
-    ...columns.filter(col => col.visible),
+    ...columns,
     {
       id: "actions",
       label: "Ações",

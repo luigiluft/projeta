@@ -19,7 +19,7 @@ export function useTaskManagement() {
     { id: "hours_formula", label: "Fórmula de Horas", visible: false },
     { id: "owner", label: "Responsável", visible: true },
     { id: "is_active", label: "Ativo", visible: false },
-    { id: "status", label: "Status", visible: false },
+    { id: "status", label: "Status", visible: true },
     { id: "fixed_hours", label: "Horas Fixas", visible: false },
     { id: "order", label: "Ordem", visible: false },
     { id: "depends_on", label: "Dependência", visible: false },
@@ -126,10 +126,12 @@ export function useTaskManagement() {
     setColumns(columns.map(col => 
       col.id === columnId ? { ...col, visible: !col.visible } : col
     ));
+    console.log("Column visibility changed for:", columnId);
   };
 
   const handleColumnsChange = (newColumns: Column[]) => {
     setColumns(newColumns);
+    console.log("Columns updated:", newColumns);
   };
 
   const handleSaveView = () => {
