@@ -20,7 +20,11 @@ export function useTaskManagement() {
   const [savedViews, setSavedViews] = useState<View[]>([]);
 
   // Fetch tasks
-  const { data: tasks = [] } = useQuery({
+  const { 
+    data: tasks = [], 
+    isLoading: loading, 
+    error 
+  } = useQuery({
     queryKey: ['tasks'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -52,9 +56,15 @@ export function useTaskManagement() {
   // Create task mutation
   const createTaskMutation = useMutation({
     mutationFn: async (newTask: Omit<Task, 'id' | 'created_at'>) => {
+      // Add the required hours_type property for database compatibility
+      const taskWithHoursType = {
+        ...newTask,
+        hours_type: 'formula' // Default value for hours_type
+      };
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert([newTask])
+        .insert([taskWithHoursType])
         .select()
         .single();
 
@@ -68,6 +78,27 @@ export function useTaskManagement() {
     },
     onError: (error) => {
       toast.error(`Erro ao criar tarefa: ${error.message}`);
+    },
+  });
+
+  // Delete tasks mutation
+  const deleteTasksMutation = useMutation({
+    mutationFn: async (taskIds: string[]) => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .delete()
+        .in('id', taskIds)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast.success("Tarefas excluídas com sucesso!");
+    },
+    onError: (error) => {
+      toast.error(`Erro ao excluir tarefas: ${error.message}`);
     },
   });
 
@@ -112,11 +143,18 @@ export function useTaskManagement() {
     createTaskMutation.mutate(values);
   };
 
+  const deleteTasks = (taskIds: string[]) => {
+    deleteTasksMutation.mutate(taskIds);
+  };
+
   return {
     showForm,
     tasks,
     columns,
     savedViews,
+    loading,
+    error,
+    deleteTasks,
     handleImportSpreadsheet,
     handleNewTask,
     handleColumnVisibilityChange,

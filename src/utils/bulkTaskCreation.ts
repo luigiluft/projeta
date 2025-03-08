@@ -21,7 +21,8 @@ export async function createTasksInBulk(tasks: TaskData[]) {
       owner: task.owner || 'PO',
       phase: task.phase || task.epic.split(' ')[0], // Se não fornecido, usa a primeira palavra do epic
       is_active: true,
-      status: 'pending'
+      status: 'pending',
+      hours_type: 'formula' // Adicionar o campo obrigatório hours_type
     }));
 
     const { data, error } = await supabase

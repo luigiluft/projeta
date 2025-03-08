@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-interface TaskListProps {
+export interface TaskListProps {
   tasks: Task[];
   columns: Column[];
   onColumnsChange: (columns: Column[]) => void;

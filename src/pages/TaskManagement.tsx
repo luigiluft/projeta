@@ -1,14 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { TaskList } from '@/components/TaskManagement/TaskList';
 import { TaskHeader } from '@/components/TaskManagement/TaskHeader';
-import { type Task, type Column, type View } from '@/types/project';
+import { type Task } from '@/types/project';
 
 export default function TaskManagement() {
-  const { tasks, columns, savedViews, loading, error, deleteTasks, handleColumnVisibilityChange, handleSaveView, handleLoadView } = useTaskManagement();
+  const { tasks, columns, loading, error, deleteTasks, handleColumnVisibilityChange } = useTaskManagement();
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 
   const handleTaskSelection = (taskId: string, selected: boolean) => {
@@ -23,16 +23,8 @@ export default function TaskManagement() {
     setSelectedTasks([]);
   };
 
-  const handleImportSpreadsheet = () => {
-    console.log("Import spreadsheet");
-  };
-
-  const handleNewTask = () => {
-    console.log("New task");
-  };
-
   if (loading) return <div>Carregando...</div>;
-  if (error) return <div>Erro ao carregar tarefas: {error}</div>;
+  if (error) return <div>Erro ao carregar tarefas: {error.message}</div>;
 
   return (
     <div className="container mx-auto py-8">
@@ -47,8 +39,8 @@ export default function TaskManagement() {
         <CardContent>
           <TaskList 
             tasks={tasks} 
-            selectedTasks={selectedTasks}
-            onTaskSelection={handleTaskSelection}
+            columns={columns}
+            onColumnsChange={handleColumnVisibilityChange}
           />
         </CardContent>
       </Card>

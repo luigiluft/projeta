@@ -2,12 +2,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { useToast } from '@/hooks/use-toast';
-import { ColumnManager } from "@/components/TaskManagement/ColumnManager";
-import { ViewManager } from "@/components/TaskManagement/ViewManager";
-import { type Column, type View, type Task } from '@/types/project';
 
 interface TaskHeaderProps {
   selectedTasks: string[];
@@ -17,12 +14,12 @@ interface TaskHeaderProps {
 export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteTasks }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const taskManagement = useTaskManagement();
+  const { deleteTasks } = useTaskManagement();
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   const handleDelete = async () => {
     try {
-      await taskManagement.deleteTasks(selectedTasks);
+      await deleteTasks(selectedTasks);
       onDeleteTasks(selectedTasks);
       toast({
         title: "Tarefas excluídas com sucesso!",
