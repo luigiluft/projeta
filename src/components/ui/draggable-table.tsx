@@ -61,35 +61,46 @@ export function DraggableTable<T>({
           </TableRow>
         </TableHeader>
         <TableBody ref={setNodeRef}>
-          {data.map((row: any, rowIndex) => (
-            <TableRow
-              key={row.id || rowIndex}
-              draggable
-              onDragStart={() => handleReorder(rowIndex, rowIndex)}
-              onDragOver={(e) => {
-                e.preventDefault();
-                const target = e.target as HTMLElement;
-                const targetRow = target.closest("tr");
-                if (targetRow) {
-                  const targetIndex = Array.from(
-                    targetRow.parentElement?.children || []
-                  ).indexOf(targetRow);
-                  handleReorder(rowIndex, targetIndex);
-                }
-              }}
-            >
-              {visibleColumns.map((column) => (
-                <TableCell 
-                  key={column.id}
-                  className="max-w-[200px] truncate overflow-hidden whitespace-nowrap"
-                >
-                  {formatValue 
-                    ? formatValue(row[column.id], column.id, row)
-                    : row[column.id]?.toString() || ''}
-                </TableCell>
-              ))}
+          {data.length === 0 ? (
+            <TableRow>
+              <TableCell 
+                colSpan={visibleColumns.length} 
+                className="h-32 text-center text-muted-foreground"
+              >
+                Nenhum registro encontrado
+              </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            data.map((row: any, rowIndex) => (
+              <TableRow
+                key={row.id || rowIndex}
+                draggable
+                onDragStart={() => handleReorder(rowIndex, rowIndex)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  const target = e.target as HTMLElement;
+                  const targetRow = target.closest("tr");
+                  if (targetRow) {
+                    const targetIndex = Array.from(
+                      targetRow.parentElement?.children || []
+                    ).indexOf(targetRow);
+                    handleReorder(rowIndex, targetIndex);
+                  }
+                }}
+              >
+                {visibleColumns.map((column) => (
+                  <TableCell 
+                    key={column.id}
+                    className="max-w-[200px] truncate overflow-hidden whitespace-nowrap"
+                  >
+                    {formatValue 
+                      ? formatValue(row[column.id], column.id, row)
+                      : row[column.id]?.toString() || ''}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
 

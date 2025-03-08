@@ -71,7 +71,7 @@ export function ActionButtons({
   };
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-2">
       <ColumnManager
         columns={columns}
         onColumnVisibilityChange={onColumnVisibilityChange}
@@ -81,23 +81,23 @@ export function ActionButtons({
         onLoadView={onLoadView}
         savedViews={savedViews}
       />
-      <Button variant="outline" onClick={handleExport} disabled={data.length === 0}>
-        <Download className="mr-2 h-4 w-4" />
+      <Button variant="outline" size="sm" onClick={handleExport} disabled={data.length === 0} className="flex items-center gap-2">
+        <Download className="h-4 w-4" />
         Exportar CSV
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
             {newButtonText}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuItem onClick={() => navigate(getNavigationPath())}>
+          <DropdownMenuItem onClick={() => navigate(getNavigationPath())} className="cursor-pointer">
             <Plus className="mr-2 h-4 w-4" />
             {getActionText(newButtonText)}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onImportSpreadsheet}>
+          <DropdownMenuItem onClick={onImportSpreadsheet} className="cursor-pointer">
             <FilePlus className="mr-2 h-4 w-4" />
             Importar Planilha
           </DropdownMenuItem>

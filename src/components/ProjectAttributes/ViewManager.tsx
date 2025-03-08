@@ -29,13 +29,13 @@ export function ViewManager({ onSaveView, onLoadView, savedViews }: ViewManagerP
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Eye className="mr-2 h-4 w-4" />
+        <Button variant="outline" size="sm" className="flex items-center gap-2">
+          <Eye className="h-4 w-4" />
           Visualização
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={handleSaveView}>
+        <DropdownMenuItem onClick={handleSaveView} className="cursor-pointer">
           Salvar Visualização Atual
         </DropdownMenuItem>
         {savedViews.length > 0 && (
@@ -45,6 +45,7 @@ export function ViewManager({ onSaveView, onLoadView, savedViews }: ViewManagerP
               <DropdownMenuItem
                 key={view.id}
                 onClick={() => onLoadView(view)}
+                className="cursor-pointer"
               >
                 {view.name}
               </DropdownMenuItem>
