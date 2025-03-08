@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
 import { TeamList } from "@/components/Team/TeamList";
@@ -11,6 +12,7 @@ interface TeamMember {
   email: string;
   department: string;
   status: "active" | "inactive";
+  hourlyRate: number;
 }
 
 const mockTeamMembers: TeamMember[] = [
@@ -21,6 +23,7 @@ const mockTeamMembers: TeamMember[] = [
     email: "joao@exemplo.com",
     department: "Tecnologia",
     status: "active",
+    hourlyRate: 100,
   },
   {
     id: "2",
@@ -29,6 +32,7 @@ const mockTeamMembers: TeamMember[] = [
     email: "maria@exemplo.com",
     department: "Produto",
     status: "active",
+    hourlyRate: 120,
   },
 ];
 

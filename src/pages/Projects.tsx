@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ProjectHeader } from "@/components/Projects/ProjectHeader";
 import { ProjectsTable } from "@/components/Projects/ProjectsTable";
 import { DeleteProjectDialog } from "@/components/Projects/DeleteProjectDialog";
+import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
 
 export default function Projects() {
   const {
