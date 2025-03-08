@@ -40,14 +40,12 @@ export function DraggableTable<T>({
     }
   };
 
-  const visibleColumns = columns.filter(col => col.visible);
-
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            {visibleColumns.map((column) => (
+            {columns.map((column) => (
               <TableHead key={column.id}>
                 {column.label}
               </TableHead>
@@ -72,7 +70,7 @@ export function DraggableTable<T>({
                 }
               }}
             >
-              {visibleColumns.map((column) => (
+              {columns.map((column) => (
                 <TableCell key={column.id}>
                   {formatValue 
                     ? formatValue(row[column.id], column.id, row)

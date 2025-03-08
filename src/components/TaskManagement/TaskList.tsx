@@ -94,6 +94,7 @@ export function TaskList({
     return value;
   };
 
+  // Adicionar a coluna de ações apenas se não existir entre as colunas visíveis
   const columnsWithActions = [
     ...columns.filter(col => col.visible),
     {
