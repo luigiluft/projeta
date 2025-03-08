@@ -5,10 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { TaskList } from '@/components/TaskManagement/TaskList';
 import { TaskHeader } from '@/components/TaskManagement/TaskHeader';
-import { type Task } from '@/types/project';
+import { type Task, type Column } from '@/types/project';
 
 export default function TaskManagement() {
-  const { tasks, columns, loading, error, deleteTasks, handleColumnVisibilityChange } = useTaskManagement();
+  const { 
+    tasks, 
+    columns, 
+    loading, 
+    error, 
+    deleteTasks, 
+    handleColumnVisibilityChange,
+    handleColumnsChange 
+  } = useTaskManagement();
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
 
   const handleTaskSelection = (taskId: string, selected: boolean) => {
@@ -20,6 +28,7 @@ export default function TaskManagement() {
   };
 
   const handleDeleteTasks = (taskIds: string[]) => {
+    deleteTasks(taskIds);
     setSelectedTasks([]);
   };
 
@@ -40,7 +49,7 @@ export default function TaskManagement() {
           <TaskList 
             tasks={tasks} 
             columns={columns}
-            onColumnsChange={handleColumnVisibilityChange}
+            onColumnsChange={handleColumnsChange}
           />
         </CardContent>
       </Card>
