@@ -6,6 +6,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { useToast } from '@/hooks/use-toast';
 import { Filter, Eye, Download, Plus, Trash2 } from "lucide-react";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TaskHeaderProps {
   selectedTasks: string[];
@@ -15,7 +21,7 @@ interface TaskHeaderProps {
 export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteTasks }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { deleteTasks } = useTaskManagement();
+  const { deleteTasks, columns, handleColumnVisibilityChange } = useTaskManagement();
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   const handleDelete = async () => {
@@ -51,10 +57,33 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ selectedTasks, onDeleteT
   return (
     <div className="flex justify-between items-center mb-4">
       <div className="flex items-center space-x-2">
-        <Button variant="outline" onClick={() => navigate('/task-management/new')} className="gap-2">
-          <Filter className="h-4 w-4" />
-          Colunas
-        </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="gap-2">
+              <Filter className="h-4 w-4" />
+              Colunas
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-0" align="start">
+            <div className="p-2 grid gap-2">
+              {columns.map((column) => (
+                <div key={column.id} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={column.id}
+                    checked={column.visible}
+                    onCheckedChange={() => handleColumnVisibilityChange(column.id)}
+                  />
+                  <label 
+                    htmlFor={column.id}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    {column.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
         <Button variant="outline" className="gap-2">
           <Eye className="h-4 w-4" />
           Visualização

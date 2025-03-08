@@ -5,14 +5,23 @@ import { Task, Column } from "@/types/project";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export interface TaskListProps {
   tasks: Task[];
   columns: Column[];
   onColumnsChange: (columns: Column[]) => void;
+  onTaskSelect?: (taskId: string, selected: boolean) => void;
+  selectedTasks?: string[];
 }
 
-export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
+export function TaskList({ 
+  tasks, 
+  columns, 
+  onColumnsChange, 
+  onTaskSelect,
+  selectedTasks = []
+}: TaskListProps) {
   const navigate = useNavigate();
 
   const formatDate = (dateString: string) => {
@@ -27,13 +36,22 @@ export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
   const formatValue = (value: any, columnId: string, rowData?: Task) => {
     if (columnId === "actions") {
       return (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(`/task-management/${rowData?.id}`)}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center space-x-2">
+          {onTaskSelect && rowData && (
+            <Checkbox 
+              checked={selectedTasks.includes(rowData.id)}
+              onCheckedChange={(checked) => onTaskSelect(rowData.id, checked === true)}
+              aria-label="Selecionar tarefa"
+            />
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(`/task-management/${rowData?.id}`)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </div>
       );
     }
 
@@ -41,6 +59,19 @@ export function TaskList({ tasks, columns, onColumnsChange }: TaskListProps) {
     
     if (columnId === "created_at") {
       return formatDate(value);
+    }
+    
+    if (columnId === "status") {
+      const statusMap: Record<string, string> = {
+        "pending": "Pendente",
+        "in_progress": "Em Progresso",
+        "completed": "Concluído"
+      };
+      return statusMap[value] || value;
+    }
+    
+    if (columnId === "is_active") {
+      return value ? "Sim" : "Não";
     }
     
     if (Array.isArray(value)) {

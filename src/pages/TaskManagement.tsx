@@ -32,8 +32,8 @@ export default function TaskManagement() {
     setSelectedTasks([]);
   };
 
-  if (loading) return <div>Carregando...</div>;
-  if (error) return <div>Erro ao carregar tarefas: {error.message}</div>;
+  if (loading) return <div className="flex items-center justify-center h-64">Carregando...</div>;
+  if (error) return <div className="text-red-500 p-4">Erro ao carregar tarefas: {error.message}</div>;
 
   return (
     <div className="container mx-auto py-8">
@@ -50,6 +50,8 @@ export default function TaskManagement() {
             tasks={tasks} 
             columns={columns}
             onColumnsChange={handleColumnsChange}
+            onTaskSelect={handleTaskSelection}
+            selectedTasks={selectedTasks}
           />
         </CardContent>
       </Card>
