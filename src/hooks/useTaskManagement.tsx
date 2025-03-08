@@ -9,23 +9,22 @@ export function useTaskManagement() {
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
   
-  // Ordenando as colunas de acordo com a ordem no banco de dados
+  // Definir todas as colunas disponíveis na tabela tasks
   const [columns, setColumns] = useState<Column[]>([
-    { id: "id", label: "ID", visible: false },
+    { id: "id", label: "ID", visible: true },
     { id: "task_name", label: "Tarefa", visible: true },
     { id: "phase", label: "Fase", visible: true },
     { id: "epic", label: "Epic", visible: true },
     { id: "story", label: "Story", visible: true },
-    { id: "hours_formula", label: "Fórmula de Horas", visible: false },
+    { id: "hours_formula", label: "Fórmula de Horas", visible: true },
+    { id: "fixed_hours", label: "Horas Fixas", visible: true },
     { id: "owner", label: "Responsável", visible: true },
-    { id: "is_active", label: "Ativo", visible: false },
+    { id: "is_active", label: "Ativo", visible: true },
     { id: "status", label: "Status", visible: true },
-    { id: "fixed_hours", label: "Horas Fixas", visible: false },
-    { id: "order", label: "Ordem", visible: false },
-    { id: "depends_on", label: "Dependência", visible: false },
-    { id: "hours_type", label: "Tipo de Horas", visible: false },
+    { id: "order", label: "Ordem", visible: true },
+    { id: "depends_on", label: "Dependência", visible: true },
+    { id: "hours_type", label: "Tipo de Horas", visible: true },
     { id: "created_at", label: "Criado em", visible: true },
-    { id: "hours", label: "Horas", visible: false },
   ]);
   
   const [savedViews, setSavedViews] = useState<View[]>([]);
@@ -127,10 +126,6 @@ export function useTaskManagement() {
       col.id === columnId ? { ...col, visible: !col.visible } : col
     ));
     console.log("Column visibility changed for:", columnId);
-    // Debug para verificar o estado atual das colunas após a mudança
-    setTimeout(() => {
-      console.log("Current visible columns:", columns.filter(c => c.visible).map(c => c.id));
-    }, 0);
   };
 
   const handleColumnsChange = (newColumns: Column[]) => {

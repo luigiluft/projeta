@@ -75,13 +75,19 @@ export function TaskList({
     }
     
     if (columnId === "depends_on" && value) {
-      // Exibir o ID da dependência de forma simplificada
       return typeof value === 'string' ? value.substring(0, 8) + '...' : value;
     }
     
     if (columnId === "hours_formula") {
-      // Renderizar a fórmula de horas adequadamente
       return value || '';
+    }
+    
+    if (columnId === "fixed_hours") {
+      return value || '0';
+    }
+    
+    if (columnId === "order") {
+      return value || '-';
     }
     
     if (Array.isArray(value)) {
@@ -99,22 +105,31 @@ export function TaskList({
     return value;
   };
 
-  // Incluir a coluna de ações nas colunas com visibilidade
-  const columnsWithActions = [
-    ...columns,
-    {
-      id: "actions",
-      label: "Ações",
-      visible: true,
-    }
+  // Definir todas as colunas disponíveis na tabela tasks
+  const allTaskColumns = [
+    { id: "id", label: "ID", visible: true },
+    { id: "task_name", label: "Tarefa", visible: true },
+    { id: "phase", label: "Fase", visible: true },
+    { id: "epic", label: "Epic", visible: true },
+    { id: "story", label: "Story", visible: true },
+    { id: "hours_formula", label: "Fórmula de Horas", visible: true },
+    { id: "fixed_hours", label: "Horas Fixas", visible: true },
+    { id: "owner", label: "Responsável", visible: true },
+    { id: "is_active", label: "Ativo", visible: true },
+    { id: "status", label: "Status", visible: true },
+    { id: "order", label: "Ordem", visible: true },
+    { id: "depends_on", label: "Dependência", visible: true },
+    { id: "hours_type", label: "Tipo de Horas", visible: true },
+    { id: "created_at", label: "Criado em", visible: true },
+    { id: "actions", label: "Ações", visible: true },
   ];
   
-  console.log("Columns in TaskList:", columnsWithActions.filter(c => c.visible).map(c => c.id));
+  console.log("All task columns in TaskList:", allTaskColumns.map(c => c.id));
 
   return (
     <div className="h-full overflow-auto">
       <DraggableTable
-        columns={columnsWithActions}
+        columns={allTaskColumns}
         onColumnsChange={onColumnsChange}
         data={tasks}
         formatValue={formatValue}
