@@ -21,6 +21,13 @@ export async function importFromCSV(file: File): Promise<any[]> {
         // Parse headers (first line)
         const headers = parseCSVLine(lines[0]);
         
+        // Verificar se tem pelo menos um cabeçalho relacionado à tarefa
+        const taskHeaderIndex = findTaskHeaderIndex(headers);
+        if (taskHeaderIndex === -1) {
+          reject(new Error("O arquivo CSV deve conter uma coluna 'Tarefa' ou 'task_name'"));
+          return;
+        }
+        
         // Parse data rows
         const data = lines.slice(1).map(line => {
           const values = parseCSVLine(line);
@@ -41,6 +48,16 @@ export async function importFromCSV(file: File): Promise<any[]> {
             }
           });
           
+          // Garantir que o campo tarefa seja setado corretamente
+          if (taskHeaderIndex !== -1) {
+            const taskValue = values[taskHeaderIndex];
+            if (!taskValue.trim()) {
+              throw new Error(`Linha ${line} não possui valor para o campo Tarefa`);
+            }
+            // Mapear corretamente o campo de tarefa
+            row["task_name"] = taskValue;
+          }
+          
           return row;
         });
         
@@ -58,6 +75,20 @@ export async function importFromCSV(file: File): Promise<any[]> {
     
     reader.readAsText(file);
   });
+}
+
+// Função auxiliar para encontrar o índice do cabeçalho relacionado à tarefa
+function findTaskHeaderIndex(headers: string[]): number {
+  const possibleTaskHeaders = ['tarefa', 'task', 'task_name', 'nome_tarefa', 'nome da tarefa', 'título', 'titulo', 'title'];
+  
+  for (let i = 0; i < headers.length; i++) {
+    const normalizedHeader = headers[i].toLowerCase().trim();
+    if (possibleTaskHeaders.includes(normalizedHeader)) {
+      return i;
+    }
+  }
+  
+  return -1;
 }
 
 // Função melhorada para lidar com valores entre aspas e vírgulas dentro de campos
