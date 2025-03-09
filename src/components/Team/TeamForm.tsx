@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -69,7 +68,7 @@ export function TeamForm({ initialValues, onClose }: TeamFormProps) {
         // Criar novo membro
         const { error } = await supabase
           .from('team_members')
-          .insert([values]);
+          .insert(values);
 
         if (error) throw error;
         toast.success("Membro da equipe criado com sucesso");

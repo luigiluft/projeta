@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
@@ -116,7 +115,7 @@ export default function Team() {
   };
 
   const handleNewMember = () => {
-    navigate('/new-team-member');
+    navigate('/team/new');
   };
 
   return (

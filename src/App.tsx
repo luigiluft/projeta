@@ -53,13 +53,7 @@ function App() {
               <Route path="/import" element={<Import />} />
               <Route path="/project-attributes" element={<ProjectAttributes />} />
               <Route path="/project-attributes/new" element={<NewAttribute />} />
-              <Route path="/edit-team-member/:id" element={
-                <ProtectedRoute>
-                  <Layout>
-                    <EditTeamMember />
-                  </Layout>
-                </ProtectedRoute>
-              } />
+              <Route path="/edit-team-member/:id" element={<EditTeamMember />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Route>

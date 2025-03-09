@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
@@ -17,6 +16,7 @@ export interface TeamMember {
   department: string;
   status: string;
   hourly_rate: number;
+  squad?: string;
 }
 
 interface TeamListProps {
@@ -86,7 +86,6 @@ export function TeamList({ teamMembers, columns, onColumnsChange, onDelete }: Te
     });
   };
 
-  // Filtramos as colunas visíveis para uso no DraggableTable
   const visibleColumns = columns.filter(column => column.visible);
   
   console.log("TeamList received columns:", columns.map(c => `${c.id} (${c.visible ? 'visible' : 'hidden'})`));
