@@ -41,8 +41,8 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
           is_active: row['Ativo'] === true || row['Ativo'] === 'Sim' || row['is_active'] === true || true,
           status: convertStatus(row['Status'] || row['status'] || 'pending'),
           hours_type: determineHoursType(row),
-          fixed_hours: undefined as number | undefined,
-          hours_formula: undefined as string | undefined
+          fixed_hours: null as number | null,
+          hours_formula: null as string | null
         };
 
         // Handle fixed_hours if present
@@ -71,7 +71,7 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
       console.log('Tarefas a serem importadas:', tasks);
 
       // Insert tasks into the database
-      const { data: result, error } = await supabase.from('tasks').insert(tasks);
+      const { error } = await supabase.from('tasks').insert(tasks);
 
       if (error) {
         console.error('Erro ao importar tarefas:', error);
@@ -114,12 +114,10 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
   };
 
   const handleImportClick = () => {
-    // Abre o diálogo
     setOpen(true);
   };
 
   const handleSelectFileClick = () => {
-    // Garantindo que o click no botão abra o seletor de arquivo
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }

@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { Column, Task, View } from "@/types/project";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { exportToCSV } from "@/utils/csvExport";
+import { TaskImporter } from "@/components/TaskManagement/TaskImporter";
 
 export function useTaskManagement() {
   const [showForm, setShowForm] = useState(false);

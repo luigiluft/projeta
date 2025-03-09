@@ -19,7 +19,7 @@ export async function importFromCSV(file: File): Promise<any[]> {
         }
         
         // Parse headers (first line)
-        const headers = lines[0].split(',').map(header => header.trim());
+        const headers = parseCSVLine(lines[0]);
         
         // Parse data rows
         const data = lines.slice(1).map(line => {
@@ -80,7 +80,7 @@ function parseCSVLine(line: string): string[] {
       }
     } else if (char === ',' && !inQuotes) {
       // End of field
-      result.push(currentValue);
+      result.push(currentValue.trim());
       currentValue = '';
     } else {
       currentValue += char;
@@ -88,7 +88,7 @@ function parseCSVLine(line: string): string[] {
   }
   
   // Add the last field
-  result.push(currentValue);
+  result.push(currentValue.trim());
   
   return result;
 }

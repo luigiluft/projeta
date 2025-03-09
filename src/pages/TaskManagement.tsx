@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { TaskList } from '@/components/TaskManagement/TaskList';
 import { TaskHeader } from '@/components/TaskManagement/TaskHeader';
+import { TaskImporter } from '@/components/TaskManagement/TaskImporter';
 import { type Task, type Column } from '@/types/project';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -29,7 +30,8 @@ export default function TaskManagement() {
     error, 
     deleteTasks, 
     handleColumnVisibilityChange,
-    handleColumnsChange 
+    handleColumnsChange,
+    refreshTasks 
   } = useTaskManagement();
   
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
@@ -62,13 +64,13 @@ export default function TaskManagement() {
   return (
     <div className="container mx-auto py-8">
       <Card className="bg-white shadow">
-        <CardHeader className="pb-0">
+        <CardHeader className="pb-0 bg-gray-50">
           <TaskHeader 
             columns={columns}
             onColumnVisibilityChange={handleColumnVisibilityChange}
           />
         </CardHeader>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 bg-white">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-2">
               {selectedTasks.length > 0 && (
@@ -82,6 +84,9 @@ export default function TaskManagement() {
                   Excluir Tarefas ({selectedTasks.length})
                 </Button>
               )}
+            </div>
+            <div className="w-48">
+              <TaskImporter onSuccess={refreshTasks} />
             </div>
           </div>
           
