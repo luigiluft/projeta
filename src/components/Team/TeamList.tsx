@@ -4,26 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { DraggableTable } from "@/components/ui/draggable-table";
 import { Column } from "@/types/project";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-interface TeamMember {
+export interface TeamMember {
   id: string;
-  name: string;
-  role: string;
+  first_name: string;
+  last_name: string;
+  position: string;
   email: string;
   department: string;
-  status: "active" | "inactive";
-  hourlyRate: number;
+  status: string;
+  hourly_rate: number;
 }
 
 interface TeamListProps {
   teamMembers: TeamMember[];
   columns: Column[];
   onColumnsChange: (columns: Column[]) => void;
+  onDelete: (id: string) => void;
 }
 
-export function TeamList({ teamMembers, columns, onColumnsChange }: TeamListProps) {
+export function TeamList({ teamMembers, columns, onColumnsChange, onDelete }: TeamListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const navigate = useNavigate();
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -31,21 +37,38 @@ export function TeamList({ teamMembers, columns, onColumnsChange }: TeamListProp
 
   const totalPages = Math.ceil(teamMembers.length / itemsPerPage);
 
+  const handleEdit = (id: string) => {
+    navigate(`/edit-team-member/${id}`);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      onDelete(id);
+    } catch (error) {
+      console.error("Erro ao excluir membro:", error);
+      toast.error("Erro ao excluir membro da equipe");
+    }
+  };
+
   const formatValue = (value: any, columnId: string, rowData?: any) => {
-    if (columnId === "actions") {
+    if (columnId === "actions" && rowData) {
       return (
         <div className="flex gap-2">
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(rowData.id)}>
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" onClick={() => handleDelete(rowData.id)}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       );
     }
     
-    if (columnId === "hourlyRate") {
+    if (columnId === "name" && rowData) {
+      return `${rowData.first_name} ${rowData.last_name}`;
+    }
+    
+    if (columnId === "hourly_rate") {
       return value ? formatCurrency(value) : '-';
     }
     

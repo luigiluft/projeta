@@ -1,52 +1,68 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
-import { TeamList } from "@/components/Team/TeamList";
+import { TeamList, TeamMember } from "@/components/Team/TeamList";
 import { Column, View } from "@/types/project";
 import { toast } from "sonner";
-
-interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-  department: string;
-  status: "active" | "inactive";
-  hourlyRate: number;
-}
-
-const mockTeamMembers: TeamMember[] = [
-  {
-    id: "1",
-    name: "João Silva",
-    role: "Desenvolvedor Frontend",
-    email: "joao@exemplo.com",
-    department: "Tecnologia",
-    status: "active",
-    hourlyRate: 100,
-  },
-  {
-    id: "2",
-    name: "Maria Santos",
-    role: "Product Manager",
-    email: "maria@exemplo.com",
-    department: "Produto",
-    status: "active",
-    hourlyRate: 120,
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Team() {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [savedViews, setSavedViews] = useState<View[]>([]);
+  const navigate = useNavigate();
   const [columns, setColumns] = useState<Column[]>([
     { id: "name", label: "Nome", visible: true },
-    { id: "role", label: "Cargo", visible: true },
+    { id: "position", label: "Cargo", visible: true },
     { id: "email", label: "Email", visible: true },
     { id: "department", label: "Departamento", visible: true },
     { id: "status", label: "Status", visible: true },
+    { id: "hourly_rate", label: "Valor/Hora", visible: true },
     { id: "actions", label: "Ações", visible: true },
   ]);
+
+  useEffect(() => {
+    fetchTeamMembers();
+  }, []);
+
+  const fetchTeamMembers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .order('first_name', { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      setTeamMembers(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar membros da equipe:', error);
+      toast.error('Falha ao carregar membros da equipe');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTeamMember = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Membro da equipe removido com sucesso');
+      setTeamMembers(teamMembers.filter(member => member.id !== id));
+    } catch (error) {
+      console.error('Erro ao excluir membro da equipe:', error);
+      toast.error('Erro ao excluir membro da equipe');
+    }
+  };
 
   const handleColumnVisibilityChange = (columnId: string) => {
     setColumns(prevColumns => {
@@ -99,6 +115,10 @@ export default function Team() {
     console.log("Import spreadsheet clicked");
   };
 
+  const handleNewMember = () => {
+    navigate('/new-team-member');
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -111,16 +131,25 @@ export default function Team() {
           onLoadView={handleLoadView}
           onImportSpreadsheet={handleImportSpreadsheet}
           newButtonText="Novo Membro"
+          onNewClick={handleNewMember}
           data={teamMembers}
           exportFilename="equipe"
+          isLoading={loading}
         />
       </div>
 
-      <TeamList 
-        teamMembers={teamMembers} 
-        columns={columns}
-        onColumnsChange={handleColumnsChange}
-      />
+      {loading ? (
+        <div className="flex justify-center p-8">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      ) : (
+        <TeamList 
+          teamMembers={teamMembers} 
+          columns={columns}
+          onColumnsChange={handleColumnsChange}
+          onDelete={handleDeleteTeamMember}
+        />
+      )}
     </div>
   );
 }

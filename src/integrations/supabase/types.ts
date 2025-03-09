@@ -326,6 +326,45 @@ export type Database = {
           },
         ]
       }
+      team_members: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string | null
+          first_name: string
+          hourly_rate: number
+          id: string
+          last_name: string
+          position: string
+          squad: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          first_name: string
+          hourly_rate: number
+          id?: string
+          last_name: string
+          position: string
+          squad?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          first_name?: string
+          hourly_rate?: number
+          id?: string
+          last_name?: string
+          position?: string
+          squad?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

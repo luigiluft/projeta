@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from '@/components/AuthProvider';
@@ -25,6 +24,7 @@ import RolePermissions from './pages/RolePermissions';
 import Import from './pages/Import';
 import ProjectAttributes from './pages/ProjectAttributes';
 import NewAttribute from './pages/NewAttribute';
+import EditTeamMember from "@/pages/EditTeamMember";
 
 function App() {
   return (
@@ -53,6 +53,13 @@ function App() {
               <Route path="/import" element={<Import />} />
               <Route path="/project-attributes" element={<ProjectAttributes />} />
               <Route path="/project-attributes/new" element={<NewAttribute />} />
+              <Route path="/edit-team-member/:id" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <EditTeamMember />
+                  </Layout>
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Route>
