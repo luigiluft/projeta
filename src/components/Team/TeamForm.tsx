@@ -29,6 +29,8 @@ const teamMemberSchema = z.object({
   squad: z.string().optional(),
 });
 
+type TeamMemberFormValues = z.infer<typeof teamMemberSchema>;
+
 interface TeamFormProps {
   initialValues?: TeamMember;
   onClose: () => void;
@@ -38,7 +40,7 @@ export function TeamForm({ initialValues, onClose }: TeamFormProps) {
   const [loading, setLoading] = useState(false);
   const isEditing = !!initialValues;
 
-  const form = useForm<z.infer<typeof teamMemberSchema>>({
+  const form = useForm<TeamMemberFormValues>({
     resolver: zodResolver(teamMemberSchema),
     defaultValues: {
       first_name: initialValues?.first_name || "",
@@ -52,7 +54,7 @@ export function TeamForm({ initialValues, onClose }: TeamFormProps) {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof teamMemberSchema>) => {
+  const onSubmit = async (formValues: TeamMemberFormValues) => {
     try {
       setLoading(true);
 
@@ -60,7 +62,16 @@ export function TeamForm({ initialValues, onClose }: TeamFormProps) {
         // Atualizar membro existente
         const { error } = await supabase
           .from('team_members')
-          .update(values)
+          .update({
+            first_name: formValues.first_name,
+            last_name: formValues.last_name,
+            position: formValues.position,
+            hourly_rate: formValues.hourly_rate,
+            email: formValues.email,
+            department: formValues.department,
+            status: formValues.status,
+            squad: formValues.squad
+          })
           .eq('id', initialValues.id);
 
         if (error) throw error;
@@ -69,7 +80,16 @@ export function TeamForm({ initialValues, onClose }: TeamFormProps) {
         // Criar novo membro
         const { error } = await supabase
           .from('team_members')
-          .insert(values);
+          .insert({
+            first_name: formValues.first_name,
+            last_name: formValues.last_name,
+            position: formValues.position,
+            hourly_rate: formValues.hourly_rate,
+            email: formValues.email,
+            department: formValues.department,
+            status: formValues.status,
+            squad: formValues.squad
+          });
 
         if (error) throw error;
         toast.success("Membro da equipe criado com sucesso");

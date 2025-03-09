@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Download, MoreHorizontal } from "lucide-react";
@@ -14,11 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { exportToCSV } from "@/utils/csvExport";
+import { Task } from "@/types/project";
 
 interface ProjectHeaderProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  onTasksSelected: (taskIds: string[]) => void;
+  onTasksSelected: (tasks: Task[], attributeValues?: Record<string, number>) => void;
 }
 
 export function ProjectHeader({ open, setOpen, onTasksSelected }: ProjectHeaderProps) {

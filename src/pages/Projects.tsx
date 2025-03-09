@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useProjects } from "@/hooks/useProjects";
 import { Task, Column, View } from "@/types/project";
@@ -146,6 +147,7 @@ export default function Projects() {
           newButtonText="Adicionar Projeto"
           data={projects}
           exportFilename="projetos"
+          onNewClick={() => navigate('/projects/new')}
         />
       </div>
 
