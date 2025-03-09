@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
@@ -5,6 +6,7 @@ import { TeamList, TeamMember } from "@/components/Team/TeamList";
 import { Column, View } from "@/types/project";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
 
 export default function Team() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -142,12 +144,14 @@ export default function Team() {
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
         </div>
       ) : (
-        <TeamList 
-          teamMembers={teamMembers} 
-          columns={columns}
-          onColumnsChange={handleColumnsChange}
-          onDelete={handleDeleteTeamMember}
-        />
+        <Card className="bg-white dark:bg-slate-800 shadow-md">
+          <TeamList 
+            teamMembers={teamMembers} 
+            columns={columns}
+            onColumnsChange={handleColumnsChange}
+            onDelete={handleDeleteTeamMember}
+          />
+        </Card>
       )}
     </div>
   );

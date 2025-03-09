@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from '@/components/AuthProvider';
@@ -34,8 +35,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Auth />} />
           <Route path="/dash" element={<Navigate to="/dashboard" replace />} />
-          <Route element={<ProtectedRoute />}>
-            <Route element={<Layout />}>
+          <Route path="/" element={<ProtectedRoute />}>
+            <Route path="/" element={<Layout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/new" element={<NewProject />} />

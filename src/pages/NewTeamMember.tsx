@@ -1,7 +1,9 @@
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { TeamForm } from "@/components/Team/TeamForm";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function NewTeamMember() {
   const navigate = useNavigate();
@@ -13,9 +15,17 @@ export default function NewTeamMember() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
         </Button>
-        <h1 className="text-2xl font-bold">Cadastrar Membro</h1>
+        <h1 className="text-2xl font-bold">Cadastrar Membro da Equipe</h1>
       </div>
-      <TeamForm onClose={() => navigate("/team")} />
+      
+      <Card className="bg-white dark:bg-slate-800 shadow-md">
+        <CardHeader className="border-b border-gray-200 dark:border-gray-700">
+          <CardTitle className="text-xl">Informações do Membro</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <TeamForm onClose={() => navigate("/team")} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
