@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Column, Task, View } from "@/types/project";
 import { toast } from "sonner";
@@ -10,7 +9,6 @@ export function useTaskManagement() {
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
   
-  // Definir todas as colunas disponíveis na tabela tasks
   const [columns, setColumns] = useState<Column[]>([
     { id: "id", label: "ID", visible: true },
     { id: "task_name", label: "Tarefa", visible: true },
@@ -31,7 +29,6 @@ export function useTaskManagement() {
   
   const [savedViews, setSavedViews] = useState<View[]>([]);
 
-  // Fetch tasks
   const { 
     data: tasks = [], 
     isLoading: loading, 
@@ -50,10 +47,9 @@ export function useTaskManagement() {
       }
 
       console.log('Tasks loaded successfully:', data);
-      // Transformar os dados para incluir order_number
       const transformedTasks: Task[] = data.map((task, index) => ({
         ...task,
-        order_number: index + 1, // Adiciona order_number com base no índice
+        order_number: index + 1,
         phase: task.phase || '',
         epic: task.epic || '',
         story: task.story || '',
@@ -66,13 +62,11 @@ export function useTaskManagement() {
     },
   });
 
-  // Create task mutation
   const createTaskMutation = useMutation({
     mutationFn: async (newTask: Omit<Task, 'id' | 'created_at'>) => {
-      // Add the required hours_type property for database compatibility
       const taskWithHoursType = {
         ...newTask,
-        hours_type: 'formula' // Default value for hours_type
+        hours_type: 'formula'
       };
 
       const { data, error } = await supabase
@@ -94,7 +88,6 @@ export function useTaskManagement() {
     },
   });
 
-  // Delete tasks mutation
   const deleteTasksMutation = useMutation({
     mutationFn: async (taskIds: string[]) => {
       const { data, error } = await supabase
@@ -129,7 +122,6 @@ export function useTaskManagement() {
         col.id === columnId ? { ...col, visible: !col.visible } : col
       );
       
-      // Always keep the "actions" column visible
       const actionsColumn = updatedColumns.find(col => col.id === "actions");
       if (actionsColumn && !actionsColumn.visible) {
         actionsColumn.visible = true;
@@ -180,12 +172,27 @@ export function useTaskManagement() {
         const rowData: Record<string, any> = {};
         visibleColumns.forEach(col => {
           if (col.id in task) {
-            rowData[col.label] = task[col.id as keyof Task];
+            if (col.id === 'created_at' && task[col.id]) {
+              const date = new Date(task[col.id] as string);
+              rowData[col.label] = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR');
+            } else if (col.id === 'is_active') {
+              rowData[col.label] = task[col.id] ? 'Sim' : 'Não';
+            } else if (col.id === 'status') {
+              const statusMap: Record<string, string> = {
+                "pending": "Pendente",
+                "in_progress": "Em Progresso",
+                "completed": "Concluído"
+              };
+              rowData[col.label] = statusMap[task[col.id] as string] || task[col.id];
+            } else {
+              rowData[col.label] = task[col.id as keyof Task];
+            }
           }
         });
         return rowData;
       });
       
+      console.log('Exporting data:', formattedData);
       exportToCSV(formattedData, 'tarefas');
       toast.success('Tarefas exportadas com sucesso!');
     } else {

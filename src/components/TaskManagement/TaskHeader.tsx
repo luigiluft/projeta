@@ -21,7 +21,13 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({
   const { exportTasks } = useTaskManagement();
 
   const handleExportCSV = () => {
-    exportTasks();
+    try {
+      console.log('Export CSV button clicked');
+      exportTasks();
+    } catch (error) {
+      console.error('Erro ao exportar CSV:', error);
+      toast.error('Erro ao exportar CSV');
+    }
   };
 
   return (
@@ -37,11 +43,20 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({
           <Eye className="h-4 w-4" />
           Visualização
         </Button>
-        <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={handleExportCSV}>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-2" 
+          onClick={handleExportCSV}
+        >
           <Download className="h-4 w-4" />
           Exportar CSV
         </Button>
-        <Button size="sm" className="flex items-center gap-2 bg-primary text-white" onClick={() => navigate('/task-management/new')}>
+        <Button 
+          size="sm" 
+          className="flex items-center gap-2 bg-primary text-white" 
+          onClick={() => navigate('/task-management/new')}
+        >
           <Plus className="h-4 w-4" />
           Nova Tarefa
         </Button>
