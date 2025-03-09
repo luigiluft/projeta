@@ -24,6 +24,7 @@ export async function importFromCSV(file: File): Promise<any[]> {
         
         // Parse headers (first line)
         const headers = parseCSVLine(lines[0]);
+        console.log('Headers detectados:', headers);
         
         // Verificar se tem pelo menos um cabeçalho relacionado à tarefa
         const taskHeaderIndex = findTaskHeaderIndex(headers);
@@ -32,17 +33,31 @@ export async function importFromCSV(file: File): Promise<any[]> {
           return;
         }
         
+        console.log(`Coluna de tarefa encontrada no índice ${taskHeaderIndex}: "${headers[taskHeaderIndex]}"`);
+        
         // Parse data rows
         const data = [];
         
         for (let i = 1; i < lines.length; i++) {
           try {
             const line = lines[i];
+            // Pular linhas vazias completamente
+            if (!line.trim()) {
+              console.log(`Linha ${i+1} ignorada: vazia`);
+              continue;
+            }
+            
             const values = parseCSVLine(line);
             
+            // Verificar se a linha tem valores suficientes
+            if (values.length === 0) {
+              console.log(`Linha ${i+1} ignorada: sem valores`);
+              continue;
+            }
+            
             // Verificar se a linha tem o valor da tarefa
-            if (taskHeaderIndex >= values.length || !values[taskHeaderIndex].trim()) {
-              console.warn(`Linha ${i+1} ignorada: não possui valor para o campo Tarefa`, line);
+            if (taskHeaderIndex >= values.length || !values[taskHeaderIndex]?.trim()) {
+              console.log(`Linha ${i+1} ignorada: não possui valor para o campo Tarefa`, line);
               continue; // Pula esta linha e continua com a próxima
             }
             
@@ -99,7 +114,7 @@ function findTaskHeaderIndex(headers: string[]): number {
   const possibleTaskHeaders = [
     'tarefa', 'task', 'task_name', 'nome_tarefa', 'nome da tarefa', 
     'título', 'titulo', 'title', 'nome', 'name', 'descrição', 'descricao',
-    'description'
+    'description', 'tarefas'
   ];
   
   for (let i = 0; i < headers.length; i++) {
@@ -114,6 +129,10 @@ function findTaskHeaderIndex(headers: string[]): number {
 
 // Função melhorada para lidar com valores entre aspas e vírgulas dentro de campos
 function parseCSVLine(line: string): string[] {
+  if (!line || line.trim() === '') {
+    return [];
+  }
+  
   const result: string[] = [];
   let inQuotes = false;
   let currentValue = '';
