@@ -4,16 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { toast } from "sonner";
-import { Filter, Eye, Download, Plus, FilePlus } from "lucide-react";
+import { Filter, Eye, Download, Plus, Upload } from "lucide-react";
 import { Column } from '@/types/project';
 import { ColumnManager } from '@/components/ProjectAttributes/ColumnManager';
 import { TaskImporter } from '@/components/TaskManagement/TaskImporter';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface TaskHeaderProps {
   columns: Column[];
@@ -60,26 +54,20 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({
           Exportar CSV
         </Button>
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              size="sm" 
-              className="flex items-center gap-2 bg-primary text-white"
-            >
-              <Plus className="h-4 w-4" />
-              Nova Tarefa
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => navigate('/task-management/new')}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Tarefa
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <TaskImporter onSuccess={refreshTasks} />
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center space-x-2">
+          <Button 
+            size="sm" 
+            className="flex items-center gap-2 bg-primary text-white"
+            onClick={() => navigate('/task-management/new')}
+          >
+            <Plus className="h-4 w-4" />
+            Nova Tarefa
+          </Button>
+          
+          <div className="w-auto">
+            <TaskImporter onSuccess={refreshTasks} />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -239,13 +239,15 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
 
   return (
     <>
-      <div 
-        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer bg-primary/10 hover:bg-primary/20 rounded-sm" 
+      <Button 
+        variant="outline" 
+        size="sm" 
         onClick={handleImportClick}
+        className="flex items-center gap-2" 
       >
-        <Upload className="mr-2 h-4 w-4" />
+        <Upload className="h-4 w-4" />
         Importar Planilha
-      </div>
+      </Button>
 
       <Dialog open={open} onOpenChange={(openState) => {
         setOpen(openState);
