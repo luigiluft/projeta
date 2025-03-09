@@ -32,7 +32,8 @@ export function useTaskManagement() {
   const { 
     data: tasks = [], 
     isLoading: loading, 
-    error 
+    error, 
+    refetch
   } = useQuery({
     queryKey: ['tasks'],
     queryFn: async () => {
@@ -164,6 +165,11 @@ export function useTaskManagement() {
     deleteTasksMutation.mutate(taskIds);
   };
 
+  const refreshTasks = () => {
+    console.log('Refreshing tasks...');
+    refetch();
+  };
+
   const exportTasks = () => {
     if (tasks && tasks.length > 0) {
       const visibleColumns = columns.filter(col => col.visible && col.id !== 'actions');
@@ -217,5 +223,6 @@ export function useTaskManagement() {
     handleTaskSubmit,
     setShowForm,
     exportTasks,
+    refreshTasks,
   };
 }

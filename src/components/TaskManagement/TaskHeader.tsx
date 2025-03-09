@@ -4,9 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { toast } from "sonner";
-import { Filter, Eye, Download, Plus } from "lucide-react";
+import { Filter, Eye, Download, Plus, Upload } from "lucide-react";
 import { Column } from '@/types/project';
 import { ColumnManager } from '@/components/ProjectAttributes/ColumnManager';
+import { TaskImporter } from '@/components/TaskManagement/TaskImporter';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TaskHeaderProps {
   columns: Column[];
@@ -18,7 +25,7 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({
   onColumnVisibilityChange
 }) => {
   const navigate = useNavigate();
-  const { exportTasks } = useTaskManagement();
+  const { exportTasks, refreshTasks } = useTaskManagement();
 
   const handleExportCSV = () => {
     try {
@@ -52,14 +59,29 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({
           <Download className="h-4 w-4" />
           Exportar CSV
         </Button>
-        <Button 
-          size="sm" 
-          className="flex items-center gap-2 bg-primary text-white" 
-          onClick={() => navigate('/task-management/new')}
-        >
-          <Plus className="h-4 w-4" />
-          Nova Tarefa
-        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              size="sm" 
+              className="flex items-center gap-2 bg-primary text-white"
+            >
+              <Plus className="h-4 w-4" />
+              Nova Tarefa
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => navigate('/task-management/new')}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Tarefa
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <div className="w-full cursor-pointer">
+                <TaskImporter onSuccess={refreshTasks} />
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
