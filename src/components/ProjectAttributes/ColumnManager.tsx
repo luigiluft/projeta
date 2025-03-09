@@ -30,7 +30,7 @@ export function ColumnManager({ columns, onColumnVisibilityChange }: ColumnManag
           Colunas
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 p-0 bg-white dark:bg-slate-800 shadow-md border border-gray-200 dark:border-gray-700">
+      <DropdownMenuContent align="end" className="w-56 p-0 bg-white dark:bg-slate-800 shadow-md border border-gray-200 dark:border-gray-700 z-50">
         <div className="p-2 grid gap-1.5 max-h-80 overflow-y-auto">
           {columns.map((column) => (
             <div key={column.id} className="flex items-center space-x-2 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-sm">

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
@@ -91,9 +92,9 @@ export function TeamList({ teamMembers, columns, onColumnsChange, onDelete }: Te
   console.log("TeamList received columns:", columns.map(c => `${c.id} (${c.visible ? 'visible' : 'hidden'})`));
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-white rounded-lg shadow dark:bg-slate-800">
       <div className="p-6">
-        <div className="relative overflow-x-auto">
+        <div className="relative overflow-x-auto bg-white dark:bg-slate-800 rounded-lg">
           <DraggableTable
             columns={columns}
             onColumnsChange={onColumnsChange}
@@ -104,7 +105,7 @@ export function TeamList({ teamMembers, columns, onColumnsChange, onDelete }: Te
         
         {totalPages > 1 && (
           <div className="flex justify-between items-center mt-4">
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               Mostrando {startIndex + 1} a {Math.min(endIndex, teamMembers.length)} de {teamMembers.length} membros
             </div>
             <div className="flex gap-2">

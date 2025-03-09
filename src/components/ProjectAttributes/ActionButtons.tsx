@@ -23,6 +23,8 @@ interface ActionButtonsProps {
   newButtonText?: string;
   data?: any[];
   exportFilename?: string;
+  onNewClick?: () => void;
+  isLoading?: boolean;
 }
 
 export function ActionButtons({
@@ -35,6 +37,8 @@ export function ActionButtons({
   newButtonText = "Adicionar Atributo",
   data = [],
   exportFilename = "export",
+  onNewClick,
+  isLoading = false,
 }: ActionButtonsProps) {
   const navigate = useNavigate();
 
@@ -70,6 +74,14 @@ export function ActionButtons({
     }
   };
 
+  const handleButtonClick = () => {
+    if (onNewClick) {
+      onNewClick();
+    } else {
+      navigate(getNavigationPath());
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <ColumnManager
@@ -92,8 +104,8 @@ export function ActionButtons({
             {newButtonText}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuItem onClick={() => navigate(getNavigationPath())} className="cursor-pointer">
+        <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-800 shadow-md border border-gray-200 dark:border-gray-700 z-50">
+          <DropdownMenuItem onClick={handleButtonClick} className="cursor-pointer">
             <Plus className="mr-2 h-4 w-4" />
             {getActionText(newButtonText)}
           </DropdownMenuItem>
