@@ -1,70 +1,33 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
-import { useToast } from '@/hooks/use-toast';
-import { Filter, Eye, Download, Plus, Trash2 } from "lucide-react";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { Filter, Eye, Download, Plus } from "lucide-react";
 import { Column } from '@/types/project';
 import { ColumnManager } from '@/components/ProjectAttributes/ColumnManager';
 
 interface TaskHeaderProps {
-  selectedTasks: string[];
-  onDeleteTasks: (taskIds: string[]) => void;
   columns: Column[];
   onColumnVisibilityChange: (columnId: string) => void;
 }
 
 export const TaskHeader: React.FC<TaskHeaderProps> = ({ 
-  selectedTasks, 
-  onDeleteTasks,
   columns,
   onColumnVisibilityChange
 }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { deleteTasks } = useTaskManagement();
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const { exportTasks } = useTaskManagement();
 
-  const handleDelete = async () => {
-    try {
-      await deleteTasks(selectedTasks);
-      onDeleteTasks(selectedTasks);
-      toast({
-        title: "Tarefas excluídas com sucesso!",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Erro ao excluir tarefas",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setOpenDeleteDialog(false);
-    }
-  };
-
-  const handleDeleteConfirmation = () => {
-    if (selectedTasks.length === 0) {
-      toast({
-        title: "Nenhuma tarefa selecionada",
-        description: "Selecione as tarefas que deseja excluir.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setOpenDeleteDialog(true);
+  const handleExportCSV = () => {
+    exportTasks();
   };
 
   return (
     <div className="flex justify-between items-center mb-4">
+      <h3 className="text-xl font-bold">Gestão de Tarefas</h3>
+      
       <div className="flex items-center space-x-2">
         <ColumnManager 
           columns={columns}
@@ -74,7 +37,7 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({
           <Eye className="h-4 w-4" />
           Visualização
         </Button>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
+        <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={handleExportCSV}>
           <Download className="h-4 w-4" />
           Exportar CSV
         </Button>
@@ -83,32 +46,6 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({
           Nova Tarefa
         </Button>
       </div>
-
-      <Button variant="destructive" size="sm" onClick={handleDeleteConfirmation} disabled={selectedTasks.length === 0} className="flex items-center gap-2">
-        <Trash2 className="h-4 w-4" />
-        Excluir Tarefas
-      </Button>
-
-      <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir as tarefas selecionadas? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button variant="secondary" onClick={() => setOpenDeleteDialog(false)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Excluir
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

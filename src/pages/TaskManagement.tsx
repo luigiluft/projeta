@@ -1,13 +1,27 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { TaskList } from '@/components/TaskManagement/TaskList';
 import { TaskHeader } from '@/components/TaskManagement/TaskHeader';
 import { type Task, type Column } from '@/types/project';
+import { useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function TaskManagement() {
+  const navigate = useNavigate();
   const { 
     tasks, 
     columns, 
@@ -17,7 +31,9 @@ export default function TaskManagement() {
     handleColumnVisibilityChange,
     handleColumnsChange 
   } = useTaskManagement();
+  
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleTaskSelection = (taskId: string, selected: boolean) => {
     if (selected) {
@@ -27,9 +43,17 @@ export default function TaskManagement() {
     }
   };
 
-  const handleDeleteTasks = (taskIds: string[]) => {
-    deleteTasks(taskIds);
-    setSelectedTasks([]);
+  const confirmDelete = async () => {
+    try {
+      await deleteTasks(selectedTasks);
+      setSelectedTasks([]);
+      toast.success("Tarefas excluídas com sucesso");
+    } catch (error) {
+      toast.error("Erro ao excluir tarefas");
+      console.error("Erro ao excluir tarefas:", error);
+    } finally {
+      setDeleteDialogOpen(false);
+    }
   };
 
   if (loading) return <div className="flex items-center justify-center h-64">Carregando...</div>;
@@ -37,17 +61,30 @@ export default function TaskManagement() {
 
   return (
     <div className="container mx-auto py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gestão de Tarefas</CardTitle>
+      <Card className="bg-white shadow">
+        <CardHeader className="pb-0">
           <TaskHeader 
-            selectedTasks={selectedTasks} 
-            onDeleteTasks={handleDeleteTasks}
             columns={columns}
             onColumnVisibilityChange={handleColumnVisibilityChange}
           />
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center space-x-2">
+              {selectedTasks.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Excluir Tarefas ({selectedTasks.length})
+                </Button>
+              )}
+            </div>
+          </div>
+          
           <TaskList 
             tasks={tasks} 
             columns={columns}
@@ -57,6 +94,24 @@ export default function TaskManagement() {
           />
         </CardContent>
       </Card>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir {selectedTasks.length} {selectedTasks.length === 1 ? 'tarefa' : 'tarefas'}? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-white">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

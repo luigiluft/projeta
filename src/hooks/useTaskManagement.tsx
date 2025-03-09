@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import { Column, Task, View } from "@/types/project";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { exportToCSV } from "@/utils/csvExport";
 
 export function useTaskManagement() {
   const [showForm, setShowForm] = useState(false);
@@ -170,6 +172,27 @@ export function useTaskManagement() {
     deleteTasksMutation.mutate(taskIds);
   };
 
+  const exportTasks = () => {
+    if (tasks && tasks.length > 0) {
+      const visibleColumns = columns.filter(col => col.visible && col.id !== 'actions');
+      
+      const formattedData = tasks.map(task => {
+        const rowData: Record<string, any> = {};
+        visibleColumns.forEach(col => {
+          if (col.id in task) {
+            rowData[col.label] = task[col.id as keyof Task];
+          }
+        });
+        return rowData;
+      });
+      
+      exportToCSV(formattedData, 'tarefas');
+      toast.success('Tarefas exportadas com sucesso!');
+    } else {
+      toast.error('Não há tarefas para exportar');
+    }
+  };
+
   return {
     showForm,
     tasks,
@@ -186,5 +209,6 @@ export function useTaskManagement() {
     handleLoadView,
     handleTaskSubmit,
     setShowForm,
+    exportTasks,
   };
 }
