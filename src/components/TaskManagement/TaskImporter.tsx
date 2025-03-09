@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { importFromCSV } from '@/utils/csvImport';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -113,11 +113,23 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
     return 'pending';
   };
 
+  const handleImportClick = () => {
+    // Abre o diálogo
+    setOpen(true);
+  };
+
+  const handleSelectFileClick = () => {
+    // Garantindo que o click no botão abra o seletor de arquivo
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
     <>
       <div 
         className="w-full flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer bg-primary/10 hover:bg-primary/20 rounded-sm" 
-        onClick={() => setOpen(true)}
+        onClick={handleImportClick}
       >
         <Upload className="mr-2 h-4 w-4" />
         Importar Planilha
@@ -127,11 +139,14 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Importar Tarefas</DialogTitle>
+            <DialogDescription>
+              Selecione um arquivo CSV para importar tarefas
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="flex flex-col gap-3">
               <p className="text-sm text-muted-foreground">
-                Selecione um arquivo CSV para importar tarefas. O arquivo deve conter colunas com os nomes: 
+                O arquivo deve conter colunas com os nomes: 
                 Tarefa, Fase, Epic, Story, Responsável, Status, Horas Fixas, Fórmula de Horas.
               </p>
               <div className="grid w-full max-w-sm items-center gap-1.5">
@@ -145,7 +160,7 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
                   disabled={loading}
                 />
                 <Button 
-                  onClick={() => fileInputRef.current?.click()} 
+                  onClick={handleSelectFileClick} 
                   disabled={loading}
                   className="w-full"
                 >
