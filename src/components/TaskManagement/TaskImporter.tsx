@@ -26,29 +26,35 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
       
       // Map the imported data to match the database schema
       const tasks = data.map(row => {
+        // Verificar se existe o campo Tarefa e converter para task_name
+        if (!row['Tarefa'] && !row['task_name']) {
+          throw new Error('Campo "Tarefa" é obrigatório no arquivo CSV');
+        }
+
         // Convert display names back to database field names
         const task: Record<string, any> = {
-          task_name: row['Tarefa'],
-          phase: row['Fase'],
-          epic: row['Epic'],
-          story: row['Story'],
-          owner: row['Responsável'],
-          is_active: row['Ativo'] === true || row['Ativo'] === 'Sim',
-          status: convertStatus(row['Status']),
-          hours_type: 'fixed'
+          task_name: row['Tarefa'] || row['task_name'] || '',
+          phase: row['Fase'] || row['phase'] || '',
+          epic: row['Epic'] || row['epic'] || '',
+          story: row['Story'] || row['story'] || '',
+          owner: row['Responsável'] || row['owner'] || '',
+          is_active: row['Ativo'] === true || row['Ativo'] === 'Sim' || row['is_active'] === true || true,
+          status: convertStatus(row['Status'] || row['status'] || 'pending'),
+          hours_type: determineHoursType(row)
         };
 
         // Handle fixed_hours if present
-        if (row['Horas Fixas']) {
-          const hours = parseFloat(row['Horas Fixas']);
+        if (row['Horas Fixas'] || row['fixed_hours']) {
+          const hoursValue = row['Horas Fixas'] || row['fixed_hours'];
+          const hours = parseFloat(String(hoursValue));
           if (!isNaN(hours)) {
             task.fixed_hours = hours;
           }
         }
 
         // Handle hours_formula if present
-        if (row['Fórmula de Horas']) {
-          task.hours_formula = row['Fórmula de Horas'];
+        if (row['Fórmula de Horas'] || row['hours_formula']) {
+          task.hours_formula = row['Fórmula de Horas'] || row['hours_formula'];
           task.hours_type = 'formula';
         }
 
@@ -59,6 +65,8 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
         toast.error('Nenhuma tarefa encontrada no arquivo');
         return;
       }
+
+      console.log('Tarefas a serem importadas:', tasks);
 
       // Insert tasks into the database
       const { data: result, error } = await supabase.from('tasks').insert(tasks);
@@ -82,6 +90,17 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
     }
   };
 
+  // Helper function to determine hours_type based on available data
+  const determineHoursType = (row: Record<string, any>): string => {
+    if (row['Fórmula de Horas'] || row['hours_formula']) {
+      return 'formula';
+    } else if (row['Horas Fixas'] || row['fixed_hours']) {
+      return 'fixed';
+    }
+    // Default to 'fixed' if no hours information is provided
+    return 'fixed';
+  };
+
   const convertStatus = (status: string): string => {
     status = (status || '').toLowerCase();
     if (status.includes('progre') || status.includes('andamento')) {
@@ -97,7 +116,7 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
       <Button
         variant="outline"
         size="sm"
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 w-full"
         onClick={() => setOpen(true)}
       >
         <Upload className="h-4 w-4" />

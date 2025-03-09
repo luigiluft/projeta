@@ -44,8 +44,10 @@ export async function importFromCSV(file: File): Promise<any[]> {
           return row;
         });
         
+        console.log('CSV importado com sucesso:', data);
         resolve(data);
       } catch (error) {
+        console.error('Erro ao processar CSV:', error);
         reject(error);
       }
     };
@@ -58,6 +60,7 @@ export async function importFromCSV(file: File): Promise<any[]> {
   });
 }
 
+// Função melhorada para lidar com valores entre aspas e vírgulas dentro de campos
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let inQuotes = false;
