@@ -40,7 +40,9 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
           owner: row['Responsável'] || row['owner'] || '',
           is_active: row['Ativo'] === true || row['Ativo'] === 'Sim' || row['is_active'] === true || true,
           status: convertStatus(row['Status'] || row['status'] || 'pending'),
-          hours_type: determineHoursType(row)
+          hours_type: determineHoursType(row),
+          fixed_hours: undefined as number | undefined,
+          hours_formula: undefined as string | undefined
         };
 
         // Handle fixed_hours if present
@@ -112,7 +114,7 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
   };
 
   return (
-    <div className="w-full flex items-center px-2 py-1.5 text-sm cursor-pointer" onClick={() => setOpen(true)}>
+    <div className="w-full flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer bg-primary/10 hover:bg-primary/20 rounded-sm" onClick={() => setOpen(true)}>
       <Upload className="mr-2 h-4 w-4" />
       Importar Planilha
     </div>
