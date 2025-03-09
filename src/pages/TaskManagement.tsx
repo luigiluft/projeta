@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { TaskList } from '@/components/TaskManagement/TaskList';
 import { TaskHeader } from '@/components/TaskManagement/TaskHeader';
-import { TaskImporter } from '@/components/TaskManagement/TaskImporter';
 import { type Task, type Column } from '@/types/project';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -90,9 +89,7 @@ export default function TaskManagement() {
                 </Button>
               )}
             </div>
-            <div className="w-48">
-              <TaskImporter onSuccess={handleImportSuccess} />
-            </div>
+            {/* Removed the duplicate TaskImporter button from here */}
           </div>
           
           <TaskList 
