@@ -135,11 +135,7 @@ export function ProjectsTable({
         </div>
       )}
       
-      {projects.length === 0 && (
-        <div className="h-32 flex items-center justify-center text-muted-foreground">
-          Nenhum projeto cadastrado
-        </div>
-      )}
+      {/* Removido a duplicidade do aviso - mantendo apenas o que aparece na tabela */}
     </div>
   );
 }

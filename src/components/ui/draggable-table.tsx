@@ -67,7 +67,7 @@ export function DraggableTable<T>({
                 colSpan={visibleColumns.length} 
                 className="h-32 text-center text-muted-foreground bg-white"
               >
-                Nenhum registro encontrado
+                Nenhum projeto cadastrado
               </TableCell>
             </TableRow>
           ) : (
