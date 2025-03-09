@@ -8,16 +8,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { Upload } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Info } from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface TaskImporterProps {
   onSuccess: () => void;
 }
+
+type ImportMode = 'add_update' | 'replace';
 
 export function TaskImporter({ onSuccess }: TaskImporterProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [importMode, setImportMode] = useState<ImportMode>('add_update');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,6 +50,12 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
       setError(null);
       
       const data = await importFromCSV(selectedFile);
+      
+      if (data.length === 0) {
+        throw new Error('Nenhuma tarefa encontrada no arquivo');
+      }
+      
+      console.log('Tarefas a serem importadas:', data);
       
       // Map the imported data to match the database schema
       const tasks = data.map(row => {
@@ -79,27 +96,97 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
         return task;
       });
 
-      if (tasks.length === 0) {
-        setError('Nenhuma tarefa encontrada no arquivo');
-        return;
+      if (importMode === 'replace') {
+        // Primeiro excluir todas as tarefas existentes
+        const { error: deleteError } = await supabase
+          .from('tasks')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Isso exclui todas as tarefas
+
+        if (deleteError) {
+          console.error('Erro ao excluir tarefas existentes:', deleteError);
+          throw new Error(`Erro ao excluir tarefas existentes: ${deleteError.message}`);
+        }
+
+        // Depois inserir as novas tarefas
+        const { error: insertError } = await supabase.from('tasks').insert(tasks);
+
+        if (insertError) {
+          console.error('Erro ao importar tarefas:', insertError);
+          throw new Error(`Erro ao importar tarefas: ${insertError.message}`);
+        }
+
+        toast.success(`${tasks.length} tarefas importadas com sucesso (modo substituição)!`);
+      } else {
+        // Modo adicionar/atualizar
+        // Primeiro vamos buscar todas as tarefas existentes para comparação
+        const { data: existingTasks, error: fetchError } = await supabase
+          .from('tasks')
+          .select('*');
+
+        if (fetchError) {
+          console.error('Erro ao buscar tarefas existentes:', fetchError);
+          throw new Error(`Erro ao buscar tarefas existentes: ${fetchError.message}`);
+        }
+
+        // Vamos criar dois arrays: um para inserção e outro para atualização
+        const tasksToInsert: typeof tasks = [];
+        const tasksToUpdate: (typeof tasks[0] & { id: string })[] = [];
+
+        // Para cada tarefa importada, verificar se já existe pelo nome
+        tasks.forEach(importedTask => {
+          const existingTask = existingTasks?.find(
+            et => et.task_name === importedTask.task_name && 
+                 et.epic === importedTask.epic && 
+                 et.story === importedTask.story
+          );
+
+          if (existingTask) {
+            // Se existir, adicionar ao array de atualização
+            tasksToUpdate.push({
+              ...importedTask,
+              id: existingTask.id
+            });
+          } else {
+            // Se não existir, adicionar ao array de inserção
+            tasksToInsert.push(importedTask);
+          }
+        });
+
+        // Inserir novas tarefas
+        if (tasksToInsert.length > 0) {
+          const { error: insertError } = await supabase
+            .from('tasks')
+            .insert(tasksToInsert);
+
+          if (insertError) {
+            console.error('Erro ao inserir novas tarefas:', insertError);
+            throw new Error(`Erro ao inserir novas tarefas: ${insertError.message}`);
+          }
+        }
+
+        // Atualizar tarefas existentes
+        for (const task of tasksToUpdate) {
+          const { id, ...updateData } = task;
+          const { error: updateError } = await supabase
+            .from('tasks')
+            .update(updateData)
+            .eq('id', id);
+
+          if (updateError) {
+            console.error(`Erro ao atualizar tarefa ${id}:`, updateError);
+            throw new Error(`Erro ao atualizar tarefa: ${updateError.message}`);
+          }
+        }
+
+        toast.success(`Importação concluída: ${tasksToInsert.length} tarefas novas e ${tasksToUpdate.length} tarefas atualizadas!`);
       }
 
-      console.log('Tarefas a serem importadas:', tasks);
-
-      // Insert tasks into the database
-      const { error: supabaseError } = await supabase.from('tasks').insert(tasks);
-
-      if (supabaseError) {
-        console.error('Erro ao importar tarefas:', supabaseError);
-        setError(`Erro ao importar tarefas: ${supabaseError.message}`);
-      } else {
-        toast.success(`${tasks.length} tarefas importadas com sucesso!`);
-        onSuccess();
-        setOpen(false);
-        setSelectedFile(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+      onSuccess();
+      setOpen(false);
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     } catch (error) {
       console.error('Erro ao processar arquivo:', error);
@@ -144,6 +231,7 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
   const resetForm = () => {
     setSelectedFile(null);
     setError(null);
+    setImportMode('add_update');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -190,7 +278,25 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
               </Alert>
             )}
 
-            <div className="flex flex-col gap-3">
+            <div className="space-y-4">
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor="importMode">Modo de importação</Label>
+                <Select value={importMode} onValueChange={(value) => setImportMode(value as ImportMode)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um modo de importação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="add_update">Adicionar e atualizar tarefas</SelectItem>
+                    <SelectItem value="replace">Substituir todas as tarefas existentes</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {importMode === 'add_update' 
+                    ? 'Novas tarefas serão adicionadas e tarefas existentes serão atualizadas se tiverem o mesmo nome, epic e story.' 
+                    : 'ATENÇÃO: Todas as tarefas existentes serão excluídas e substituídas pelas novas.'}
+                </p>
+              </div>
+
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <input
                   type="file"

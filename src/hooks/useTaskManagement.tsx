@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Column, Task, View } from "@/types/project";
 import { toast } from "sonner";
@@ -68,7 +69,7 @@ export function useTaskManagement() {
     mutationFn: async (newTask: Omit<Task, 'id' | 'created_at'>) => {
       const taskWithHoursType = {
         ...newTask,
-        hours_type: 'formula'
+        hours_type: newTask.hours_type || 'formula'
       };
 
       const { data, error } = await supabase
@@ -109,10 +110,6 @@ export function useTaskManagement() {
       toast.error(`Erro ao excluir tarefas: ${error.message}`);
     },
   });
-
-  const handleImportSpreadsheet = () => {
-    console.log("Import spreadsheet clicked");
-  };
 
   const handleNewTask = () => {
     setShowForm(true);
@@ -215,7 +212,6 @@ export function useTaskManagement() {
     loading,
     error,
     deleteTasks,
-    handleImportSpreadsheet,
     handleNewTask,
     handleColumnVisibilityChange,
     handleColumnsChange,

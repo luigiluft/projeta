@@ -58,6 +58,11 @@ export default function TaskManagement() {
     }
   };
 
+  const handleImportSuccess = () => {
+    refreshTasks();
+    toast.success("Tarefas importadas com sucesso!");
+  };
+
   if (loading) return <div className="flex items-center justify-center h-64">Carregando...</div>;
   if (error) return <div className="text-red-500 p-4">Erro ao carregar tarefas: {error.message}</div>;
 
@@ -86,7 +91,7 @@ export default function TaskManagement() {
               )}
             </div>
             <div className="w-48">
-              <TaskImporter onSuccess={refreshTasks} />
+              <TaskImporter onSuccess={handleImportSuccess} />
             </div>
           </div>
           
