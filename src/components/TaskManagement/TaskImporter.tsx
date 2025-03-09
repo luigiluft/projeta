@@ -114,9 +114,48 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
   };
 
   return (
-    <div className="w-full flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer bg-primary/10 hover:bg-primary/20 rounded-sm" onClick={() => setOpen(true)}>
-      <Upload className="mr-2 h-4 w-4" />
-      Importar Planilha
-    </div>
+    <>
+      <div 
+        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer bg-primary/10 hover:bg-primary/20 rounded-sm" 
+        onClick={() => setOpen(true)}
+      >
+        <Upload className="mr-2 h-4 w-4" />
+        Importar Planilha
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Importar Tarefas</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-muted-foreground">
+                Selecione um arquivo CSV para importar tarefas. O arquivo deve conter colunas com os nomes: 
+                Tarefa, Fase, Epic, Story, Responsável, Status, Horas Fixas, Fórmula de Horas.
+              </p>
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <input
+                  type="file"
+                  id="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  disabled={loading}
+                />
+                <Button 
+                  onClick={() => fileInputRef.current?.click()} 
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? 'Processando...' : 'Selecionar arquivo CSV'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

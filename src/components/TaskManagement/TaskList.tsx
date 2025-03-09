@@ -1,3 +1,4 @@
+
 import { DraggableTable } from "@/components/ui/draggable-table";
 import { format } from "date-fns";
 import { Task, Column } from "@/types/project";
@@ -128,7 +129,7 @@ export function TaskList({
   console.log("TaskList received columns:", columns.map(c => `${c.id} (${c.visible ? 'visible' : 'hidden'})`));
   
   return (
-    <div className="h-full overflow-auto">
+    <div className="h-full overflow-auto bg-white rounded-md">
       <DraggableTable
         columns={columns}
         onColumnsChange={onColumnsChange}

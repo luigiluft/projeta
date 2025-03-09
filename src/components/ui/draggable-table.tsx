@@ -46,9 +46,9 @@ export function DraggableTable<T>({
   console.log("Rendering DraggableTable with visible columns:", visibleColumns.map(c => c.id));
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border bg-card">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-muted/50">
           <TableRow>
             {visibleColumns.map((column) => (
               <TableHead 
@@ -65,7 +65,7 @@ export function DraggableTable<T>({
             <TableRow>
               <TableCell 
                 colSpan={visibleColumns.length} 
-                className="h-32 text-center text-muted-foreground"
+                className="h-32 text-center text-muted-foreground bg-white"
               >
                 Nenhum registro encontrado
               </TableCell>
@@ -87,6 +87,7 @@ export function DraggableTable<T>({
                     handleReorder(rowIndex, targetIndex);
                   }
                 }}
+                className="bg-white hover:bg-muted/20"
               >
                 {visibleColumns.map((column) => (
                   <TableCell 
@@ -106,7 +107,7 @@ export function DraggableTable<T>({
 
       <DragOverlay>
         {itemsPerPage && (
-          <div className="p-2">
+          <div className="p-2 bg-white">
             <select
               value={itemsPerPage}
               onChange={(e) => setItemsPerPage?.(Number(e.target.value))}
