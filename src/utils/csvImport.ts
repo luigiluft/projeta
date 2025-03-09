@@ -11,7 +11,11 @@ export async function importFromCSV(file: File): Promise<any[]> {
         }
         
         const csvContent = event.target.result as string;
-        const lines = csvContent.split('\n').filter(line => line.trim());
+        
+        // Remover linhas completamente vazias e linhas que contêm apenas vírgulas
+        const lines = csvContent.split('\n')
+          .map(line => line.trim())
+          .filter(line => line && !line.split(',').every(cell => !cell.trim()));
         
         if (lines.length < 2) {
           reject(new Error("Arquivo CSV vazio ou inválido"));
@@ -24,42 +28,55 @@ export async function importFromCSV(file: File): Promise<any[]> {
         // Verificar se tem pelo menos um cabeçalho relacionado à tarefa
         const taskHeaderIndex = findTaskHeaderIndex(headers);
         if (taskHeaderIndex === -1) {
-          reject(new Error("O arquivo CSV deve conter uma coluna 'Tarefa' ou 'task_name'"));
+          reject(new Error("O arquivo CSV deve conter uma coluna 'Tarefa', 'Nome da Tarefa' ou similar"));
           return;
         }
         
         // Parse data rows
-        const data = lines.slice(1).map(line => {
-          const values = parseCSVLine(line);
-          const row: Record<string, any> = {};
-          
-          headers.forEach((header, index) => {
-            if (index < values.length) {
-              // Convert special values
-              if (values[index].toLowerCase() === 'sim') {
-                row[header] = true;
-              } else if (values[index].toLowerCase() === 'não' || values[index].toLowerCase() === 'nao') {
-                row[header] = false;
+        const data = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+          try {
+            const line = lines[i];
+            const values = parseCSVLine(line);
+            
+            // Verificar se a linha tem o valor da tarefa
+            if (taskHeaderIndex >= values.length || !values[taskHeaderIndex].trim()) {
+              console.warn(`Linha ${i+1} ignorada: não possui valor para o campo Tarefa`, line);
+              continue; // Pula esta linha e continua com a próxima
+            }
+            
+            const row: Record<string, any> = {};
+            
+            headers.forEach((header, index) => {
+              if (index < values.length) {
+                // Convert special values
+                if (values[index].toLowerCase() === 'sim') {
+                  row[header] = true;
+                } else if (values[index].toLowerCase() === 'não' || values[index].toLowerCase() === 'nao') {
+                  row[header] = false;
+                } else {
+                  row[header] = values[index];
+                }
               } else {
-                row[header] = values[index];
+                row[header] = '';
               }
-            } else {
-              row[header] = '';
-            }
-          });
-          
-          // Garantir que o campo tarefa seja setado corretamente
-          if (taskHeaderIndex !== -1) {
-            const taskValue = values[taskHeaderIndex];
-            if (!taskValue.trim()) {
-              throw new Error(`Linha ${line} não possui valor para o campo Tarefa`);
-            }
-            // Mapear corretamente o campo de tarefa
-            row["task_name"] = taskValue;
+            });
+            
+            // Garantir que o campo tarefa seja setado corretamente
+            row["task_name"] = values[taskHeaderIndex];
+            
+            data.push(row);
+          } catch (error) {
+            console.warn(`Erro ao processar linha ${i+1}:`, error);
+            // Continua com as próximas linhas mesmo se uma linha falhar
           }
-          
-          return row;
-        });
+        }
+        
+        if (data.length === 0) {
+          reject(new Error("Nenhuma tarefa válida encontrada no arquivo"));
+          return;
+        }
         
         console.log('CSV importado com sucesso:', data);
         resolve(data);
@@ -79,7 +96,11 @@ export async function importFromCSV(file: File): Promise<any[]> {
 
 // Função auxiliar para encontrar o índice do cabeçalho relacionado à tarefa
 function findTaskHeaderIndex(headers: string[]): number {
-  const possibleTaskHeaders = ['tarefa', 'task', 'task_name', 'nome_tarefa', 'nome da tarefa', 'título', 'titulo', 'title'];
+  const possibleTaskHeaders = [
+    'tarefa', 'task', 'task_name', 'nome_tarefa', 'nome da tarefa', 
+    'título', 'titulo', 'title', 'nome', 'name', 'descrição', 'descricao',
+    'description'
+  ];
   
   for (let i = 0; i < headers.length; i++) {
     const normalizedHeader = headers[i].toLowerCase().trim();

@@ -171,7 +171,7 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <Alert variant="info" className="bg-blue-50 border-blue-200">
+            <Alert variant="default" className="bg-blue-50 border-blue-200">
               <Info className="h-4 w-4 text-blue-500" />
               <AlertTitle>Formato esperado</AlertTitle>
               <AlertDescription className="text-xs mt-1">
