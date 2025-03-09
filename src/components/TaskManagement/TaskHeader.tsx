@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { toast } from "sonner";
-import { Filter, Eye, Download, Plus, Upload } from "lucide-react";
+import { Filter, Eye, Download, Plus, FilePlus } from "lucide-react";
 import { Column } from '@/types/project';
 import { ColumnManager } from '@/components/ProjectAttributes/ColumnManager';
 import { TaskImporter } from '@/components/TaskManagement/TaskImporter';
@@ -75,10 +75,8 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Tarefa
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <div className="w-full cursor-pointer">
-                <TaskImporter onSuccess={refreshTasks} />
-              </div>
+            <DropdownMenuItem>
+              <TaskImporter onSuccess={refreshTasks} />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -32,7 +32,7 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
         }
 
         // Convert display names back to database field names
-        const task: Record<string, any> = {
+        const task = {
           task_name: row['Tarefa'] || row['task_name'] || '',
           phase: row['Fase'] || row['phase'] || '',
           epic: row['Epic'] || row['epic'] || '',
@@ -112,71 +112,9 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
   };
 
   return (
-    <>
-      <Button
-        variant="outline"
-        size="sm"
-        className="flex items-center gap-2 w-full"
-        onClick={() => setOpen(true)}
-      >
-        <Upload className="h-4 w-4" />
-        Importar CSV
-      </Button>
-      
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Importar Tarefas</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Selecione um arquivo CSV para importar tarefas. O arquivo deve seguir o formato exportado pela plataforma.
-            </p>
-            
-            <div className="flex flex-col gap-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-slate-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-md file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-primary file:text-white
-                  hover:file:bg-primary/90"
-              />
-              
-              <div className="text-xs text-muted-foreground">
-                <p className="font-semibold">Colunas esperadas:</p>
-                <ul className="list-disc list-inside">
-                  <li>Tarefa (obrigatório) - Nome da tarefa</li>
-                  <li>Fase - Fase do projeto</li>
-                  <li>Epic - Epic relacionado</li>
-                  <li>Story - Story relacionada</li>
-                  <li>Responsável - Responsável pela tarefa</li>
-                  <li>Status - Status da tarefa (Pendente, Em Progresso, Concluído)</li>
-                  <li>Fórmula de Horas - Fórmula para cálculo de horas</li>
-                  <li>Horas Fixas - Quantidade fixa de horas</li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button variant="outline" onClick={() => setOpen(false)} className="mr-2">
-                Cancelar
-              </Button>
-              <Button
-                type="button"
-                disabled={loading}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {loading ? 'Importando...' : 'Selecionar Arquivo'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    <div className="w-full flex items-center px-2 py-1.5 text-sm cursor-pointer" onClick={() => setOpen(true)}>
+      <Upload className="mr-2 h-4 w-4" />
+      Importar Planilha
+    </div>
   );
 }
