@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   name: string;
@@ -53,12 +52,15 @@ export interface Task {
   story: string;
   task_name: string;
   hours_formula?: string;
+  fixed_hours?: number;
+  hours_type?: string;
   owner: string;
   created_at: string;
   status: 'pending' | 'in_progress' | 'completed';
   start_date?: string;
   end_date?: string;
   estimated_completion_date?: string;
+  depends_on?: string;
 }
 
 export interface Column {

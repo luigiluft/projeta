@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Column, Task, View } from "@/types/project";
 import { toast } from "sonner";
@@ -67,6 +66,7 @@ export function useTaskManagement() {
 
   const createTaskMutation = useMutation({
     mutationFn: async (newTask: Omit<Task, 'id' | 'created_at'>) => {
+      // Já que hours_type é opcional na interface Task, vamos usar um valor padrão quando não estiver presente
       const taskWithHoursType = {
         ...newTask,
         hours_type: newTask.hours_type || 'formula'
