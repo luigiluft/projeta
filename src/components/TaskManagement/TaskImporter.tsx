@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -19,11 +18,12 @@ import { Label } from "@/components/ui/label";
 
 interface TaskImporterProps {
   onSuccess: () => void;
+  buttonLabel?: string;
 }
 
 type ImportMode = 'add_update' | 'replace';
 
-export function TaskImporter({ onSuccess }: TaskImporterProps) {
+export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: TaskImporterProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -57,14 +57,11 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
       
       console.log('Tarefas a serem importadas:', data);
       
-      // Map the imported data to match the database schema
       const tasks = data.map(row => {
-        // Verificar se existe o campo task_name (já garantido pelo importFromCSV)
         if (!row['task_name']) {
           throw new Error('Campo "task_name" é obrigatório');
         }
 
-        // Convert display names back to database field names
         const task = {
           task_name: row['task_name'] || '',
           phase: row['Fase'] || row['fase'] || row['phase'] || '',
@@ -78,7 +75,6 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
           hours_formula: null as string | null
         };
 
-        // Handle fixed_hours if present
         if (row['Horas Fixas'] || row['horas_fixas'] || row['fixed_hours']) {
           const hoursValue = row['Horas Fixas'] || row['horas_fixas'] || row['fixed_hours'];
           const hours = parseFloat(String(hoursValue));
@@ -87,7 +83,6 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
           }
         }
 
-        // Handle hours_formula if present
         if (row['Fórmula de Horas'] || row['formula_horas'] || row['hours_formula']) {
           task.hours_formula = row['Fórmula de Horas'] || row['formula_horas'] || row['hours_formula'];
           task.hours_type = 'formula';
@@ -97,18 +92,16 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
       });
 
       if (importMode === 'replace') {
-        // Primeiro excluir todas as tarefas existentes
         const { error: deleteError } = await supabase
           .from('tasks')
           .delete()
-          .neq('id', '00000000-0000-0000-0000-000000000000'); // Isso exclui todas as tarefas
+          .neq('id', '00000000-0000-0000-0000-000000000000');
 
         if (deleteError) {
           console.error('Erro ao excluir tarefas existentes:', deleteError);
           throw new Error(`Erro ao excluir tarefas existentes: ${deleteError.message}`);
         }
 
-        // Depois inserir as novas tarefas
         const { error: insertError } = await supabase.from('tasks').insert(tasks);
 
         if (insertError) {
@@ -118,8 +111,6 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
 
         toast.success(`${tasks.length} tarefas importadas com sucesso (modo substituição)!`);
       } else {
-        // Modo adicionar/atualizar
-        // Primeiro vamos buscar todas as tarefas existentes para comparação
         const { data: existingTasks, error: fetchError } = await supabase
           .from('tasks')
           .select('*');
@@ -129,11 +120,9 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
           throw new Error(`Erro ao buscar tarefas existentes: ${fetchError.message}`);
         }
 
-        // Vamos criar dois arrays: um para inserção e outro para atualização
         const tasksToInsert: typeof tasks = [];
         const tasksToUpdate: (typeof tasks[0] & { id: string })[] = [];
 
-        // Para cada tarefa importada, verificar se já existe pelo nome
         tasks.forEach(importedTask => {
           const existingTask = existingTasks?.find(
             et => et.task_name === importedTask.task_name && 
@@ -142,18 +131,15 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
           );
 
           if (existingTask) {
-            // Se existir, adicionar ao array de atualização
             tasksToUpdate.push({
               ...importedTask,
               id: existingTask.id
             });
           } else {
-            // Se não existir, adicionar ao array de inserção
             tasksToInsert.push(importedTask);
           }
         });
 
-        // Inserir novas tarefas
         if (tasksToInsert.length > 0) {
           const { error: insertError } = await supabase
             .from('tasks')
@@ -165,7 +151,6 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
           }
         }
 
-        // Atualizar tarefas existentes
         for (const task of tasksToUpdate) {
           const { id, ...updateData } = task;
           const { error: updateError } = await supabase
@@ -196,14 +181,12 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
     }
   };
 
-  // Helper function to determine hours_type based on available data
   const determineHoursType = (row: Record<string, any>): string => {
     if (row['Fórmula de Horas'] || row['formula_horas'] || row['hours_formula']) {
       return 'formula';
     } else if (row['Horas Fixas'] || row['horas_fixas'] || row['fixed_hours']) {
       return 'fixed';
     }
-    // Default to 'fixed' if no hours information is provided
     return 'fixed';
   };
 
@@ -246,7 +229,7 @@ export function TaskImporter({ onSuccess }: TaskImporterProps) {
         className="flex items-center gap-2" 
       >
         <Upload className="h-4 w-4" />
-        Importar Planilha
+        {buttonLabel}
       </Button>
 
       <Dialog open={open} onOpenChange={(openState) => {

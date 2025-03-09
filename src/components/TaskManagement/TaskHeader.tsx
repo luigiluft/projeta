@@ -54,20 +54,17 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({
           Exportar CSV
         </Button>
         
-        <div className="flex items-center space-x-2">
-          <Button 
-            size="sm" 
-            className="flex items-center gap-2 bg-primary text-white"
-            onClick={() => navigate('/task-management/new')}
-          >
-            <Plus className="h-4 w-4" />
-            Nova Tarefa
-          </Button>
-          
-          <div className="w-auto">
-            <TaskImporter onSuccess={refreshTasks} />
-          </div>
-        </div>
+        {/* Movido o TaskImporter para cá e renomeado para "Importar CSV" */}
+        <TaskImporter onSuccess={refreshTasks} buttonLabel="Importar CSV" />
+        
+        <Button 
+          size="sm" 
+          className="flex items-center gap-2 bg-primary text-white"
+          onClick={() => navigate('/task-management/new')}
+        >
+          <Plus className="h-4 w-4" />
+          Nova Tarefa
+        </Button>
       </div>
     </div>
   );
