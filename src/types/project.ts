@@ -55,7 +55,7 @@ export interface Task {
   hours_formula?: string;
   fixed_hours?: number;
   hours_type?: string;
-  calculated_hours?: number; // Novo campo para armazenar o resultado do cálculo
+  calculated_hours?: number; // Campo para armazenar o resultado do cálculo
   owner: string;
   created_at: string;
   status: 'pending' | 'in_progress' | 'completed';
@@ -63,6 +63,9 @@ export interface Task {
   end_date?: string;
   estimated_completion_date?: string;
   depends_on?: string;
+  
+  // Campos adicionados para compatibilidade com os dados do banco
+  order?: number; // Para compatibilidade com o campo 'order' do banco
 }
 
 export interface Column {

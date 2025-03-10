@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { ProjectsTable } from "@/components/Projects/ProjectsTable";
 import { DeleteProjectDialog } from "@/components/Projects/DeleteProjectDialog";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
-import { Download, Plus } from "lucide-react";
+import { Download, Plus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -16,12 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { exportToCSV } from "@/utils/csvExport";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function Projects() {
   const {
     projects,
     handleSubmit,
     handleDelete,
+    isError,
   } = useProjects();
 
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -172,6 +174,16 @@ export default function Projects() {
           />
         </div>
       </div>
+
+      {isError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro ao carregar projetos</AlertTitle>
+          <AlertDescription>
+            Ocorreu um erro ao carregar os projetos. Tente novamente mais tarde.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <ProjectsTable
         projects={projects}

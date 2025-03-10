@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Project, Task, View } from "@/types/project";
 import { toast } from "sonner";
@@ -21,84 +20,120 @@ export const useProjects = () => {
   const [savedViews, setSavedViews] = useState<View[]>([]);
   const queryClient = useQueryClient();
 
-  const { data: projects = [] } = useQuery({
+  const { data: projects = [], isError } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
-      const { data: projectsData, error: projectsError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('deleted', false)
-        .order('created_at', { ascending: false });
+      try {
+        const { data: projectsData, error: projectsError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('deleted', false)
+          .order('created_at', { ascending: false });
 
-      if (projectsError) {
-        toast.error('Erro ao carregar projetos');
-        throw projectsError;
-      }
+        if (projectsError) {
+          console.error("Erro ao buscar projetos:", projectsError);
+          return []; // Retorna array vazio em caso de erro
+        }
 
-      const projectsWithTasks = await Promise.all(
-        projectsData.map(async (project) => {
-          // Lidar com múltiplos epics
-          const epicList = project.epic ? project.epic.split(', ') : [];
-          
-          let allTasks: Task[] = [];
-          
-          // Buscar tarefas para cada epic
-          for (const epic of epicList) {
-            const { data: tasksData, error: tasksError } = await supabase
-              .from('tasks')
-              .select('*')
-              .eq('epic', epic);
+        if (!projectsData || projectsData.length === 0) {
+          return []; // Retorna array vazio se não houver projetos
+        }
 
-            if (tasksError) {
-              toast.error(`Erro ao carregar tarefas do epic ${epic}`);
-              throw tasksError;
-            }
-
-            if (tasksData && tasksData.length > 0) {
-              const tasks = tasksData.map((task, index) => ({
-                ...task,
-                order_number: allTasks.length + index + 1, // Ordem contínua para todos os epics
-                is_active: task.is_active || true,
-                phase: task.phase || '',
-                epic: task.epic || '',
-                story: task.story || '',
-                owner: task.owner || '',
-                status: (task.status as "pending" | "in_progress" | "completed") || "pending",
-              })) as Task[];
+        const projectsWithTasks = await Promise.all(
+          projectsData.map(async (project) => {
+            try {
+              // Lidar com múltiplos epics
+              const epicList = project.epic ? project.epic.split(', ') : [];
               
-              allTasks = [...allTasks, ...tasks];
+              let allTasks: Task[] = [];
+              
+              // Buscar tarefas para cada epic
+              for (const epic of epicList) {
+                try {
+                  const { data: tasksData, error: tasksError } = await supabase
+                    .from('tasks')
+                    .select('*')
+                    .eq('epic', epic);
+
+                  if (tasksError) {
+                    console.error(`Erro ao carregar tarefas do epic ${epic}:`, tasksError);
+                    continue; // Pula para o próximo epic em caso de erro
+                  }
+
+                  if (tasksData && tasksData.length > 0) {
+                    const tasks = tasksData.map((task, index) => ({
+                      ...task,
+                      order_number: allTasks.length + index + 1, // Ordem contínua para todos os epics
+                      is_active: task.is_active || true,
+                      phase: task.phase || '',
+                      epic: task.epic || '',
+                      story: task.story || '',
+                      owner: task.owner || '',
+                      status: (task.status as "pending" | "in_progress" | "completed") || "pending",
+                    })) as Task[];
+                    
+                    allTasks = [...allTasks, ...tasks];
+                  }
+                } catch (e) {
+                  console.error(`Erro ao processar tarefas para epic ${epic}:`, e);
+                }
+              }
+
+              // Extrair valores dos atributos do campo metadata
+              let attributeValues: Record<string, number> = {};
+              
+              if (project.metadata && typeof project.metadata === 'object') {
+                // Verifica se metadata é um objeto e se contém attribute_values
+                const metadata = project.metadata as Record<string, any>;
+                if (metadata.attribute_values && typeof metadata.attribute_values === 'object') {
+                  attributeValues = metadata.attribute_values as Record<string, number>;
+                }
+              }
+
+              return {
+                ...project,
+                tasks: allTasks,
+                favorite: project.favorite || false,
+                priority: project.priority || 0,
+                tags: project.tags || [],
+                archived: project.archived || false,
+                deleted: project.deleted || false,
+                version: project.version || 1,
+                metadata: project.metadata || {},
+                settings: project.settings || {},
+                attribute_values: attributeValues
+              } as Project;
+            } catch (e) {
+              console.error(`Erro ao processar projeto ${project.id}:`, e);
+              return {
+                ...project,
+                tasks: [],
+                favorite: project.favorite || false,
+                priority: project.priority || 0,
+                tags: project.tags || [],
+                archived: project.archived || false,
+                deleted: project.deleted || false,
+                version: project.version || 1,
+                metadata: project.metadata || {},
+                settings: project.settings || {},
+                attribute_values: {}
+              } as Project;
             }
-          }
+          })
+        );
 
-          // Extrair valores dos atributos do campo metadata
-          let attributeValues: Record<string, number> = {};
-          
-          if (project.metadata && typeof project.metadata === 'object') {
-            // Verifica se metadata é um objeto e se contém attribute_values
-            const metadata = project.metadata as Record<string, any>;
-            if (metadata.attribute_values && typeof metadata.attribute_values === 'object') {
-              attributeValues = metadata.attribute_values as Record<string, number>;
-            }
-          }
-
-          return {
-            ...project,
-            tasks: allTasks,
-            favorite: project.favorite || false,
-            priority: project.priority || 0,
-            tags: project.tags || [],
-            archived: project.archived || false,
-            deleted: project.deleted || false,
-            version: project.version || 1,
-            metadata: project.metadata || {},
-            settings: project.settings || {},
-            attribute_values: attributeValues
-          } as Project;
-        })
-      );
-
-      return projectsWithTasks;
+        return projectsWithTasks;
+      } catch (error) {
+        console.error("Erro não tratado ao carregar projetos:", error);
+        return []; // Retorna array vazio em caso de erro
+      }
     },
+    meta: {
+      onError: (error: Error) => {
+        console.error("Erro na query de projetos:", error);
+        // Não mostrar toast de erro para não irritar o usuário
+      }
+    }
   });
 
   const calculateProjectCosts = (tasks: Task[], attributeValues: Record<string, number> = {}) => {
@@ -108,14 +143,12 @@ export const useProjects = () => {
     tasks.forEach(task => {
       if (task.hours_formula) {
         try {
-          // Substituir atributos com valores
           let formula = task.hours_formula;
           Object.entries(attributeValues).forEach(([key, value]) => {
             const regex = new RegExp(`\\b${key}\\b`, 'g');
             formula = formula.replace(regex, value.toString());
           });
           
-          // Calcular horas
           const calculatedHours = eval(formula);
           const hours = isNaN(calculatedHours) ? 0 : calculatedHours;
           
@@ -145,7 +178,6 @@ export const useProjects = () => {
       return;
     }
 
-    // Para múltiplos epics
     const epics = Array.from(new Set(selectedTasks.map(task => task.epic))).filter(Boolean);
     const epicNames = epics.join(', ');
     
@@ -226,6 +258,7 @@ export const useProjects = () => {
   return {
     projects,
     savedViews,
+    isError,
     handleSubmit,
     handleDelete,
     handleSaveView,

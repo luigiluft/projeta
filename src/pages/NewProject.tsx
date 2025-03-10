@@ -1,105 +1,88 @@
 
-import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
-import { useProjectForm } from "@/hooks/useProjectForm";
-import { PROJECT_ATTRIBUTES } from "@/constants/projectAttributes";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Task } from "@/types/project";
 
 export default function NewProject() {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const [isLoading, setIsLoading] = useState(false);
   const [availableEpics, setAvailableEpics] = useState<string[]>([]);
-  const [epicTasks, setEpicTasks] = useState<Task[]>([]);
-  const { project, handleSubmit } = useProjectForm(id);
+  const [epicTasks, setEpicTasks] = useState<{ [key: string]: Task[] }>({});
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Carregar epics disponíveis
   useEffect(() => {
-    async function loadAvailableEpics() {
-      try {
-        const { data, error } = await supabase
-          .from('tasks')
-          .select('epic')
-          .is('epic', 'not.null')
-          .not('epic', 'eq', '')
-          .order('epic');
-
-        if (error) throw error;
-
-        // Extrair valores únicos de epic
-        const uniqueEpics = Array.from(new Set(data.map(item => item.epic)))
-          .filter(Boolean) as string[];
-
-        setAvailableEpics(uniqueEpics);
-      } catch (error) {
-        console.error('Erro ao carregar epics:', error);
-        toast.error('Erro ao carregar epics disponíveis');
-      }
-    }
-
     loadAvailableEpics();
   }, []);
 
-  const handleFormSubmit = async (values: any) => {
+  const loadAvailableEpics = async () => {
     try {
       setIsLoading(true);
-      await handleSubmit(values);
-      navigate("/projects");
-    } catch (error) {
-      toast.error("Erro ao salvar projeto");
-      console.error(error);
+      
+      // Buscar epics distintos das tarefas
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('epic')
+        .not('epic', 'is', null) // Usar 'is' em vez de 'is.not.null'
+        .not('epic', 'eq', '')   // Não incluir strings vazias
+        .order('epic', { ascending: true });
+
+      if (error) {
+        console.error("Erro ao carregar epics:", error);
+        toast.error("Erro ao carregar epics");
+        setIsLoading(false);
+        return;
+      }
+
+      // Extrair epics únicos
+      const epics = [...new Set(data.map(item => item.epic))];
+      setAvailableEpics(epics);
+
+      // Para cada epic, carregar suas tarefas
+      const tasksMap: { [key: string]: Task[] } = {};
+      for (const epic of epics) {
+        const { data: tasksData, error: tasksError } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('epic', epic);
+
+        if (tasksError) {
+          console.error(`Erro ao carregar tarefas do epic ${epic}:`, tasksError);
+          continue;
+        }
+
+        if (tasksData && tasksData.length > 0) {
+          // Mapear as propriedades e garantir que o tipo Task seja respeitado
+          const formattedTasks: Task[] = tasksData.map((task, index) => ({
+            ...task,
+            order_number: index + 1,
+            is_active: task.is_active || true,
+            phase: task.phase || '',
+            epic: task.epic || '',
+            story: task.story || '',
+            owner: task.owner || '',
+            status: (task.status as "pending" | "in_progress" | "completed") || "pending",
+          }));
+          
+          tasksMap[epic] = formattedTasks;
+        }
+      }
+      
+      setEpicTasks(tasksMap);
+    } catch (e) {
+      console.error("Erro não tratado ao carregar epics:", e);
+      toast.error("Erro ao carregar dados");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Função para carregar tarefas de um epic quando selecionado
-  const loadEpicTasks = async (selectedEpics: string[]) => {
-    if (!selectedEpics.length) {
-      setEpicTasks([]);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .in('epic', selectedEpics)
-        .order('order', { ascending: true });
-
-      if (error) throw error;
-      
-      setEpicTasks(data as Task[]);
-    } catch (error) {
-      console.error('Erro ao carregar tarefas:', error);
-      toast.error('Erro ao carregar tarefas dos epics');
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate("/projects")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
-        </Button>
-        <h1 className="text-2xl font-bold">
-          {id ? "Editar Projeto" : "Cadastrar Projeto"}
-        </h1>
-      </div>
-      <ProjectForm
-        editingId={id || null}
-        attributes={PROJECT_ATTRIBUTES}
-        onSubmit={handleFormSubmit}
-        initialValues={project}
+    <div className="container mx-auto py-6">
+      <h1 className="text-2xl font-bold mb-6">Novo Projeto</h1>
+      
+      <ProjectForm 
         availableEpics={availableEpics}
         epicTasks={epicTasks}
-        onEpicsChange={loadEpicTasks}
         isLoading={isLoading}
       />
     </div>
