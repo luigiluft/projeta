@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -148,9 +147,7 @@ export default function NewProject() {
         status: "draft" as const,
         currency: "BRL" as const,
         type: "default",
-        metadata: { attribute_values: project.attribute_values || {} },
-        // Adicionando owner_id se o usuário estiver autenticado
-        owner_id: user?.id || null
+        metadata: { attribute_values: project.attribute_values || {} }
       };
       
       console.log("Dados do projeto formatados para inserção:", projectData);
