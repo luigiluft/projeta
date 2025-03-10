@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { Task, Column } from "@/types/project";
+import { useNavigate } from 'react-router-dom';
 
 interface TaskListProps {
   tasks: Task[];
@@ -19,6 +21,7 @@ export function TaskList({
   selectedTasks = [] 
 }: TaskListProps) {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const visible = columns
@@ -33,6 +36,10 @@ export function TaskList({
   const truncateText = (text: string | undefined | null, maxLength: number = 20) => {
     if (!text) return '-';
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  };
+
+  const handleEditClick = (taskId: string) => {
+    navigate(`/task-management/${taskId}`);
   };
 
   const renderCellContent = (task: Task, columnId: string) => {
@@ -69,16 +76,24 @@ export function TaskList({
       case 'hours_type':
         return truncateText(task.hours_type, 10);
       case 'order':
-        return task.order?.toString() || task.order === 0 ? task.order.toString() : '-';
+        // Mostrar qualquer valor, incluindo zero, e cair para '-' apenas se for null/undefined
+        return task.order !== null && task.order !== undefined ? task.order.toString() : '-';
       case 'order_number':
-        return task.order_number?.toString() || task.order_number === 0 ? task.order_number.toString() : '-';
+        // Mostrar qualquer valor, incluindo zero, e cair para '-' apenas se for null/undefined
+        return task.order_number !== null && task.order_number !== undefined ? task.order_number.toString() : '-';
       case 'dependency':
       case 'depends_on':
-        return task.depends_on || '-';
+        // Não truncar a dependência e retornar o valor ou '-' se for null/undefined
+        return task.depends_on !== null && task.depends_on !== undefined ? task.depends_on : '-';
       case 'actions':
         return (
           <div className="flex items-center space-x-2">
-            <button className="text-blue-500 hover:text-blue-700">Editar</button>
+            <button 
+              className="text-blue-500 hover:text-blue-700"
+              onClick={() => handleEditClick(task.id)}
+            >
+              Editar
+            </button>
             <button className="text-red-500 hover:text-red-700">Excluir</button>
           </div>
         );
