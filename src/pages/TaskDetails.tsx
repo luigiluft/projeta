@@ -1,4 +1,3 @@
-
 import { useNavigate, useParams } from "react-router-dom";
 import { Task } from "@/types/project";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -53,10 +52,9 @@ export default function TaskDetails() {
       
       console.log('Raw task data from Supabase:', taskData);
 
-      // Transformar os dados do Supabase para corresponder à interface Task
       const transformedTask: Task = {
         id: taskData.id,
-        order_number: 0, // Valor padrão
+        order_number: 0,
         is_active: taskData.is_active !== undefined ? taskData.is_active : true,
         phase: taskData.phase || '',
         epic: taskData.epic || '',
@@ -67,11 +65,10 @@ export default function TaskDetails() {
         hours_type: taskData.hours_type || 'formula',
         owner: taskData.owner || '',
         created_at: taskData.created_at,
-        // Garantir que status seja um dos valores esperados
         status: (taskData.status === 'pending' || taskData.status === 'in_progress' || taskData.status === 'completed') 
           ? taskData.status as 'pending' | 'in_progress' | 'completed'
           : 'pending',
-        start_date: undefined, // Estes campos não existem no banco de dados atual
+        start_date: undefined,
         end_date: undefined,
         estimated_completion_date: undefined,
         depends_on: taskData.depends_on,
@@ -98,15 +95,12 @@ export default function TaskDetails() {
       }
 
       const formattedAttributes = data?.reduce((acc: Record<string, any>, attr) => {
-        // Certifique-se de que o valor é um número se for possível converter
         let defaultValue: string | number = attr.default_value || '';
         
-        // Se o valor tiver uma vírgula, substitua por ponto para converter corretamente para número
         if (typeof defaultValue === 'string' && defaultValue.includes(',')) {
           defaultValue = defaultValue.replace(',', '.');
         }
         
-        // Tente converter para número se possível
         const numValue = Number(defaultValue);
         acc[attr.code || attr.name] = !isNaN(numValue) ? numValue : defaultValue;
         return acc;
@@ -122,7 +116,6 @@ export default function TaskDetails() {
       console.log('Updating task with values:', values);
       if (!id) throw new Error('Task ID is required');
 
-      // Remover campos não necessários para a atualização
       const { 
         is_new, 
         is_modified,
@@ -135,16 +128,10 @@ export default function TaskDetails() {
         ...taskData 
       } = values;
 
-      console.log('Filtered task data for update:', taskData);
-
-      // Verificando se hours_formula está sendo enviado corretamente
-      console.log('Hours formula being sent:', values.hours_formula);
-      console.log('Hours formula type:', typeof values.hours_formula);
-
-      // Garantir que o hours_formula está sendo enviado exatamente como está no formulário
       const taskDataToUpdate = {
         ...taskData,
-        hours_formula: values.hours_formula // Certifica-se de que a fórmula é enviada como está
+        hours_formula: values.hours_formula,
+        hours_type: values.hours_formula ? 'formula' : 'fixed',
       };
 
       console.log('Final data being sent to Supabase:', taskDataToUpdate);
@@ -165,7 +152,7 @@ export default function TaskDetails() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', id] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Invalidar também a lista de tarefas
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Tarefa atualizada com sucesso!');
     },
     onError: (error) => {
@@ -201,13 +188,12 @@ export default function TaskDetails() {
         <BasicInfoForm 
           task={task} 
           onSubmit={(values) => {
-            console.log('Form submitted with values:', values);
-            // Garantir que hours_formula está sendo passado corretamente
-            const updatedValues = {
+            const finalValues = {
               ...values,
-              hours_type: values.hours_formula ? 'formula' : 'fixed'
+              hours_type: values.hours_formula ? 'formula' : 'fixed',
             };
-            updateTaskMutation.mutate(updatedValues);
+            console.log('Submitting task with values:', finalValues);
+            updateTaskMutation.mutate(finalValues);
           }}
           projectAttributes={projectAttributes || {}}
         />
