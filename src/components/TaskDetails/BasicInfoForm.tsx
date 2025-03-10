@@ -76,28 +76,78 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
         evaluableFormula = evaluableFormula.replace(regex, String(value));
       });
 
-      console.log('Fórmula para avaliação:', evaluableFormula);
+      console.log('Fórmula após substituição de atributos:', evaluableFormula);
 
-      // Verificar se ainda existem palavras não substituídas (exceto operadores matemáticos)
-      const remainingWords = evaluableFormula.match(/[a-zA-Z_]\w*/g);
-      if (remainingWords) {
-        toast.error(`Atributos inválidos na fórmula: ${remainingWords.join(', ')}`);
+      // Implementar funções personalizadas
+      // IF(condition, trueValue, falseValue)
+      evaluableFormula = evaluableFormula.replace(/IF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/gi, 
+        (match, condition, trueVal, falseVal) => {
+          return `(${condition} ? ${trueVal} : ${falseVal})`;
+        }
+      );
+
+      // ROUNDUP(value)
+      evaluableFormula = evaluableFormula.replace(/ROUNDUP\s*\(\s*([^)]+)\s*\)/gi, 
+        (match, value) => {
+          return `Math.ceil(${value})`;
+        }
+      );
+
+      // ROUNDDOWN(value)
+      evaluableFormula = evaluableFormula.replace(/ROUNDDOWN\s*\(\s*([^)]+)\s*\)/gi, 
+        (match, value) => {
+          return `Math.floor(${value})`;
+        }
+      );
+
+      // ROUND(value, decimals)
+      evaluableFormula = evaluableFormula.replace(/ROUND\s*\(\s*([^,]+),\s*([^)]+)\s*\)/gi, 
+        (match, value, decimals) => {
+          return `(Math.round(${value} * Math.pow(10, ${decimals})) / Math.pow(10, ${decimals}))`;
+        }
+      );
+
+      // SUM(value1, value2, ...)
+      evaluableFormula = evaluableFormula.replace(/SUM\s*\(\s*([^)]+)\s*\)/gi, 
+        (match, values) => {
+          const valueArray = values.split(',').map(v => v.trim());
+          return `(${valueArray.join(' + ')})`;
+        }
+      );
+
+      // MAX(value1, value2, ...)
+      evaluableFormula = evaluableFormula.replace(/MAX\s*\(\s*([^)]+)\s*\)/gi, 
+        (match, values) => {
+          const valueArray = values.split(',').map(v => v.trim());
+          return `Math.max(${valueArray.join(', ')})`;
+        }
+      );
+
+      // MIN(value1, value2, ...)
+      evaluableFormula = evaluableFormula.replace(/MIN\s*\(\s*([^)]+)\s*\)/gi, 
+        (match, values) => {
+          const valueArray = values.split(',').map(v => v.trim());
+          return `Math.min(${valueArray.join(', ')})`;
+        }
+      );
+
+      console.log('Fórmula após tratamento de funções:', evaluableFormula);
+
+      // Verificar se ainda existem palavras não substituídas (exceto operadores matemáticos e funções JavaScript reconhecidas)
+      const jsGlobals = ['Math', 'ceil', 'floor', 'round', 'max', 'min', 'pow'];
+      const remainingWords = evaluableFormula.match(/[a-zA-Z_]\w*/g)?.filter(word => 
+        !jsGlobals.includes(word) && 
+        !['true', 'false', 'null', 'undefined'].includes(word.toLowerCase())
+      );
+      
+      if (remainingWords && remainingWords.length > 0) {
+        toast.error(`Atributos ou funções inválidas na fórmula: ${remainingWords.join(', ')}`);
         return null;
       }
 
-      // Em vez de usar Function, vamos usar uma maneira mais segura de avaliar a expressão
-      const safeEval = (expression: string): number => {
-        // Remover qualquer coisa que não seja números, operadores matemáticos básicos e parênteses
-        const sanitizedExpr = expression.replace(/[^0-9+\-*/().]/g, '');
-        // Verificar se a expressão contém apenas caracteres permitidos
-        if (sanitizedExpr !== expression) {
-          throw new Error("Expressão contém caracteres não permitidos");
-        }
-        // Avaliar a expressão de maneira mais segura
-        return new Function(`return ${sanitizedExpr}`)() as number;
-      };
-
-      const result = safeEval(evaluableFormula);
+      // Avaliação segura da expressão final
+      // eslint-disable-next-line no-new-func
+      const result = new Function(`return ${evaluableFormula}`)();
       
       if (typeof result !== 'number' || isNaN(result)) {
         console.error('Resultado inválido:', result);
@@ -109,7 +159,7 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
       return Math.ceil(result * 100) / 100;
     } catch (e) {
       console.error('Erro ao calcular fórmula:', e);
-      toast.error("Erro ao calcular fórmula. Verifique a sintaxe.");
+      toast.error(`Erro ao calcular fórmula: ${(e as Error).message}`);
       return null;
     }
   };
@@ -141,6 +191,50 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     }
   };
 
+  const insertFunctionTemplate = (funcName: string) => {
+    let template = "";
+    
+    switch (funcName) {
+      case "IF":
+        template = "IF(condition, valueIfTrue, valueIfFalse)";
+        break;
+      case "ROUNDUP":
+        template = "ROUNDUP(value)";
+        break;
+      case "ROUNDDOWN":
+        template = "ROUNDDOWN(value)";
+        break;
+      case "ROUND":
+        template = "ROUND(value, decimals)";
+        break;
+      case "SUM":
+        template = "SUM(value1, value2, ...)";
+        break;
+      case "MAX":
+        template = "MAX(value1, value2, ...)";
+        break;
+      case "MIN":
+        template = "MIN(value1, value2, ...)";
+        break;
+      default:
+        template = funcName + "()";
+    }
+    
+    const currentFormula = form.getValues("hours_formula") || "";
+    const newFormula = currentFormula
+      ? `${currentFormula} ${template}`
+      : template;
+    
+    form.setValue("hours_formula", newFormula);
+    
+    // Não calculamos o resultado ainda pois o usuário precisa preencher a função
+    
+    // Foca o textarea após inserir a função
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
   const handleSubmit = (data: Task) => {
     console.log('Submitting form with data:', data);
     
@@ -160,6 +254,17 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     setHoursType(value);
     form.setValue("hours_type", value);
   };
+
+  // Lista de funções disponíveis
+  const availableFunctions = [
+    { name: "IF", description: "Condição lógica" },
+    { name: "ROUNDUP", description: "Arredonda para cima" },
+    { name: "ROUNDDOWN", description: "Arredonda para baixo" },
+    { name: "ROUND", description: "Arredonda para X decimais" },
+    { name: "SUM", description: "Soma valores" },
+    { name: "MAX", description: "Valor máximo" },
+    { name: "MIN", description: "Valor mínimo" }
+  ];
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -216,44 +321,74 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex justify-between items-center mb-2">
               <Label htmlFor="hours_formula">Fórmula de Horas</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Variable className="h-4 w-4 mr-2" />
-                    Inserir Variável
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
-                >
-                  {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
-                    <DropdownMenuItem
-                      key={key}
-                      onClick={() => insertAttributeAtCursor(key)}
-                      className="flex justify-between hover:bg-blue-50"
-                    >
-                      <span className="font-medium">{key}</span>
-                      <span className="text-gray-600">{value}</span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex space-x-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Variable className="h-4 w-4 mr-2" />
+                      Inserir Variável
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    align="end" 
+                    className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
+                  >
+                    {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
+                      <DropdownMenuItem
+                        key={key}
+                        onClick={() => insertAttributeAtCursor(key)}
+                        className="flex justify-between hover:bg-blue-50"
+                      >
+                        <span className="font-medium">{key}</span>
+                        <span className="text-gray-600">{value}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Inserir Função
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    align="end" 
+                    className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
+                  >
+                    {availableFunctions.map((func) => (
+                      <DropdownMenuItem
+                        key={func.name}
+                        onClick={() => insertFunctionTemplate(func.name)}
+                        className="flex justify-between hover:bg-blue-50"
+                      >
+                        <span className="font-medium">{func.name}</span>
+                        <span className="text-gray-600">{func.description}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
             <Textarea 
               id="hours_formula" 
               ref={textareaRef}
               value={form.watch("hours_formula") || ""}
               onChange={(e) => handleFormulaChange(e.target.value)}
-              placeholder="Ex: ORDERS_PER_MONTH * 0.5 + SKU_COUNT * 0.1"
+              placeholder="Ex: IF(SKU_COUNT > 1000, SKU_COUNT * 0.01, SKU_COUNT * 0.02)"
+              className="font-mono text-sm"
+              rows={4}
             />
-            {previewHours !== null && (
-              <p className="text-sm text-blue-600">
-                Horas calculadas: {previewHours}
-              </p>
-            )}
+            <div className="text-sm mt-1">
+              <p className="text-gray-500">Funções disponíveis: IF, ROUNDUP, ROUNDDOWN, ROUND, SUM, MAX, MIN</p>
+              {previewHours !== null && (
+                <p className="text-blue-600 font-medium mt-1">
+                  Horas calculadas: {previewHours}
+                </p>
+              )}
+            </div>
           </div>
         )}
 

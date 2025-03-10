@@ -11,8 +11,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Task } from "@/types/project";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Variable } from "lucide-react";
 
 interface TaskFormProps {
   onSubmit: (values: Omit<Task, "id" | "created_at">) => void;
@@ -24,7 +38,9 @@ interface TaskFormProps {
 export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: TaskFormProps) {
   const { register, handleSubmit, watch, setValue, reset } = useForm<Omit<Task, "id" | "created_at">>();
   const [previewHours, setPreviewHours] = useState<number | null>(null);
-  const hoursFormula = watch("hours_formula");
+  const [hoursType, setHoursType] = useState<string>('fixed');
+  const [fixedHours, setFixedHours] = useState<number>(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const calculateHours = (formula: string) => {
     if (!projectAttributes) {
@@ -33,19 +49,105 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
     }
 
     try {
-      // Cria uma função segura que só pode acessar os atributos do projeto
-      const calculateSafe = new Function(...Object.keys(projectAttributes), `
-        try {
-          return ${formula};
-        } catch (e) {
-          return null;
-        }
-      `);
+      console.log('Fórmula original:', formula);
 
-      const result = calculateSafe(...Object.values(projectAttributes));
-      return typeof result === 'number' ? result : null;
+      // Verificar se a fórmula está vazia
+      if (!formula || formula.trim() === '') {
+        return null;
+      }
+
+      // Primeiro substituir os atributos pelos seus valores
+      let evaluableFormula = formula;
+      
+      // Substituir os atributos na fórmula
+      Object.entries(projectAttributes).forEach(([key, value]) => {
+        const regex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
+        evaluableFormula = evaluableFormula.replace(regex, String(value));
+      });
+
+      console.log('Fórmula após substituição de atributos:', evaluableFormula);
+
+      // Implementar funções personalizadas
+      // IF(condition, trueValue, falseValue)
+      evaluableFormula = evaluableFormula.replace(/IF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/gi, 
+        (match, condition, trueVal, falseVal) => {
+          return `(${condition} ? ${trueVal} : ${falseVal})`;
+        }
+      );
+
+      // ROUNDUP(value)
+      evaluableFormula = evaluableFormula.replace(/ROUNDUP\s*\(\s*([^)]+)\s*\)/gi, 
+        (match, value) => {
+          return `Math.ceil(${value})`;
+        }
+      );
+
+      // ROUNDDOWN(value)
+      evaluableFormula = evaluableFormula.replace(/ROUNDDOWN\s*\(\s*([^)]+)\s*\)/gi, 
+        (match, value) => {
+          return `Math.floor(${value})`;
+        }
+      );
+
+      // ROUND(value, decimals)
+      evaluableFormula = evaluableFormula.replace(/ROUND\s*\(\s*([^,]+),\s*([^)]+)\s*\)/gi, 
+        (match, value, decimals) => {
+          return `(Math.round(${value} * Math.pow(10, ${decimals})) / Math.pow(10, ${decimals}))`;
+        }
+      );
+
+      // SUM(value1, value2, ...)
+      evaluableFormula = evaluableFormula.replace(/SUM\s*\(\s*([^)]+)\s*\)/gi, 
+        (match, values) => {
+          const valueArray = values.split(',').map(v => v.trim());
+          return `(${valueArray.join(' + ')})`;
+        }
+      );
+
+      // MAX(value1, value2, ...)
+      evaluableFormula = evaluableFormula.replace(/MAX\s*\(\s*([^)]+)\s*\)/gi, 
+        (match, values) => {
+          const valueArray = values.split(',').map(v => v.trim());
+          return `Math.max(${valueArray.join(', ')})`;
+        }
+      );
+
+      // MIN(value1, value2, ...)
+      evaluableFormula = evaluableFormula.replace(/MIN\s*\(\s*([^)]+)\s*\)/gi, 
+        (match, values) => {
+          const valueArray = values.split(',').map(v => v.trim());
+          return `Math.min(${valueArray.join(', ')})`;
+        }
+      );
+
+      console.log('Fórmula após processamento de funções:', evaluableFormula);
+
+      // Verificar se ainda existem palavras não substituídas (exceto operadores matemáticos e funções JavaScript reconhecidas)
+      const jsGlobals = ['Math', 'ceil', 'floor', 'round', 'max', 'min', 'pow'];
+      const remainingWords = evaluableFormula.match(/[a-zA-Z_]\w*/g)?.filter(word => 
+        !jsGlobals.includes(word) && 
+        !['true', 'false', 'null', 'undefined'].includes(word.toLowerCase())
+      );
+      
+      if (remainingWords && remainingWords.length > 0) {
+        toast.error(`Atributos ou funções inválidas na fórmula: ${remainingWords.join(', ')}`);
+        return null;
+      }
+
+      // Avaliação segura da expressão final
+      // eslint-disable-next-line no-new-func
+      const result = new Function(`return ${evaluableFormula}`)();
+      
+      if (typeof result !== 'number' || isNaN(result)) {
+        toast.error("A fórmula não resultou em um número válido");
+        return null;
+      }
+
+      // Arredondar para 2 casas decimais
+      return Math.ceil(result * 100) / 100;
     } catch (e) {
       console.error('Erro ao calcular fórmula:', e);
+      toast.error(`Erro ao calcular fórmula: ${(e as Error).message}`);
       return null;
     }
   };
@@ -57,20 +159,92 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
     }
   };
 
-  const onSubmitForm = (values: Omit<Task, "id" | "created_at">) => {
-    if (values.hours_formula) {
-      const calculatedHours = calculateHours(values.hours_formula);
-      if (calculatedHours !== null) {
-        values.hours_formula = calculatedHours.toString();
-      }
+  const insertAttributeAtCursor = (attributeCode: string) => {
+    const currentFormula = watch("hours_formula") || "";
+    
+    // Apenas insere a variável, sem adicionar operadores
+    const newFormula = currentFormula
+      ? `${currentFormula} ${attributeCode}`
+      : attributeCode;
+    
+    setValue("hours_formula", newFormula);
+    handleFormulaChange(newFormula);
+
+    // Foca o textarea após inserir a variável
+    if (textareaRef.current) {
+      textareaRef.current.focus();
     }
-    onSubmit({
+  };
+
+  const insertFunctionTemplate = (funcName: string) => {
+    let template = "";
+    
+    switch (funcName) {
+      case "IF":
+        template = "IF(condition, valueIfTrue, valueIfFalse)";
+        break;
+      case "ROUNDUP":
+        template = "ROUNDUP(value)";
+        break;
+      case "ROUNDDOWN":
+        template = "ROUNDDOWN(value)";
+        break;
+      case "ROUND":
+        template = "ROUND(value, decimals)";
+        break;
+      case "SUM":
+        template = "SUM(value1, value2, ...)";
+        break;
+      case "MAX":
+        template = "MAX(value1, value2, ...)";
+        break;
+      case "MIN":
+        template = "MIN(value1, value2, ...)";
+        break;
+      default:
+        template = funcName + "()";
+    }
+    
+    const currentFormula = watch("hours_formula") || "";
+    const newFormula = currentFormula
+      ? `${currentFormula} ${template}`
+      : template;
+    
+    setValue("hours_formula", newFormula);
+    
+    // Foca o textarea após inserir a função
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
+  const onSubmitForm = (values: Omit<Task, "id" | "created_at">) => {
+    const formValues = {
       ...values,
+      hours_type: hoursType,
+      hours_formula: hoursType === 'formula' ? watch("hours_formula") : undefined,
+      fixed_hours: hoursType === 'fixed' ? fixedHours : undefined,
       order_number: 0,
       is_active: true,
-    });
+    };
+    
+    onSubmit(formValues);
     reset();
+    setHoursType('fixed');
+    setFixedHours(0);
+    setPreviewHours(null);
   };
+
+  // Lista de funções disponíveis
+  const availableFunctions = [
+    { name: "IF", description: "Condição lógica" },
+    { name: "ROUNDUP", description: "Arredonda para cima" },
+    { name: "ROUNDDOWN", description: "Arredonda para baixo" },
+    { name: "ROUND", description: "Arredonda para X decimais" },
+    { name: "SUM", description: "Soma valores" },
+    { name: "MAX", description: "Valor máximo" },
+    { name: "MIN", description: "Valor mínimo" }
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -100,29 +274,105 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hours_formula">Fórmula de Horas</Label>
-            <Textarea 
-              id="hours_formula" 
-              {...register("hours_formula")}
-              placeholder="Ex: ORDERS_PER_MONTH * 0.5 + SKU_COUNT * 0.1"
-              onChange={(e) => handleFormulaChange(e.target.value)}
-            />
-            {projectAttributes && (
-              <div className="text-sm text-gray-500">
-                <p>Atributos disponíveis:</p>
-                <ul className="list-disc pl-4">
-                  {Object.keys(projectAttributes).map((attr) => (
-                    <li key={attr}>{attr}: {projectAttributes[attr]}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {previewHours !== null && (
-              <p className="text-sm text-blue-600">
-                Horas calculadas: {previewHours}
-              </p>
-            )}
+            <Label htmlFor="hours_type">Tipo de Horas</Label>
+            <Select 
+              value={hoursType} 
+              onValueChange={(value) => setHoursType(value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo de horas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fixed">Horas Fixas</SelectItem>
+                <SelectItem value="formula">Fórmula de Horas</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          {hoursType === 'fixed' ? (
+            <div className="space-y-2">
+              <Label htmlFor="fixed_hours">Horas Fixas</Label>
+              <Input 
+                id="fixed_hours" 
+                type="number" 
+                step="0.01"
+                value={fixedHours}
+                onChange={(e) => setFixedHours(parseFloat(e.target.value))}
+                min="0"
+              />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center mb-2">
+                <Label htmlFor="hours_formula">Fórmula de Horas</Label>
+                <div className="flex space-x-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Variable className="h-4 w-4 mr-2" />
+                        Inserir Variável
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end" 
+                      className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
+                    >
+                      {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
+                        <DropdownMenuItem
+                          key={key}
+                          onClick={() => insertAttributeAtCursor(key)}
+                          className="flex justify-between hover:bg-blue-50"
+                        >
+                          <span className="font-medium">{key}</span>
+                          <span className="text-gray-600">{value}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        Inserir Função
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end" 
+                      className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
+                    >
+                      {availableFunctions.map((func) => (
+                        <DropdownMenuItem
+                          key={func.name}
+                          onClick={() => insertFunctionTemplate(func.name)}
+                          className="flex justify-between hover:bg-blue-50"
+                        >
+                          <span className="font-medium">{func.name}</span>
+                          <span className="text-gray-600">{func.description}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+              <Textarea 
+                id="hours_formula" 
+                ref={textareaRef}
+                {...register("hours_formula")}
+                onChange={(e) => handleFormulaChange(e.target.value)}
+                placeholder="Ex: IF(SKU_COUNT > 1000, SKU_COUNT * 0.01, SKU_COUNT * 0.02)"
+                className="font-mono text-sm"
+                rows={3}
+              />
+              <div className="text-sm mt-1">
+                <p className="text-gray-500">Funções disponíveis: IF, ROUNDUP, ROUNDDOWN, ROUND, SUM, MAX, MIN</p>
+                {previewHours !== null && (
+                  <p className="text-blue-600 font-medium mt-1">
+                    Horas calculadas: {previewHours}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="owner">Responsável</Label>

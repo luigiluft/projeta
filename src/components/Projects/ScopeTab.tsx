@@ -1,4 +1,3 @@
-
 import { TaskList } from "@/components/TaskManagement/TaskList";
 import { Column, Task } from "@/types/project";
 import { useEffect, useState } from "react";
@@ -53,8 +52,64 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
           // Log para verificar a fórmula após substituição
           console.log(`Fórmula após substituição:`, formula);
           
-          // Calcular o resultado da fórmula
-          const calculatedHours = eval(formula);
+          // Implementar funções personalizadas
+          // IF(condition, trueValue, falseValue)
+          formula = formula.replace(/IF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/gi, 
+            (match, condition, trueVal, falseVal) => {
+              return `(${condition} ? ${trueVal} : ${falseVal})`;
+            }
+          );
+
+          // ROUNDUP(value)
+          formula = formula.replace(/ROUNDUP\s*\(\s*([^)]+)\s*\)/gi, 
+            (match, value) => {
+              return `Math.ceil(${value})`;
+            }
+          );
+
+          // ROUNDDOWN(value)
+          formula = formula.replace(/ROUNDDOWN\s*\(\s*([^)]+)\s*\)/gi, 
+            (match, value) => {
+              return `Math.floor(${value})`;
+            }
+          );
+
+          // ROUND(value, decimals)
+          formula = formula.replace(/ROUND\s*\(\s*([^,]+),\s*([^)]+)\s*\)/gi, 
+            (match, value, decimals) => {
+              return `(Math.round(${value} * Math.pow(10, ${decimals})) / Math.pow(10, ${decimals}))`;
+            }
+          );
+
+          // SUM(value1, value2, ...)
+          formula = formula.replace(/SUM\s*\(\s*([^)]+)\s*\)/gi, 
+            (match, values) => {
+              const valueArray = values.split(',').map(v => v.trim());
+              return `(${valueArray.join(' + ')})`;
+            }
+          );
+
+          // MAX(value1, value2, ...)
+          formula = formula.replace(/MAX\s*\(\s*([^)]+)\s*\)/gi, 
+            (match, values) => {
+              const valueArray = values.split(',').map(v => v.trim());
+              return `Math.max(${valueArray.join(', ')})`;
+            }
+          );
+
+          // MIN(value1, value2, ...)
+          formula = formula.replace(/MIN\s*\(\s*([^)]+)\s*\)/gi, 
+            (match, values) => {
+              const valueArray = values.split(',').map(v => v.trim());
+              return `Math.min(${valueArray.join(', ')})`;
+            }
+          );
+
+          console.log(`Fórmula após processamento de funções:`, formula);
+          
+          // Calcular o resultado da fórmula de maneira segura
+          // eslint-disable-next-line no-new-func
+          const calculatedHours = new Function(`return ${formula}`)();
           console.log(`Resultado do cálculo: ${calculatedHours}`);
           
           if (!isNaN(calculatedHours)) {
@@ -97,8 +152,6 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
       averageHourlyRate: costs.hours > 0 ? costs.cost / costs.hours : 0
     };
   };
-
-  const costs = calculateCosts();
 
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', {
