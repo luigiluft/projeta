@@ -113,10 +113,23 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     }
   };
 
+  const handleSubmit = (data: Task) => {
+    console.log('Submitting form with data:', data);
+    
+    // Garantir que a fórmula de horas seja enviada corretamente
+    const formValues = {
+      ...data,
+      hours_formula: form.getValues("hours_formula") // Obter o valor exato do campo
+    };
+    
+    console.log('Processed form values:', formValues);
+    onSubmit(formValues);
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-lg font-semibold mb-4">Informações Básicas</h2>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="task_name">Nome da Tarefa</Label>
           <Input id="task_name" {...form.register("task_name")} />

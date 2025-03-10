@@ -63,6 +63,8 @@ export default function TaskDetails() {
         story: taskData.story || '',
         task_name: taskData.task_name || '',
         hours_formula: taskData.hours_formula,
+        fixed_hours: taskData.fixed_hours,
+        hours_type: taskData.hours_type || 'formula',
         owner: taskData.owner || '',
         created_at: taskData.created_at,
         // Garantir que status seja um dos valores esperados
@@ -71,7 +73,9 @@ export default function TaskDetails() {
           : 'pending',
         start_date: undefined, // Estes campos não existem no banco de dados atual
         end_date: undefined,
-        estimated_completion_date: undefined
+        estimated_completion_date: undefined,
+        depends_on: taskData.depends_on,
+        order: taskData.order
       };
 
       console.log('Transformed task data:', transformedTask);
@@ -124,9 +128,17 @@ export default function TaskDetails() {
 
       console.log('Filtered task data for update:', taskData);
 
+      // Garantir que o hours_formula está sendo enviado exatamente como está no formulário
+      const taskDataToUpdate = {
+        ...taskData,
+        hours_formula: values.hours_formula // Certifica-se de que a fórmula é enviada como está
+      };
+
+      console.log('Final data being sent to Supabase:', taskDataToUpdate);
+
       const { data, error } = await supabase
         .from('tasks')
-        .update(taskData)
+        .update(taskDataToUpdate)
         .eq('id', id)
         .select();
 
@@ -135,10 +147,12 @@ export default function TaskDetails() {
         throw error;
       }
 
+      console.log('Supabase update response:', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', id] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Invalidar também a lista de tarefas
       toast.success('Tarefa atualizada com sucesso!');
     },
     onError: (error) => {

@@ -39,6 +39,7 @@ export function TaskList({
   };
 
   const handleEditClick = (taskId: string) => {
+    console.log(`Navigating to task details: /task-management/${taskId}`);
     navigate(`/task-management/${taskId}`);
   };
 
@@ -76,21 +77,25 @@ export function TaskList({
       case 'hours_type':
         return truncateText(task.hours_type, 10);
       case 'order':
-        // Mostrar qualquer valor, incluindo zero, e cair para '-' apenas se for null/undefined
+        // Mostrar qualquer valor, incluindo zero
         return task.order !== null && task.order !== undefined ? task.order.toString() : '-';
       case 'order_number':
-        // Mostrar qualquer valor, incluindo zero, e cair para '-' apenas se for null/undefined
+        // Mostrar qualquer valor, incluindo zero
         return task.order_number !== null && task.order_number !== undefined ? task.order_number.toString() : '-';
       case 'dependency':
       case 'depends_on':
-        // Não truncar a dependência e retornar o valor ou '-' se for null/undefined
+        // Não truncar a dependência e mostrar o valor exato
         return task.depends_on !== null && task.depends_on !== undefined ? task.depends_on : '-';
       case 'actions':
         return (
           <div className="flex items-center space-x-2">
             <button 
               className="text-blue-500 hover:text-blue-700"
-              onClick={() => handleEditClick(task.id)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleEditClick(task.id);
+              }}
             >
               Editar
             </button>
