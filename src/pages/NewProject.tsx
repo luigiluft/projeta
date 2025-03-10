@@ -134,6 +134,7 @@ export default function NewProject() {
       // Log do usuário atual
       console.log("Usuário logado:", user);
       
+      // Importante: Removemos qualquer referência à tabela profiles
       const projectData = {
         name: project.name,
         project_name: project.name,
@@ -150,14 +151,14 @@ export default function NewProject() {
         type: "default",
         metadata: { 
           attribute_values: project.attribute_values || {},
-          created_by_user_id: user?.id || null, // Salvar o ID do usuário nos metadados
-          created_by_email: user?.email || null // Salvar o email do usuário nos metadados
+          created_by_user_id: user?.id || null,
+          created_by_email: user?.email || null
         }
       };
       
       console.log("Dados do projeto formatados para inserção:", projectData);
       
-      // Inserir o projeto
+      // Inserir o projeto usando apenas a tabela projects
       const { data: projectResponse, error: projectError } = await supabase
         .from('projects')
         .insert(projectData)
