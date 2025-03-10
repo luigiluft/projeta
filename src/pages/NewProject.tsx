@@ -139,41 +139,49 @@ export default function NewProject() {
       const metadata = {
         attribute_values: project.attribute_values || {}
       };
+
+      // Remover referências a propriedades que podem estar causando o problema de recursão
+      const projectData = {
+        id: project.id,
+        name: project.name,
+        project_name: project.name,
+        description: project.description,
+        client_name: project.client_name,
+        start_date: project.start_date,
+        epic: project.epic,
+        total_hours: project.total_hours,
+        total_cost: project.total_cost,
+        base_cost: project.base_cost,
+        profit_margin: project.profit_margin,
+        status: project.status,
+        currency: project.currency,
+        progress: 0,
+        delay_days: 0,
+        attributes: project.attributes,
+        metadata: metadata,
+        type: 'default'
+      };
       
-      // 1. Inserir o projeto principal
-      const { data: projectData, error: projectError } = await supabase
+      // 1. Inserir o projeto principal sem usar .single() para evitar erros
+      const { data, error: projectError } = await supabase
         .from('projects')
-        .insert({
-          id: project.id,
-          name: project.name,
-          project_name: project.name,
-          description: project.description,
-          client_name: project.client_name,
-          start_date: project.start_date,
-          epic: project.epic,
-          total_hours: project.total_hours,
-          total_cost: project.total_cost,
-          base_cost: project.base_cost,
-          profit_margin: project.profit_margin,
-          status: project.status,
-          currency: project.currency,
-          progress: 0,
-          delay_days: 0,
-          attributes: project.attributes,
-          metadata: metadata,
-          type: 'default'
-        })
-        .select()
-        .single();
+        .insert(projectData)
+        .select();
 
       if (projectError) {
         throw projectError;
       }
+
+      if (!data || data.length === 0) {
+        throw new Error("Nenhum dado retornado após inserir o projeto");
+      }
+      
+      const createdProject = data[0];
       
       // 2. Inserir as tarefas na tabela project_tasks
       if (project.tasks && project.tasks.length > 0) {
         const projectTasksData = project.tasks.map(task => ({
-          project_id: projectData.id,
+          project_id: createdProject.id,
           task_id: task.id,
           calculated_hours: task.calculated_hours || 0,
           status: 'pending',
