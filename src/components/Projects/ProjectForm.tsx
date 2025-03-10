@@ -54,21 +54,32 @@ export function ProjectForm({
 
   const formSchema = createProjectFormSchema(attributes);
 
+  // Preparar valores iniciais com os valores padrão dos atributos
+  const defaultValues = {
+    name: initialValues?.name || "",
+    description: initialValues?.description || "",
+    client_name: initialValues?.client_name || "",
+    due_date: initialValues?.due_date || "",
+  };
+
+  // Adicionar valores padrão para cada atributo
+  attributes.forEach(attr => {
+    const defaultValue = attr.defaultValue !== undefined ? attr.defaultValue : "";
+    if (attr.type === "number" && defaultValue !== "") {
+      defaultValues[attr.id] = Number(defaultValue);
+    } else {
+      defaultValues[attr.id] = defaultValue;
+    }
+    
+    // Se existir um valor inicial, usar ele ao invés do valor padrão
+    if (initialValues?.attributes && initialValues.attributes[attr.id] !== undefined) {
+      defaultValues[attr.id] = initialValues.attributes[attr.id];
+    }
+  });
+
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: initialValues?.name || "",
-      description: initialValues?.description || "",
-      type: initialValues?.type || "default",
-      client_name: initialValues?.client_name || "",
-      due_date: initialValues?.due_date || "",
-      ...Object.fromEntries(
-        attributes.map((attr) => [
-          attr.id,
-          initialValues?.attributes[attr.id] || attr.defaultValue || ""
-        ])
-      ),
-    },
+    defaultValues,
   });
 
   // Atualizar valores dos atributos quando eles mudarem no formulário
@@ -117,7 +128,7 @@ export function ProjectForm({
       name: values.name,
       project_name: values.name,
       epic: selectedEpics.join(', '),
-      type: values.type,
+      type: 'default', // Valor padrão para o campo type
       description: values.description,
       client_name: values.client_name,
       due_date: values.due_date,

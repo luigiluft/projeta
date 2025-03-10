@@ -8,7 +8,6 @@ export const createProjectFormSchema = (attributes: Attribute[]) => {
       message: "O nome deve ter pelo menos 2 caracteres.",
     }),
     description: z.string().optional(),
-    type: z.string(),
     client_name: z.string().optional(),
     due_date: z.string().optional(),
     ...Object.fromEntries(
