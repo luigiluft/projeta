@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Task, Column } from "@/types/project";
 
@@ -70,14 +69,24 @@ export function TaskList({
         return task.fixed_hours || '-';
       case 'hours_type':
         return truncateText(task.hours_type, 10);
+      case 'order':
+        return task.order?.toString() || '-';
       case 'order_number':
-        return task.order_number || '-';
+        return task.order_number?.toString() || '-';
+      case 'dependency':
+      case 'depends_on':
+        return task.depends_on ? truncateText(task.depends_on, 15) : '-';
+      case 'actions':
+        return (
+          <div className="flex items-center space-x-2">
+            <button className="text-blue-500 hover:text-blue-700">Editar</button>
+            <button className="text-red-500 hover:text-red-700">Excluir</button>
+          </div>
+        );
       case 'is_active':
         return task.is_active ? 'Sim' : 'Não';
       case 'owner':
         return truncateText(task.owner, 10);
-      case 'dependency':
-        return truncateText(task.depends_on, 15) || '-';
       case 'created_at':
         return task.created_at ? new Date(task.created_at).toLocaleDateString() : '-';
       case 'status':
@@ -150,7 +159,6 @@ export function TaskList({
   );
 }
 
-// Função auxiliar para definir larguras mínimas para cada tipo de coluna
 function getColumnMinWidth(columnId: string): string {
   switch (columnId) {
     case 'task_name':
@@ -169,9 +177,11 @@ function getColumnMinWidth(columnId: string): string {
       return '80px';
     case 'is_active':
       return '60px';
+    case 'order':
     case 'order_number':
       return '70px';
     case 'dependency':
+    case 'depends_on':
       return '110px';
     case 'created_at':
       return '100px';
