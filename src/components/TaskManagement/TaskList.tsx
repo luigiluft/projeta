@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Task, Column } from "@/types/project";
 
@@ -28,7 +27,6 @@ export function TaskList({
     
     setVisibleColumns(visible);
     
-    // Log para depuração
     console.log("TaskList received columns:", columns.map(col => `${col.id} (${col.visible ? 'visible' : 'hidden'})`));
   }, [columns]);
 
@@ -83,62 +81,27 @@ export function TaskList({
         <thead className="bg-gray-50">
           <tr>
             {onTaskSelect && (
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-10 px-4 py-3">
                 <span className="sr-only">Seleção</span>
               </th>
             )}
-            {visibleColumns.includes('task_name') && (
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tarefa
+            {visibleColumns.map((columnId) => (
+              <th 
+                key={columnId}
+                className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  ['total_hours', 'total_cost', 'progress'].includes(columnId) ? 'text-right' : ''
+                }`}
+              >
+                {columns.find(col => col.id === columnId)?.label || columnId}
               </th>
-            )}
-            {visibleColumns.includes('phase') && (
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Fase
-              </th>
-            )}
-            {visibleColumns.includes('epic') && (
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Epic
-              </th>
-            )}
-            {visibleColumns.includes('story') && (
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Story
-              </th>
-            )}
-            {visibleColumns.includes('hours') && (
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Horas
-              </th>
-            )}
-            {visibleColumns.includes('owner') && (
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Responsável
-              </th>
-            )}
-            {visibleColumns.includes('dependency') && (
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Dependência
-              </th>
-            )}
-            {visibleColumns.includes('created_at') && (
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Criado em
-              </th>
-            )}
-            {visibleColumns.includes('status') && (
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-            )}
+            ))}
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {tasks.map((task) => (
             <tr key={task.id} className="hover:bg-gray-50">
               {onTaskSelect && (
-                <td className="px-4 py-4 whitespace-nowrap">
+                <td className="w-10 px-4 py-4 whitespace-nowrap">
                   <input 
                     type="checkbox"
                     className="h-4 w-4 text-blue-600 border-gray-300 rounded"
@@ -148,7 +111,12 @@ export function TaskList({
                 </td>
               )}
               {visibleColumns.map((columnId) => (
-                <td key={`${task.id}-${columnId}`} className="px-6 py-4 whitespace-nowrap text-sm">
+                <td 
+                  key={`${task.id}-${columnId}`} 
+                  className={`px-6 py-4 whitespace-nowrap text-sm ${
+                    ['total_hours', 'total_cost', 'progress'].includes(columnId) ? 'text-right' : ''
+                  }`}
+                >
                   {renderCellContent(task, columnId)}
                 </td>
               ))}
