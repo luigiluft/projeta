@@ -35,8 +35,8 @@ export default function NewProject() {
       const formattedAttributes: Attribute[] = data.map(attr => ({
         id: attr.code,
         name: attr.name,
-        unit: attr.unit || "hours",
-        type: attr.type || "number",
+        unit: (attr.unit || "hours") as "hours" | "quantity" | "percentage",
+        type: (attr.unit === "percentage" ? "number" : "number") as "number" | "list" | "text",
         defaultValue: attr.default_value
       }));
 
