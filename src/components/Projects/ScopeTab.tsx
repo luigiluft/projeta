@@ -1,11 +1,13 @@
 
 import { TaskList } from "@/components/TaskManagement/TaskList";
 import { Column, Task } from "@/types/project";
+import { useEffect, useState } from "react";
 
 interface ScopeTabProps {
   tasks: Task[];
   columns: Column[];
   onColumnsChange: (columns: Column[]) => void;
+  attributeValues: Record<string, number>;
 }
 
 const teamRates = {
@@ -20,11 +22,52 @@ const teamRates = {
   "ATS": 65.85,
 };
 
-export function ScopeTab({ tasks, columns, onColumnsChange }: ScopeTabProps) {
+export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: ScopeTabProps) {
+  const [calculatedTasks, setCalculatedTasks] = useState<Task[]>(tasks);
+
+  // Recalcular horas das tarefas quando os atributos mudarem
+  useEffect(() => {
+    if (!tasks.length) return;
+
+    const updatedTasks = tasks.map(task => {
+      const newTask = { ...task };
+      
+      // Se a tarefa tem uma fórmula de horas, calcular com base nos atributos
+      if (task.hours_formula && task.hours_type !== 'fixed') {
+        try {
+          // Substituir atributos com valores na fórmula
+          let formula = task.hours_formula;
+          Object.entries(attributeValues).forEach(([key, value]) => {
+            const regex = new RegExp(`\\b${key}\\b`, 'g');
+            formula = formula.replace(regex, value.toString());
+          });
+          
+          // Calcular o resultado da fórmula
+          const calculatedHours = eval(formula);
+          if (!isNaN(calculatedHours)) {
+            newTask.calculated_hours = calculatedHours;
+          }
+        } catch (error) {
+          console.error('Erro ao calcular fórmula:', task.hours_formula, error);
+          newTask.calculated_hours = 0;
+        }
+      } else if (task.fixed_hours) {
+        // Se for horas fixas, usar o valor fixo
+        newTask.calculated_hours = task.fixed_hours;
+      } else {
+        newTask.calculated_hours = 0;
+      }
+      
+      return newTask;
+    });
+    
+    setCalculatedTasks(updatedTasks);
+  }, [tasks, attributeValues]);
+
   const calculateCosts = () => {
-    const costs = tasks.reduce((acc, task) => {
+    const costs = calculatedTasks.reduce((acc, task) => {
       const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
-      const hours = task.hours_formula ? parseFloat(task.hours_formula) : 0;
+      const hours = task.calculated_hours || 0;
       const taskCost = hourlyRate * hours;
       return {
         hours: acc.hours + hours,
@@ -54,7 +97,7 @@ export function ScopeTab({ tasks, columns, onColumnsChange }: ScopeTabProps) {
         <h3 className="text-lg font-semibold">Lista de Tarefas</h3>
         <div className="space-y-1 text-right">
           <div className="text-sm text-gray-600">
-            Total de Horas: {costs.totalHours}h
+            Total de Horas: {costs.totalHours.toFixed(2)}h
           </div>
           <div className="text-sm font-medium text-primary">
             Custo Total: {formatCurrency(costs.totalCost)}
@@ -64,11 +107,19 @@ export function ScopeTab({ tasks, columns, onColumnsChange }: ScopeTabProps) {
           </div>
         </div>
       </div>
-      <TaskList 
-        tasks={tasks} 
-        columns={columns}
-        onColumnsChange={onColumnsChange}
-      />
+      
+      {calculatedTasks.length > 0 ? (
+        <TaskList 
+          tasks={calculatedTasks} 
+          columns={columns}
+          onColumnsChange={onColumnsChange}
+          showHoursColumn={true}
+        />
+      ) : (
+        <div className="p-8 text-center border rounded-md bg-gray-50">
+          <p className="text-muted-foreground">Selecione pelo menos um epic para visualizar as tarefas</p>
+        </div>
+      )}
     </div>
   );
 }

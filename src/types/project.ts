@@ -1,3 +1,4 @@
+
 export interface Project {
   id: string;
   name: string;
@@ -54,6 +55,7 @@ export interface Task {
   hours_formula?: string;
   fixed_hours?: number;
   hours_type?: string;
+  calculated_hours?: number; // Novo campo para armazenar o resultado do cálculo
   owner: string;
   created_at: string;
   status: 'pending' | 'in_progress' | 'completed';

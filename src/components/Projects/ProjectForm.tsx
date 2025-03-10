@@ -8,57 +8,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PricingTab } from "./PricingTab";
 import { ScopeTab } from "./ScopeTab";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
-import { Attribute, Project } from "@/types/project";
+import { Attribute, Project, Task } from "@/types/project";
 import { ProjectBasicInfo } from "./ProjectBasicInfo";
 import { createProjectFormSchema, ProjectFormValues } from "@/utils/projectFormSchema";
 import { DEFAULT_PROFIT_MARGIN, teamRates } from "@/constants/projectConstants";
+import { EpicSelector } from "./EpicSelector";
+import { useState, useEffect } from "react";
 
 interface ProjectFormProps {
   editingId: string | null;
   attributes: Attribute[];
   onSubmit: (values: Project) => void;
   initialValues?: Project;
+  availableEpics: string[];
+  epicTasks: Task[];
+  onEpicsChange: (epics: string[]) => void;
+  isLoading?: boolean;
 }
 
-export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: ProjectFormProps) {
-  const { tasks, taskColumns, handleColumnsChange } = useProjectTasks([
-    {
-      id: "1",
-      order_number: 1,
-      is_active: true,
-      phase: "Implementação",
-      epic: "Implementação Ecommerce B2C",
-      story: "Briefing",
-      task_name: "Reunião do briefing técnico",
-      owner: "PO",
-      created_at: new Date().toISOString(),
-      status: "pending"
-    },
-    {
-      id: "2",
-      order_number: 2,
-      is_active: true,
-      phase: "Implementação",
-      epic: "Implementação Ecommerce B2C",
-      story: "Briefing",
-      task_name: "Documentação do briefing técnico",
-      owner: "PO",
-      created_at: new Date().toISOString(),
-      status: "pending"
-    },
-    {
-      id: "3",
-      order_number: 3,
-      is_active: true,
-      phase: "Implementação",
-      epic: "Implementação Ecommerce B2C",
-      story: "Briefing",
-      task_name: "Definição do catálogo de produtos, categorias e atributos",
-      owner: "PO",
-      created_at: new Date().toISOString(),
-      status: "pending"
-    }
-  ]);
+export function ProjectForm({ 
+  editingId, 
+  attributes, 
+  onSubmit, 
+  initialValues, 
+  availableEpics,
+  epicTasks,
+  onEpicsChange,
+  isLoading = false
+}: ProjectFormProps) {
+  const [selectedEpics, setSelectedEpics] = useState<string[]>([]);
+  const { taskColumns, handleColumnsChange } = useProjectTasks(epicTasks);
+  const [attributeValues, setAttributeValues] = useState<Record<string, number>>({});
 
   const formSchema = createProjectFormSchema(attributes);
 
@@ -79,14 +59,41 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
     },
   });
 
+  // Atualizar valores dos atributos quando eles mudarem no formulário
+  useEffect(() => {
+    const subscription = form.watch((values) => {
+      const newAttributeValues: Record<string, number> = {};
+      
+      attributes.forEach(attr => {
+        if (attr.type === 'number' && values[attr.id]) {
+          newAttributeValues[attr.id] = Number(values[attr.id]) || 0;
+        }
+      });
+      
+      setAttributeValues(newAttributeValues);
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, attributes]);
+
+  const handleEpicSelectionChange = (epics: string[]) => {
+    setSelectedEpics(epics);
+    onEpicsChange(epics);
+  };
+
   const handleSubmit = (values: ProjectFormValues) => {
-    const taskCosts = tasks.reduce((acc, task) => {
+    if (selectedEpics.length === 0) {
+      toast.error("Selecione pelo menos um Epic para o projeto");
+      return;
+    }
+
+    const taskCosts = epicTasks.reduce((acc, task) => {
       const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
       const hours = task.hours_formula ? parseFloat(task.hours_formula) : 0;
       return acc + (hourlyRate * hours);
     }, 0);
 
-    const totalHours = tasks.reduce((sum, task) => {
+    const totalHours = epicTasks.reduce((sum, task) => {
       const hours = task.hours_formula ? parseFloat(task.hours_formula) : 0;
       return sum + hours;
     }, 0);
@@ -97,7 +104,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       id: editingId || crypto.randomUUID(),
       name: values.name,
       project_name: values.name,
-      epic: values.name,
+      epic: selectedEpics.join(', '),
       type: values.type,
       description: values.description,
       client_name: values.client_name,
@@ -110,7 +117,7 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       profit_margin: DEFAULT_PROFIT_MARGIN,
       status: 'draft',
       currency: 'BRL',
-      tasks: tasks,
+      tasks: epicTasks,
       progress: 0,
       delay_days: 0,
       attributes: Object.fromEntries(
@@ -129,18 +136,32 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
       deleted: false,
       deleted_at: undefined,
       version: 1,
-      metadata: {},
+      metadata: {
+        attribute_values: Object.fromEntries(
+          attributes
+            .filter(attr => attr.type === 'number')
+            .map(attr => [attr.id, Number(values[attr.id]) || 0])
+        )
+      },
       settings: {},
     };
     
     onSubmit(projectData);
-    toast.success(editingId ? "Projeto atualizado com sucesso!" : "Projeto criado com sucesso!");
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
         <ProjectBasicInfo form={form} />
+        
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Epics do Projeto</h3>
+          <EpicSelector 
+            availableEpics={availableEpics} 
+            selectedEpics={selectedEpics}
+            onChange={handleEpicSelectionChange}
+          />
+        </div>
 
         <Tabs defaultValue="pricing" className="w-full">
           <TabsList className="w-full">
@@ -154,16 +175,17 @@ export function ProjectForm({ editingId, attributes, onSubmit, initialValues }: 
 
           <TabsContent value="scope">
             <ScopeTab 
-              tasks={tasks} 
+              tasks={epicTasks} 
               columns={taskColumns}
               onColumnsChange={handleColumnsChange}
+              attributeValues={attributeValues}
             />
           </TabsContent>
         </Tabs>
 
         <div className="flex justify-end">
-          <Button type="submit">
-            {editingId ? "Atualizar" : "Criar"} Projeto
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Salvando..." : (editingId ? "Atualizar" : "Criar")} Projeto
           </Button>
         </div>
       </form>
