@@ -69,12 +69,12 @@ export function TaskList({
       case 'hours_type':
         return truncateText(task.hours_type, 10);
       case 'order':
-        return task.order !== null && task.order !== undefined ? task.order.toString() : '-';
+        return task.order?.toString() || task.order === 0 ? task.order.toString() : '-';
       case 'order_number':
-        return task.order_number !== null && task.order_number !== undefined ? task.order_number.toString() : '-';
+        return task.order_number?.toString() || task.order_number === 0 ? task.order_number.toString() : '-';
       case 'dependency':
       case 'depends_on':
-        return task.depends_on ? truncateText(task.depends_on, 15) : '-';
+        return task.depends_on || '-';
       case 'actions':
         return (
           <div className="flex items-center space-x-2">
