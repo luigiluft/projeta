@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -175,7 +176,7 @@ export default function NewProject() {
           status: 'pending',
           is_active: true,
           created_at: new Date().toISOString(),
-          owner_id: user?.id
+          owner_id: user?.email // Usando email como owner_id já que agora é TEXT
         }));
         
         console.log("Dados formatados das tarefas do projeto:", projectTasksData);

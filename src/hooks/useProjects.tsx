@@ -53,6 +53,7 @@ export const useProjects = () => {
                   status,
                   start_date,
                   end_date,
+                  owner_id,
                   tasks:task_id(*)
                 `)
                 .eq('project_id', project.id);
@@ -87,7 +88,7 @@ export const useProjects = () => {
                     phase: task.phase || '',
                     epic: task.epic || '',
                     story: task.story || '',
-                    owner: task.owner || '',
+                    owner: task.owner || ptask.owner_id || '', // Agora podemos usar owner_id da project_tasks também
                     calculated_hours: ptask.calculated_hours, // Usar o valor calculado armazenado na tabela project_tasks
                     status: ptask.status as "pending" | "in_progress" | "completed",
                     project_task_id: ptask.id // Referência ao id da tabela de relacionamento

@@ -207,6 +207,48 @@ export type Database = {
           },
         ]
       }
+      project_tasks_backup: {
+        Row: {
+          calculated_hours: number | null
+          created_at: string | null
+          end_date: string | null
+          id: string | null
+          is_active: boolean | null
+          owner_id: string | null
+          project_id: string | null
+          start_date: string | null
+          status: string | null
+          task_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          calculated_hours?: number | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          owner_id?: string | null
+          project_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          task_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          calculated_hours?: number | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          owner_id?: string | null
+          project_id?: string | null
+          start_date?: string | null
+          status?: string | null
+          task_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           archived: boolean | null
@@ -216,7 +258,7 @@ export type Database = {
           category_id: string | null
           client_id: string | null
           client_name: string | null
-          created_at: string
+          created_at: string | null
           currency: string | null
           delay_days: number | null
           deleted: boolean | null
@@ -242,7 +284,7 @@ export type Database = {
           total_cost: number | null
           total_hours: number | null
           type: string
-          updated_at: string
+          updated_at: string | null
           version: number | null
           workspace_id: string | null
         }
@@ -254,7 +296,7 @@ export type Database = {
           category_id?: string | null
           client_id?: string | null
           client_name?: string | null
-          created_at?: string
+          created_at?: string | null
           currency?: string | null
           delay_days?: number | null
           deleted?: boolean | null
@@ -280,7 +322,7 @@ export type Database = {
           total_cost?: number | null
           total_hours?: number | null
           type: string
-          updated_at?: string
+          updated_at?: string | null
           version?: number | null
           workspace_id?: string | null
         }
@@ -292,7 +334,7 @@ export type Database = {
           category_id?: string | null
           client_id?: string | null
           client_name?: string | null
-          created_at?: string
+          created_at?: string | null
           currency?: string | null
           delay_days?: number | null
           deleted?: boolean | null
@@ -318,7 +360,124 @@ export type Database = {
           total_cost?: number | null
           total_hours?: number | null
           type?: string
-          updated_at?: string
+          updated_at?: string | null
+          version?: number | null
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
+      projects_backup: {
+        Row: {
+          archived: boolean | null
+          archived_at: string | null
+          attributes: Json | null
+          base_cost: number | null
+          category_id: string | null
+          client_id: string | null
+          client_name: string | null
+          created_at: string | null
+          currency: string | null
+          delay_days: number | null
+          deleted: boolean | null
+          deleted_at: string | null
+          description: string | null
+          due_date: string | null
+          epic: string | null
+          expected_end_date: string | null
+          favorite: boolean | null
+          id: string | null
+          metadata: Json | null
+          name: string | null
+          owner_id: string | null
+          priority: number | null
+          profit_margin: number | null
+          progress: number | null
+          project_name: string | null
+          settings: Json | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["project_status"] | null
+          tags: string[] | null
+          team_id: string | null
+          total_cost: number | null
+          total_hours: number | null
+          type: string | null
+          updated_at: string | null
+          version: number | null
+          workspace_id: string | null
+        }
+        Insert: {
+          archived?: boolean | null
+          archived_at?: string | null
+          attributes?: Json | null
+          base_cost?: number | null
+          category_id?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string | null
+          currency?: string | null
+          delay_days?: number | null
+          deleted?: boolean | null
+          deleted_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          epic?: string | null
+          expected_end_date?: string | null
+          favorite?: boolean | null
+          id?: string | null
+          metadata?: Json | null
+          name?: string | null
+          owner_id?: string | null
+          priority?: number | null
+          profit_margin?: number | null
+          progress?: number | null
+          project_name?: string | null
+          settings?: Json | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
+          tags?: string[] | null
+          team_id?: string | null
+          total_cost?: number | null
+          total_hours?: number | null
+          type?: string | null
+          updated_at?: string | null
+          version?: number | null
+          workspace_id?: string | null
+        }
+        Update: {
+          archived?: boolean | null
+          archived_at?: string | null
+          attributes?: Json | null
+          base_cost?: number | null
+          category_id?: string | null
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string | null
+          currency?: string | null
+          delay_days?: number | null
+          deleted?: boolean | null
+          deleted_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          epic?: string | null
+          expected_end_date?: string | null
+          favorite?: boolean | null
+          id?: string | null
+          metadata?: Json | null
+          name?: string | null
+          owner_id?: string | null
+          priority?: number | null
+          profit_margin?: number | null
+          progress?: number | null
+          project_name?: string | null
+          settings?: Json | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
+          tags?: string[] | null
+          team_id?: string | null
+          total_cost?: number | null
+          total_hours?: number | null
+          type?: string | null
+          updated_at?: string | null
           version?: number | null
           workspace_id?: string | null
         }

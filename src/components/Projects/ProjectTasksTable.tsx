@@ -51,7 +51,7 @@ export function ProjectTasksTable({ tasks = [], projectId, epic }: ProjectTasksT
             status: 'pending',
             is_active: true,
             calculated_hours: values.fixed_hours || 0,
-            owner_id: user?.id // Adicionando o owner_id na project_tasks
+            owner_id: user?.email // Usando email como owner_id já que agora é TEXT
           }]);
 
         if (projectTaskError) throw projectTaskError;
