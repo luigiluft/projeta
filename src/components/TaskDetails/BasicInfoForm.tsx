@@ -20,7 +20,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Variable } from "lucide-react";
+import { Calculator, Variable } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface BasicInfoFormProps {
   task: Task;
@@ -381,12 +382,19 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
               className="font-mono text-sm"
               rows={4}
             />
-            <div className="text-sm mt-1">
-              <p className="text-gray-500">Funções disponíveis: IF, ROUNDUP, ROUNDDOWN, ROUND, SUM, MAX, MIN</p>
+            <div className="text-sm mt-2">
+              <p className="text-gray-500 mb-2">Funções disponíveis: IF, ROUNDUP, ROUNDDOWN, ROUND, SUM, MAX, MIN</p>
+              
               {previewHours !== null && (
-                <p className="text-blue-600 font-medium mt-1">
-                  Horas calculadas: {previewHours}
-                </p>
+                <div className="flex items-center mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
+                  <Calculator className="h-5 w-5 text-blue-500 mr-2" />
+                  <div>
+                    <span className="font-medium">Horas calculadas:</span>
+                    <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800 hover:bg-blue-100">
+                      {previewHours.toFixed(2)}h
+                    </Badge>
+                  </div>
+                </div>
               )}
             </div>
           </div>
