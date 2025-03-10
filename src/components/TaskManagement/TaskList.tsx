@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Task, Column } from "@/types/project";
 
@@ -30,6 +31,11 @@ export function TaskList({
     console.log("TaskList received columns:", columns.map(col => `${col.id} (${col.visible ? 'visible' : 'hidden'})`));
   }, [columns]);
 
+  const truncateText = (text: string, maxLength: number = 20) => {
+    if (!text) return '-';
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  };
+
   const renderCellContent = (task: Task, columnId: string) => {
     switch (columnId) {
       case 'task_name':
@@ -53,7 +59,15 @@ export function TaskList({
             </div>
           );
         }
-        return task.hours_formula || task.fixed_hours || '-';
+        // Exibir fórmula truncada ou horas fixas
+        if (task.hours_formula) {
+          return <span title={task.hours_formula}>{truncateText(task.hours_formula, 15)}</span>;
+        }
+        return task.fixed_hours || '-';
+      case 'hours_formula':
+        return task.hours_formula ? <span title={task.hours_formula}>{truncateText(task.hours_formula, 15)}</span> : '-';
+      case 'fixed_hours':
+        return task.fixed_hours || '-';
       case 'owner':
         return task.owner;
       case 'dependency':
