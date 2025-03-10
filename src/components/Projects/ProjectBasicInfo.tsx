@@ -43,10 +43,10 @@ export function ProjectBasicInfo({ form }: ProjectBasicInfoProps) {
 
         <FormField
           control={form.control}
-          name="due_date"
+          name="start_date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data de Entrega</FormLabel>
+              <FormLabel>Data de Início</FormLabel>
               <FormControl>
                 <Input type="date" {...field} />
               </FormControl>

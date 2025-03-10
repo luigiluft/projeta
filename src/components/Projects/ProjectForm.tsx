@@ -59,7 +59,7 @@ export function ProjectForm({
     name: initialValues?.name || "",
     description: initialValues?.description || "",
     client_name: initialValues?.client_name || "",
-    due_date: initialValues?.due_date || "",
+    start_date: initialValues?.start_date || "",
   };
 
   // Adicionar valores padrão para cada atributo
@@ -133,7 +133,7 @@ export function ProjectForm({
       type: 'default', // Valor padrão para o campo type
       description: values.description,
       client_name: values.client_name,
-      due_date: values.due_date,
+      start_date: values.start_date,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       total_hours: totalHours,

@@ -9,7 +9,7 @@ export const createProjectFormSchema = (attributes: Attribute[]) => {
     }),
     description: z.string().optional(),
     client_name: z.string().optional(),
-    due_date: z.string().optional(),
+    start_date: z.string().optional(),
     ...Object.fromEntries(
       attributes.map((attr) => [
         attr.id,

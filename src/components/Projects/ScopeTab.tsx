@@ -29,6 +29,8 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
   useEffect(() => {
     if (!tasks.length) return;
 
+    console.log("Calculando horas com atributos:", attributeValues);
+    
     const updatedTasks = tasks.map(task => {
       const newTask = { ...task };
       
@@ -37,15 +39,29 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
         try {
           // Substituir atributos com valores na fórmula
           let formula = task.hours_formula;
+          
+          // Log para verificar a fórmula original
+          console.log(`Fórmula original para tarefa ${task.task_name}:`, formula);
+          
+          // Substituir os atributos na fórmula
           Object.entries(attributeValues).forEach(([key, value]) => {
+            // Use regex para garantir que substituímos apenas ocorrências isoladas da chave
             const regex = new RegExp(`\\b${key}\\b`, 'g');
             formula = formula.replace(regex, value.toString());
           });
           
+          // Log para verificar a fórmula após substituição
+          console.log(`Fórmula após substituição:`, formula);
+          
           // Calcular o resultado da fórmula
           const calculatedHours = eval(formula);
+          console.log(`Resultado do cálculo: ${calculatedHours}`);
+          
           if (!isNaN(calculatedHours)) {
             newTask.calculated_hours = calculatedHours;
+          } else {
+            console.error('Resultado não é um número:', calculatedHours);
+            newTask.calculated_hours = 0;
           }
         } catch (error) {
           console.error('Erro ao calcular fórmula:', task.hours_formula, error);
