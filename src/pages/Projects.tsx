@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useProjects } from "@/hooks/useProjects";
 import { Task, Column, View } from "@/types/project";
@@ -7,7 +8,7 @@ import { toast } from "sonner";
 import { ProjectsTable } from "@/components/Projects/ProjectsTable";
 import { DeleteProjectDialog } from "@/components/Projects/DeleteProjectDialog";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
-import { Filter, Download, Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -144,10 +145,6 @@ export default function Projects() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Projetos</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filtrar
-          </Button>
           <Button variant="outline" size="sm" onClick={handleExportCSV} className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Exportar CSV
@@ -169,6 +166,9 @@ export default function Projects() {
             onImportSpreadsheet={() => setImportDialogOpen(true)}
             data={projects}
             exportFilename="projetos"
+            showExportButton={false}
+            showAddButton={false}
+            newButtonText="Adicionar Projeto"
           />
         </div>
       </div>

@@ -25,6 +25,8 @@ interface ActionButtonsProps {
   exportFilename?: string;
   onNewClick?: () => void;
   isLoading?: boolean;
+  showExportButton?: boolean;
+  showAddButton?: boolean;
 }
 
 export function ActionButtons({
@@ -39,6 +41,8 @@ export function ActionButtons({
   exportFilename = "export",
   onNewClick,
   isLoading = false,
+  showExportButton = true,
+  showAddButton = true,
 }: ActionButtonsProps) {
   const navigate = useNavigate();
 
@@ -93,28 +97,32 @@ export function ActionButtons({
         onLoadView={onLoadView}
         savedViews={savedViews}
       />
-      <Button variant="outline" size="sm" onClick={handleExport} disabled={data.length === 0} className="flex items-center gap-2">
-        <Download className="h-4 w-4" />
-        Exportar CSV
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            {newButtonText}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-800 shadow-md border border-gray-200 dark:border-gray-700 z-50">
-          <DropdownMenuItem onClick={handleButtonClick} className="cursor-pointer">
-            <Plus className="mr-2 h-4 w-4" />
-            {getActionText(newButtonText)}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onImportSpreadsheet} className="cursor-pointer">
-            <FilePlus className="mr-2 h-4 w-4" />
-            Importar Planilha
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {showExportButton && (
+        <Button variant="outline" size="sm" onClick={handleExport} disabled={data.length === 0} className="flex items-center gap-2">
+          <Download className="h-4 w-4" />
+          Exportar CSV
+        </Button>
+      )}
+      {showAddButton && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              {newButtonText}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-slate-800 shadow-md border border-gray-200 dark:border-gray-700 z-50">
+            <DropdownMenuItem onClick={handleButtonClick} className="cursor-pointer">
+              <Plus className="mr-2 h-4 w-4" />
+              {getActionText(newButtonText)}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onImportSpreadsheet} className="cursor-pointer">
+              <FilePlus className="mr-2 h-4 w-4" />
+              Importar Planilha
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }
