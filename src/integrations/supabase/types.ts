@@ -430,6 +430,10 @@ export type Database = {
         }
         Returns: string
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_distinct_approved_roles: {
         Args: Record<PropertyKey, never>
         Returns: {
