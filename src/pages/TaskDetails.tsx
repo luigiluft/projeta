@@ -1,3 +1,4 @@
+
 import { useNavigate, useParams } from "react-router-dom";
 import { Task } from "@/types/project";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -128,11 +129,15 @@ export default function TaskDetails() {
         ...taskData 
       } = values;
 
+      // Ensure we preserve the order field if it exists
+      const order = values.order;
+
       const taskDataToUpdate = {
         ...taskData,
         hours_type: values.hours_type || 'fixed',
         hours_formula: values.hours_type === 'formula' ? values.hours_formula : null,
-        fixed_hours: values.hours_type === 'fixed' ? values.fixed_hours : null
+        fixed_hours: values.hours_type === 'fixed' ? values.fixed_hours : null,
+        order: order // Explicitly include the order field
       };
 
       console.log('Final data being sent to Supabase:', taskDataToUpdate);
