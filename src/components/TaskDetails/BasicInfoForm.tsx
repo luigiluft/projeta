@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,9 +79,9 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
 
       console.log('Fórmula após substituição de atributos:', evaluableFormula);
 
-      // Implementar funções personalizadas
-      // IF(condition, trueValue, falseValue)
-      evaluableFormula = evaluableFormula.replace(/IF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/gi, 
+      // Modificar para usar ; como separador de parâmetros nas funções
+      // IF(condition; trueValue; falseValue)
+      evaluableFormula = evaluableFormula.replace(/IF\s*\(\s*([^;]+);\s*([^;]+);\s*([^)]+)\s*\)/gi, 
         (match, condition, trueVal, falseVal) => {
           return `(${condition} ? ${trueVal} : ${falseVal})`;
         }
@@ -100,33 +101,33 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
         }
       );
 
-      // ROUND(value, decimals)
-      evaluableFormula = evaluableFormula.replace(/ROUND\s*\(\s*([^,]+),\s*([^)]+)\s*\)/gi, 
+      // ROUND(value; decimals)
+      evaluableFormula = evaluableFormula.replace(/ROUND\s*\(\s*([^;]+);\s*([^)]+)\s*\)/gi, 
         (match, value, decimals) => {
           return `(Math.round(${value} * Math.pow(10, ${decimals})) / Math.pow(10, ${decimals}))`;
         }
       );
 
-      // SUM(value1, value2, ...)
+      // SUM(value1; value2; ...)
       evaluableFormula = evaluableFormula.replace(/SUM\s*\(\s*([^)]+)\s*\)/gi, 
         (match, values) => {
-          const valueArray = values.split(',').map(v => v.trim());
+          const valueArray = values.split(';').map(v => v.trim());
           return `(${valueArray.join(' + ')})`;
         }
       );
 
-      // MAX(value1, value2, ...)
+      // MAX(value1; value2; ...)
       evaluableFormula = evaluableFormula.replace(/MAX\s*\(\s*([^)]+)\s*\)/gi, 
         (match, values) => {
-          const valueArray = values.split(',').map(v => v.trim());
+          const valueArray = values.split(';').map(v => v.trim());
           return `Math.max(${valueArray.join(', ')})`;
         }
       );
 
-      // MIN(value1, value2, ...)
+      // MIN(value1; value2; ...)
       evaluableFormula = evaluableFormula.replace(/MIN\s*\(\s*([^)]+)\s*\)/gi, 
         (match, values) => {
-          const valueArray = values.split(',').map(v => v.trim());
+          const valueArray = values.split(';').map(v => v.trim());
           return `Math.min(${valueArray.join(', ')})`;
         }
       );
@@ -211,7 +212,7 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     
     switch (funcName) {
       case "IF":
-        template = "IF(condition, valueIfTrue, valueIfFalse)";
+        template = "IF(condition; valueIfTrue; valueIfFalse)";
         break;
       case "ROUNDUP":
         template = "ROUNDUP(value)";
@@ -220,16 +221,16 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
         template = "ROUNDDOWN(value)";
         break;
       case "ROUND":
-        template = "ROUND(value, decimals)";
+        template = "ROUND(value; decimals)";
         break;
       case "SUM":
-        template = "SUM(value1, value2, ...)";
+        template = "SUM(value1; value2; ...)";
         break;
       case "MAX":
-        template = "MAX(value1, value2, ...)";
+        template = "MAX(value1; value2; ...)";
         break;
       case "MIN":
-        template = "MIN(value1, value2, ...)";
+        template = "MIN(value1; value2; ...)";
         break;
       default:
         template = funcName + "()";
@@ -244,6 +245,7 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
       currentFormula.substring(selectionEnd);
     
     form.setValue("hours_formula", newFormula);
+    handleFormulaChange(newFormula);
     
     // Definir a nova posição do cursor após a função inserida
     setTimeout(() => {
@@ -394,12 +396,12 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
               ref={textareaRef}
               value={form.watch("hours_formula") || ""}
               onChange={(e) => handleFormulaChange(e.target.value)}
-              placeholder="Ex: IF(SKU_COUNT > 1000, SKU_COUNT * 0.01, SKU_COUNT * 0.02)"
+              placeholder="Ex: IF(SKU_COUNT>1000; SKU_COUNT*0.01; SKU_COUNT*0.02)"
               className="font-mono text-sm"
               rows={4}
             />
             <div className="text-sm mt-2">
-              <p className="text-gray-500 mb-2">Funções disponíveis: IF, ROUNDUP, ROUNDDOWN, ROUND, SUM, MAX, MIN</p>
+              <p className="text-gray-500 mb-2">Funções disponíveis: IF, ROUNDUP, ROUNDDOWN, ROUND, SUM, MAX, MIN (use ; como separador)</p>
               
               {previewHours !== null && (
                 <div className="flex items-center mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
