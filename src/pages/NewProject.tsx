@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,7 +130,6 @@ export default function NewProject() {
       setIsLoading(true);
       console.log("Projeto enviado para criação:", project);
       
-      // Criando o projeto sem qualquer referência ao usuário para evitar recursão
       const projectData = {
         name: project.name,
         project_name: project.name,
@@ -143,21 +141,17 @@ export default function NewProject() {
         total_cost: project.total_cost || 0,
         base_cost: project.base_cost || 0,
         profit_margin: project.profit_margin || 0,
-        status: "draft" as const,
-        currency: "BRL" as const,
+        status: "draft",
+        currency: "BRL",
         type: "default",
         metadata: { 
           attribute_values: project.attribute_values || {},
-          // Armazenamos as informações do usuário criador nos metadados
-          // sem criar uma referência direta que cause acesso à tabela profiles
-          created_by_email: user?.email || null
+          created_by_email: user?.email || "anonymous"
         }
       };
       
       console.log("Dados do projeto formatados para inserção:", projectData);
       
-      // Inserir o projeto usando a tabela projects diretamente, sem políticas RLS
-      // Utilizamos o método `.from().insert()` para evitar qualquer interação com RLS
       const { data: projectResponse, error: projectError } = await supabase
         .from('projects')
         .insert(projectData)
@@ -166,12 +160,12 @@ export default function NewProject() {
 
       if (projectError) {
         console.error("Erro ao inserir projeto:", projectError);
-        throw projectError;
+        toast.error(`Erro ao criar projeto: ${projectError.message}`);
+        return;
       }
 
       console.log("Projeto criado com sucesso:", projectResponse);
       
-      // Verificar e preparar as tarefas do projeto
       if (project.tasks && project.tasks.length > 0) {
         console.log("Tarefas a serem inseridas:", project.tasks);
         
@@ -186,7 +180,6 @@ export default function NewProject() {
         
         console.log("Dados formatados das tarefas do projeto:", projectTasksData);
         
-        // Inserir as tarefas associadas ao projeto
         const { data: tasksData, error: tasksError } = await supabase
           .from('project_tasks')
           .insert(projectTasksData)
@@ -195,10 +188,9 @@ export default function NewProject() {
         if (tasksError) {
           console.error("Erro ao inserir tarefas do projeto:", tasksError);
           toast.error("Erro ao associar tarefas ao projeto");
-          throw tasksError;
+        } else {
+          console.log("Tarefas do projeto inseridas com sucesso:", tasksData);
         }
-        
-        console.log("Tarefas do projeto inseridas com sucesso:", tasksData);
       } else {
         console.log("Nenhuma tarefa para inserir neste projeto");
       }
