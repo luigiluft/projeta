@@ -145,8 +145,7 @@ export default function NewProject() {
         currency: "BRL" as const, 
         type: "default",
         metadata: { 
-          attribute_values: project.attribute_values || {},
-          created_by_email: user?.email || "anonymous"
+          attribute_values: project.attribute_values || {}
         }
       };
       
@@ -175,7 +174,8 @@ export default function NewProject() {
           calculated_hours: task.calculated_hours || task.fixed_hours || 0,
           status: 'pending',
           is_active: true,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          owner_id: user?.id
         }));
         
         console.log("Dados formatados das tarefas do projeto:", projectTasksData);

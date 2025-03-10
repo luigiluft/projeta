@@ -12,6 +12,7 @@ import { ptBR } from "date-fns/locale";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/components/AuthProvider";
 
 interface ProjectTasksTableProps {
   tasks?: Task[];
@@ -22,20 +23,39 @@ interface ProjectTasksTableProps {
 export function ProjectTasksTable({ tasks = [], projectId, epic }: ProjectTasksTableProps) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const handleSubmit = async (values: any) => {
     try {
-      const { error } = await supabase
+      // Primeiro, criar a tarefa na tabela tasks
+      const { data: taskData, error: taskError } = await supabase
         .from('tasks')
         .insert([{
           ...values,
           epic,
-          project_id: projectId,
           is_active: true,
           status: 'pending',
-        }]);
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (taskError) throw taskError;
+
+      if (taskData) {
+        // Depois, relacionar a tarefa ao projeto na tabela project_tasks
+        const { error: projectTaskError } = await supabase
+          .from('project_tasks')
+          .insert([{
+            project_id: projectId,
+            task_id: taskData.id,
+            status: 'pending',
+            is_active: true,
+            calculated_hours: values.fixed_hours || 0,
+            owner_id: user?.id // Adicionando o owner_id na project_tasks
+          }]);
+
+        if (projectTaskError) throw projectTaskError;
+      }
 
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
       setOpen(false);

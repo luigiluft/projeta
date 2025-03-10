@@ -157,6 +157,7 @@ export type Database = {
           end_date: string | null
           id: string
           is_active: boolean | null
+          owner_id: string | null
           project_id: string
           start_date: string | null
           status: string | null
@@ -169,6 +170,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_active?: boolean | null
+          owner_id?: string | null
           project_id: string
           start_date?: string | null
           status?: string | null
@@ -181,6 +183,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_active?: boolean | null
+          owner_id?: string | null
           project_id?: string
           start_date?: string | null
           status?: string | null
