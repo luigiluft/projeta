@@ -1,3 +1,4 @@
+
 import { TaskList } from "@/components/TaskManagement/TaskList";
 import { Column, Task } from "@/types/project";
 import { useEffect, useState } from "react";
@@ -159,6 +160,9 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
       currency: 'BRL',
     });
   };
+
+  // Aqui está a correção: chamamos a função e armazenamos o resultado em uma variável
+  const costs = calculateCosts();
 
   return (
     <div className="space-y-4 mt-4">
