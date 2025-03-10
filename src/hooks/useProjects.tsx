@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Project, Task, View } from "@/types/project";
 import { toast } from "sonner";
@@ -42,40 +43,90 @@ export const useProjects = () => {
         const projectsWithTasks = await Promise.all(
           projectsData.map(async (project) => {
             try {
-              // Lidar com múltiplos epics
-              const epicList = project.epic ? project.epic.split(', ') : [];
-              
+              // Buscar tarefas relacionadas ao projeto da nova tabela project_tasks
+              const { data: projectTasksData, error: projectTasksError } = await supabase
+                .from('project_tasks')
+                .select(`
+                  id,
+                  calculated_hours,
+                  is_active,
+                  status,
+                  start_date,
+                  end_date,
+                  tasks:task_id(*)
+                `)
+                .eq('project_id', project.id);
+
+              if (projectTasksError) {
+                console.error(`Erro ao carregar tarefas do projeto ${project.id}:`, projectTasksError);
+                return {
+                  ...project,
+                  tasks: [],
+                  favorite: project.favorite || false,
+                  priority: project.priority || 0,
+                  tags: project.tags || [],
+                  archived: project.archived || false,
+                  deleted: project.deleted || false,
+                  version: project.version || 1,
+                  metadata: project.metadata || {},
+                  settings: project.settings || {},
+                  attribute_values: {}
+                } as Project;
+              }
+
+              // Extrair e formatar as tarefas do projeto
               let allTasks: Task[] = [];
               
-              // Buscar tarefas para cada epic
-              for (const epic of epicList) {
-                try {
-                  const { data: tasksData, error: tasksError } = await supabase
-                    .from('tasks')
-                    .select('*')
-                    .eq('epic', epic);
+              if (projectTasksData && projectTasksData.length > 0) {
+                allTasks = projectTasksData.map((ptask, index) => {
+                  const task = ptask.tasks as any;
+                  return {
+                    ...task,
+                    order_number: index + 1,
+                    is_active: ptask.is_active,
+                    phase: task.phase || '',
+                    epic: task.epic || '',
+                    story: task.story || '',
+                    owner: task.owner || '',
+                    calculated_hours: ptask.calculated_hours, // Usar o valor calculado armazenado na tabela project_tasks
+                    status: ptask.status as "pending" | "in_progress" | "completed",
+                    project_task_id: ptask.id // Referência ao id da tabela de relacionamento
+                  } as Task;
+                });
+              } else {
+                // Se não houver tarefas associadas, verificar se há epics associados 
+                // e buscar tarefas baseadas nos epics (compatibilidade com projetos antigos)
+                const epicList = project.epic ? project.epic.split(', ') : [];
+                
+                for (const epic of epicList) {
+                  try {
+                    const { data: tasksData, error: tasksError } = await supabase
+                      .from('tasks')
+                      .select('*')
+                      .eq('epic', epic);
 
-                  if (tasksError) {
-                    console.error(`Erro ao carregar tarefas do epic ${epic}:`, tasksError);
-                    continue; // Pula para o próximo epic em caso de erro
-                  }
+                    if (tasksError) {
+                      console.error(`Erro ao carregar tarefas do epic ${epic}:`, tasksError);
+                      continue;
+                    }
 
-                  if (tasksData && tasksData.length > 0) {
-                    const tasks = tasksData.map((task, index) => ({
-                      ...task,
-                      order_number: allTasks.length + index + 1, // Ordem contínua para todos os epics
-                      is_active: task.is_active || true,
-                      phase: task.phase || '',
-                      epic: task.epic || '',
-                      story: task.story || '',
-                      owner: task.owner || '',
-                      status: (task.status as "pending" | "in_progress" | "completed") || "pending",
-                    })) as Task[];
-                    
-                    allTasks = [...allTasks, ...tasks];
+                    if (tasksData && tasksData.length > 0) {
+                      const tasks = tasksData.map((task, index) => ({
+                        ...task,
+                        order_number: allTasks.length + index + 1,
+                        is_active: task.is_active || true,
+                        phase: task.phase || '',
+                        epic: task.epic || '',
+                        story: task.story || '',
+                        owner: task.owner || '',
+                        status: (task.status as "pending" | "in_progress" | "completed") || "pending",
+                      })) as Task[];
+                      
+                      allTasks = [...allTasks, ...tasks];
+                    }
+                  } catch (e) {
+                    console.error(`Erro ao processar tarefas para epic ${epic}:`, e);
                   }
-                } catch (e) {
-                  console.error(`Erro ao processar tarefas para epic ${epic}:`, e);
                 }
               }
 
@@ -184,7 +235,8 @@ export const useProjects = () => {
     const costs = calculateProjectCosts(selectedTasks, attributeValues);
 
     try {
-      const { error: projectError } = await supabase
+      // 1. Criar o projeto
+      const { data: projectData, error: projectError } = await supabase
         .from('projects')
         .insert([{
           name: epicNames,
@@ -208,9 +260,58 @@ export const useProjects = () => {
           settings: {},
           project_name: epicNames,
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        }]);
+        }])
+        .select();
 
       if (projectError) throw projectError;
+      
+      // 2. Adicionar tarefas na tabela de relacionamento
+      if (projectData && projectData.length > 0) {
+        const projectId = projectData[0].id;
+        
+        // Preparar os dados para a tabela project_tasks
+        const projectTasks = selectedTasks.map(task => {
+          // Calcular as horas com base na fórmula ou usar horas fixas
+          let calculatedHours = 0;
+          
+          if (task.hours_formula) {
+            try {
+              let formula = task.hours_formula;
+              // Substituir os atributos pelos seus valores na fórmula
+              Object.entries(attributeValues).forEach(([key, value]) => {
+                const regex = new RegExp(`\\b${key}\\b`, 'g');
+                formula = formula.replace(regex, value.toString());
+              });
+              
+              const result = eval(formula);
+              calculatedHours = isNaN(result) ? 0 : result;
+            } catch (e) {
+              console.error(`Erro ao calcular fórmula para tarefa ${task.id}:`, e);
+              calculatedHours = 0;
+            }
+          } else if (task.fixed_hours) {
+            calculatedHours = task.fixed_hours;
+          }
+          
+          return {
+            project_id: projectId,
+            task_id: task.id,
+            calculated_hours: calculatedHours,
+            is_active: true,
+            status: 'pending'
+          };
+        });
+        
+        // Inserir na tabela project_tasks
+        const { error: tasksError } = await supabase
+          .from('project_tasks')
+          .insert(projectTasks);
+          
+        if (tasksError) {
+          console.error("Erro ao adicionar tarefas ao projeto:", tasksError);
+          toast.error("Erro ao registrar tarefas do projeto");
+        }
+      }
 
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success("Projeto criado com sucesso!");

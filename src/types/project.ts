@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   name: string;
@@ -24,7 +23,7 @@ export interface Project {
   attributes: {
     [key: string]: string | number;
   };
-  attribute_values?: Record<string, number>; // Novo campo para valores dos atributos
+  attribute_values?: Record<string, number>; // Valores dos atributos
   client_id?: string;
   workspace_id?: string;
   team_id?: string;
@@ -64,8 +63,9 @@ export interface Task {
   estimated_completion_date?: string;
   depends_on?: string;
   
-  // Campos adicionados para compatibilidade com os dados do banco
+  // Campos adicionados para compatibilidade e novos recursos
   order?: number; // Para compatibilidade com o campo 'order' do banco
+  project_task_id?: string; // ID da relação na tabela project_tasks
 }
 
 export interface Column {

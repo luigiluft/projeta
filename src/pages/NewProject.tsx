@@ -140,7 +140,7 @@ export default function NewProject() {
         attribute_values: project.attribute_values || {}
       };
       
-      // Inserir o projeto - correção do formato dos dados
+      // 1. Inserir o projeto principal
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
         .insert({
@@ -161,13 +161,33 @@ export default function NewProject() {
           delay_days: 0,
           attributes: project.attributes,
           metadata: metadata,
-          type: 'default' // Adicionar o tipo exigido pelo schema
+          type: 'default'
         })
         .select()
         .single();
 
       if (projectError) {
         throw projectError;
+      }
+      
+      // 2. Inserir as tarefas na tabela project_tasks
+      if (project.tasks && project.tasks.length > 0) {
+        const projectTasksData = project.tasks.map(task => ({
+          project_id: projectData.id,
+          task_id: task.id,
+          calculated_hours: task.calculated_hours || 0,
+          status: 'pending',
+          is_active: true
+        }));
+        
+        const { error: tasksError } = await supabase
+          .from('project_tasks')
+          .insert(projectTasksData);
+          
+        if (tasksError) {
+          console.error("Erro ao inserir tarefas do projeto:", tasksError);
+          toast.error("Erro ao associar tarefas ao projeto");
+        }
       }
 
       toast.success("Projeto criado com sucesso!");

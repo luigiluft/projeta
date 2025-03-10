@@ -150,6 +150,60 @@ export type Database = {
         }
         Relationships: []
       }
+      project_tasks: {
+        Row: {
+          calculated_hours: number | null
+          created_at: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          project_id: string
+          start_date: string | null
+          status: string | null
+          task_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          calculated_hours?: number | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          project_id: string
+          start_date?: string | null
+          status?: string | null
+          task_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          calculated_hours?: number | null
+          created_at?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          project_id?: string
+          start_date?: string | null
+          status?: string | null
+          task_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           archived: boolean | null
