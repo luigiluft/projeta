@@ -31,15 +31,34 @@ export default function NewProject() {
         return;
       }
 
-      // Transformar os dados para o formato de Attribute
-      const formattedAttributes: Attribute[] = data.map(attr => ({
-        id: attr.code,
-        name: attr.name,
-        unit: (attr.unit || "hours") as "hours" | "quantity" | "percentage",
-        type: (attr.unit === "percentage" ? "number" : "number") as "number" | "list" | "text",
-        defaultValue: attr.default_value
-      }));
+      console.log("Atributos carregados:", data);
 
+      // Transformar os dados para o formato de Attribute
+      const formattedAttributes: Attribute[] = data.map(attr => {
+        // Garantir que unit seja um dos valores permitidos pelo tipo Attribute
+        let unit: "hours" | "quantity" | "percentage" = "hours";
+        if (attr.unit === "quantity" || attr.unit === "percentage") {
+          unit = attr.unit;
+        }
+
+        // Determinar o tipo com base na unidade
+        let type: "number" | "list" | "text" = "number";
+        if (attr.unit === "list") {
+          type = "list";
+        } else if (attr.unit !== "hours" && attr.unit !== "quantity" && attr.unit !== "percentage") {
+          type = "text";
+        }
+
+        return {
+          id: attr.code,
+          name: attr.name,
+          unit,
+          type,
+          defaultValue: attr.default_value
+        };
+      });
+
+      console.log("Atributos formatados:", formattedAttributes);
       setAttributes(formattedAttributes);
     } catch (e) {
       console.error("Erro não tratado ao carregar atributos:", e);

@@ -77,6 +77,8 @@ export function ProjectForm({
     }
   });
 
+  console.log("Valores iniciais do formulário:", defaultValues);
+
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
