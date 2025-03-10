@@ -134,41 +134,37 @@ export default function NewProject() {
   const handleSubmit = async (project: Project) => {
     try {
       setIsLoading(true);
+      console.log("Projeto enviado para criação:", project);
       
-      // Store attribute values in the metadata field
-      const metadata = {
-        attribute_values: project.attribute_values || {}
-      };
-
-      // Remover referências a propriedades que podem estar causando o problema de recursão
+      // Simplificar ao máximo o objeto de projeto para evitar problemas
       const projectData = {
-        id: project.id,
         name: project.name,
         project_name: project.name,
-        description: project.description,
-        client_name: project.client_name,
-        start_date: project.start_date,
-        epic: project.epic,
-        total_hours: project.total_hours,
-        total_cost: project.total_cost,
-        base_cost: project.base_cost,
-        profit_margin: project.profit_margin,
-        status: project.status,
-        currency: project.currency,
-        progress: 0,
-        delay_days: 0,
-        attributes: project.attributes,
-        metadata: metadata,
-        type: 'default'
+        description: project.description || "",
+        client_name: project.client_name || "",
+        start_date: project.start_date || null,
+        epic: project.epic || "",
+        total_hours: project.total_hours || 0,
+        total_cost: project.total_cost || 0,
+        base_cost: project.base_cost || 0,
+        profit_margin: project.profit_margin || 0,
+        status: "draft" as const,
+        currency: "BRL" as const,
+        type: "default",
+        // Armazenar valores de atributos no metadata
+        metadata: { attribute_values: project.attribute_values || {} }
       };
       
-      // 1. Inserir o projeto principal sem usar .single() para evitar erros
+      console.log("Dados do projeto formatados para inserção:", projectData);
+      
+      // Inserir o projeto
       const { data, error: projectError } = await supabase
         .from('projects')
         .insert(projectData)
         .select();
 
       if (projectError) {
+        console.error("Erro ao inserir projeto:", projectError);
         throw projectError;
       }
 
@@ -177,8 +173,9 @@ export default function NewProject() {
       }
       
       const createdProject = data[0];
+      console.log("Projeto criado com sucesso:", createdProject);
       
-      // 2. Inserir as tarefas na tabela project_tasks
+      // Inserir tarefas do projeto
       if (project.tasks && project.tasks.length > 0) {
         const projectTasksData = project.tasks.map(task => ({
           project_id: createdProject.id,
@@ -187,6 +184,8 @@ export default function NewProject() {
           status: 'pending',
           is_active: true
         }));
+        
+        console.log("Inserindo tarefas do projeto:", projectTasksData);
         
         const { error: tasksError } = await supabase
           .from('project_tasks')
