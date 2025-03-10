@@ -47,6 +47,12 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
       console.log('Fórmula original:', formula);
       console.log('Atributos disponíveis:', projectAttributes);
 
+      // Verificar se a fórmula está vazia
+      if (!formula || formula.trim() === '') {
+        console.log('Fórmula vazia, retornando null');
+        return null;
+      }
+
       // Primeiro substituir os atributos pelos seus valores
       let evaluableFormula = formula;
       
@@ -96,6 +102,9 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
   };
 
   const handleFormulaChange = (formula: string) => {
+    console.log('Formula changed to:', formula);
+    form.setValue("hours_formula", formula);
+    
     if (formula && projectAttributes) {
       const result = calculateHours(formula);
       setPreviewHours(result);
@@ -123,9 +132,13 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     console.log('Submitting form with data:', data);
     
     // Garantir que a fórmula de horas seja enviada corretamente
+    const hoursFormula = form.getValues("hours_formula");
+    console.log('Hours formula at submission:', hoursFormula);
+    
     const formValues = {
       ...data,
-      hours_formula: form.getValues("hours_formula") // Obter o valor exato do campo
+      hours_formula: hoursFormula, // Obter o valor exato do campo
+      hours_type: hoursFormula ? 'formula' : 'fixed' // Definir o tipo com base na presença de fórmula
     };
     
     console.log('Processed form values:', formValues);
@@ -187,9 +200,9 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
           <Textarea 
             id="hours_formula" 
             ref={textareaRef}
-            {...form.register("hours_formula")}
-            placeholder="Ex: ORDERS_PER_MONTH * 0.5 + SKU_COUNT * 0.1"
+            value={form.watch("hours_formula") || ""}
             onChange={(e) => handleFormulaChange(e.target.value)}
+            placeholder="Ex: ORDERS_PER_MONTH * 0.5 + SKU_COUNT * 0.1"
           />
           {previewHours !== null && (
             <p className="text-sm text-blue-600">

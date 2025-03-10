@@ -137,6 +137,10 @@ export default function TaskDetails() {
 
       console.log('Filtered task data for update:', taskData);
 
+      // Verificando se hours_formula está sendo enviado corretamente
+      console.log('Hours formula being sent:', values.hours_formula);
+      console.log('Hours formula type:', typeof values.hours_formula);
+
       // Garantir que o hours_formula está sendo enviado exatamente como está no formulário
       const taskDataToUpdate = {
         ...taskData,
@@ -196,7 +200,15 @@ export default function TaskDetails() {
       <div className="space-y-6">
         <BasicInfoForm 
           task={task} 
-          onSubmit={(values) => updateTaskMutation.mutate(values)}
+          onSubmit={(values) => {
+            console.log('Form submitted with values:', values);
+            // Garantir que hours_formula está sendo passado corretamente
+            const updatedValues = {
+              ...values,
+              hours_type: values.hours_formula ? 'formula' : 'fixed'
+            };
+            updateTaskMutation.mutate(updatedValues);
+          }}
           projectAttributes={projectAttributes || {}}
         />
       </div>
