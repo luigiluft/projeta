@@ -98,8 +98,17 @@ export default function TaskDetails() {
       }
 
       const formattedAttributes = data?.reduce((acc: Record<string, any>, attr) => {
-        const defaultValue = !isNaN(Number(attr.default_value)) ? Number(attr.default_value) : attr.default_value;
-        acc[attr.code || attr.name] = defaultValue;
+        // Certifique-se de que o valor é um número se for possível converter
+        let defaultValue: string | number = attr.default_value || '';
+        
+        // Se o valor tiver uma vírgula, substitua por ponto para converter corretamente para número
+        if (typeof defaultValue === 'string' && defaultValue.includes(',')) {
+          defaultValue = defaultValue.replace(',', '.');
+        }
+        
+        // Tente converter para número se possível
+        const numValue = Number(defaultValue);
+        acc[attr.code || attr.name] = !isNaN(numValue) ? numValue : defaultValue;
         return acc;
       }, {});
 

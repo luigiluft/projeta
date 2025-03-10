@@ -44,24 +44,19 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     }
 
     try {
-      // Criar um mapa de atributos que inclui também versões sem espaço dos nomes
-      const attributesMap = new Map();
-      Object.entries(projectAttributes).forEach(([key, value]) => {
-        attributesMap.set(key, value);
-        // Adicionar versão sem espaços do nome do atributo
-        const keyNoSpaces = key.replace(/\s+/g, '');
-        attributesMap.set(keyNoSpaces, value);
-      });
+      console.log('Fórmula original:', formula);
+      console.log('Atributos disponíveis:', projectAttributes);
 
       // Primeiro substituir os atributos pelos seus valores
       let evaluableFormula = formula;
+      
+      // Substituir os atributos na fórmula
       Object.entries(projectAttributes).forEach(([key, value]) => {
+        // Usamos uma expressão regular que corresponde à palavra exata
         const regex = new RegExp(`\\b${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'g');
-        evaluableFormula = evaluableFormula.replace(regex, value.toString());
+        evaluableFormula = evaluableFormula.replace(regex, String(value));
       });
 
-      console.log('Fórmula original:', formula);
-      console.log('Atributos disponíveis:', projectAttributes);
       console.log('Fórmula para avaliação:', evaluableFormula);
 
       // Verificar se ainda existem palavras não substituídas (exceto operadores matemáticos)
@@ -71,8 +66,19 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
         return null;
       }
 
-      // Avaliar a fórmula e arredondar para 2 casas decimais
-      const result = Function(`return ${evaluableFormula}`)();
+      // Em vez de usar Function, vamos usar uma maneira mais segura de avaliar a expressão
+      const safeEval = (expression: string): number => {
+        // Remover qualquer coisa que não seja números, operadores matemáticos básicos e parênteses
+        const sanitizedExpr = expression.replace(/[^0-9+\-*/().]/g, '');
+        // Verificar se a expressão contém apenas caracteres permitidos
+        if (sanitizedExpr !== expression) {
+          throw new Error("Expressão contém caracteres não permitidos");
+        }
+        // Avaliar a expressão de maneira mais segura
+        return new Function(`return ${sanitizedExpr}`)() as number;
+      };
+
+      const result = safeEval(evaluableFormula);
       
       if (typeof result !== 'number' || isNaN(result)) {
         console.error('Resultado inválido:', result);
