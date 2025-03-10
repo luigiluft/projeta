@@ -1,12 +1,15 @@
+
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Task, Attribute, Project } from "@/types/project";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function NewProject() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [availableEpics, setAvailableEpics] = useState<string[]>([]);
   const [epicTasks, setEpicTasks] = useState<{ [key: string]: Task[] }>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -128,6 +131,9 @@ export default function NewProject() {
       setIsLoading(true);
       console.log("Projeto enviado para criação:", project);
       
+      // Log do usuário atual
+      console.log("Usuário logado:", user);
+      
       const projectData = {
         name: project.name,
         project_name: project.name,
@@ -142,11 +148,14 @@ export default function NewProject() {
         status: "draft" as const,
         currency: "BRL" as const,
         type: "default",
-        metadata: { attribute_values: project.attribute_values || {} }
+        metadata: { attribute_values: project.attribute_values || {} },
+        // Adicionando owner_id se o usuário estiver autenticado
+        owner_id: user?.id || null
       };
       
       console.log("Dados do projeto formatados para inserção:", projectData);
       
+      // Inserir o projeto
       const { data: projectResponse, error: projectError } = await supabase
         .from('projects')
         .insert(projectData)
@@ -160,7 +169,10 @@ export default function NewProject() {
 
       console.log("Projeto criado com sucesso:", projectResponse);
       
+      // Verificar e preparar as tarefas do projeto
       if (project.tasks && project.tasks.length > 0) {
+        console.log("Tarefas a serem inseridas:", project.tasks);
+        
         const projectTasksData = project.tasks.map(task => ({
           project_id: projectResponse.id,
           task_id: task.id,
@@ -170,17 +182,23 @@ export default function NewProject() {
           created_at: new Date().toISOString()
         }));
         
-        console.log("Inserindo tarefas do projeto:", projectTasksData);
+        console.log("Dados formatados das tarefas do projeto:", projectTasksData);
         
-        const { error: tasksError } = await supabase
+        // Inserir as tarefas associadas ao projeto
+        const { data: tasksData, error: tasksError } = await supabase
           .from('project_tasks')
-          .insert(projectTasksData);
+          .insert(projectTasksData)
+          .select();
           
         if (tasksError) {
           console.error("Erro ao inserir tarefas do projeto:", tasksError);
           toast.error("Erro ao associar tarefas ao projeto");
           throw tasksError;
         }
+        
+        console.log("Tarefas do projeto inseridas com sucesso:", tasksData);
+      } else {
+        console.log("Nenhuma tarefa para inserir neste projeto");
       }
 
       toast.success("Projeto criado com sucesso!");
