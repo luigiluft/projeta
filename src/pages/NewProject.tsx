@@ -135,10 +135,15 @@ export default function NewProject() {
     try {
       setIsLoading(true);
       
-      // Inserir o projeto
+      // Store attribute values in the metadata field
+      const metadata = {
+        attribute_values: project.attribute_values || {}
+      };
+      
+      // Inserir o projeto - correção do formato dos dados
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
-        .insert([{
+        .insert({
           id: project.id,
           name: project.name,
           project_name: project.name,
@@ -155,8 +160,9 @@ export default function NewProject() {
           progress: 0,
           delay_days: 0,
           attributes: project.attributes,
-          attribute_values: project.attribute_values
-        }])
+          metadata: metadata,
+          type: 'default' // Adicionar o tipo exigido pelo schema
+        })
         .select()
         .single();
 
