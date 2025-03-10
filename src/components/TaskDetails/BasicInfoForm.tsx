@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -176,23 +175,38 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
   };
 
   const insertAttributeAtCursor = (attributeCode: string) => {
+    if (!textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+    
     const currentFormula = form.getValues("hours_formula") || "";
     
-    // Apenas insere a variável, sem adicionar operadores
-    const newFormula = currentFormula
-      ? `${currentFormula} ${attributeCode}`
-      : attributeCode;
+    // Inserir a variável na posição atual do cursor
+    const newFormula = 
+      currentFormula.substring(0, selectionStart) + 
+      attributeCode + 
+      currentFormula.substring(selectionEnd);
     
     form.setValue("hours_formula", newFormula);
     handleFormulaChange(newFormula);
-
-    // Foca o textarea após inserir a variável
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
+    
+    // Definir a nova posição do cursor após a variável inserida
+    setTimeout(() => {
+      const newCursorPosition = selectionStart + attributeCode.length;
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+    }, 0);
   };
 
   const insertFunctionTemplate = (funcName: string) => {
+    if (!textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+    
     let template = "";
     
     switch (funcName) {
@@ -222,18 +236,21 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     }
     
     const currentFormula = form.getValues("hours_formula") || "";
-    const newFormula = currentFormula
-      ? `${currentFormula} ${template}`
-      : template;
+    
+    // Inserir a função na posição atual do cursor
+    const newFormula = 
+      currentFormula.substring(0, selectionStart) + 
+      template + 
+      currentFormula.substring(selectionEnd);
     
     form.setValue("hours_formula", newFormula);
     
-    // Não calculamos o resultado ainda pois o usuário precisa preencher a função
-    
-    // Foca o textarea após inserir a função
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
+    // Definir a nova posição do cursor após a função inserida
+    setTimeout(() => {
+      const newCursorPosition = selectionStart + template.length;
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+    }, 0);
   };
 
   const handleSubmit = (data: Task) => {
@@ -256,7 +273,6 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
     form.setValue("hours_type", value);
   };
 
-  // Lista de funções disponíveis
   const availableFunctions = [
     { name: "IF", description: "Condição lógica" },
     { name: "ROUNDUP", description: "Arredonda para cima" },
