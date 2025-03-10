@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -142,8 +141,8 @@ export default function NewProject() {
         total_cost: project.total_cost || 0,
         base_cost: project.base_cost || 0,
         profit_margin: project.profit_margin || 0,
-        status: "draft" as const, // Usando 'as const' para definir o tipo literal correto
-        currency: "BRL" as const, // Também ajustamos aqui para consistência
+        status: "draft" as const, 
+        currency: "BRL" as const, 
         type: "default",
         metadata: { 
           attribute_values: project.attribute_values || {},
