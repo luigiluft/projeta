@@ -31,7 +31,7 @@ export function TaskList({
     console.log("TaskList received columns:", columns.map(col => `${col.id} (${col.visible ? 'visible' : 'hidden'})`));
   }, [columns]);
 
-  const truncateText = (text: string, maxLength: number = 20) => {
+  const truncateText = (text: string | undefined | null, maxLength: number = 20) => {
     if (!text) return '-';
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
@@ -39,13 +39,13 @@ export function TaskList({
   const renderCellContent = (task: Task, columnId: string) => {
     switch (columnId) {
       case 'task_name':
-        return task.task_name;
+        return truncateText(task.task_name, 30);
       case 'phase':
-        return task.phase;
+        return truncateText(task.phase, 15);
       case 'epic':
-        return task.epic;
+        return truncateText(task.epic, 15);
       case 'story':
-        return task.story;
+        return truncateText(task.story, 15);
       case 'hours':
         if (showHoursColumn) {
           return (
@@ -68,14 +68,20 @@ export function TaskList({
         return task.hours_formula ? <span title={task.hours_formula}>{truncateText(task.hours_formula, 15)}</span> : '-';
       case 'fixed_hours':
         return task.fixed_hours || '-';
+      case 'hours_type':
+        return truncateText(task.hours_type, 10);
+      case 'order_number':
+        return task.order_number || '-';
+      case 'is_active':
+        return task.is_active ? 'Sim' : 'Não';
       case 'owner':
-        return task.owner;
+        return truncateText(task.owner, 10);
       case 'dependency':
-        return task.depends_on || '-';
+        return truncateText(task.depends_on, 15) || '-';
       case 'created_at':
-        return new Date(task.created_at).toLocaleDateString();
+        return task.created_at ? new Date(task.created_at).toLocaleDateString() : '-';
       case 'status':
-        return task.status;
+        return truncateText(task.status, 10);
       default:
         return '-';
     }
@@ -105,6 +111,7 @@ export function TaskList({
                 className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
                   ['total_hours', 'total_cost', 'progress'].includes(columnId) ? 'text-right' : ''
                 }`}
+                style={{ minWidth: getColumnMinWidth(columnId) }}
               >
                 {columns.find(col => col.id === columnId)?.label || columnId}
               </th>
@@ -130,6 +137,7 @@ export function TaskList({
                   className={`px-6 py-4 whitespace-nowrap text-sm ${
                     ['total_hours', 'total_cost', 'progress'].includes(columnId) ? 'text-right' : ''
                   }`}
+                  style={{ minWidth: getColumnMinWidth(columnId) }}
                 >
                   {renderCellContent(task, columnId)}
                 </td>
@@ -140,4 +148,34 @@ export function TaskList({
       </table>
     </div>
   );
+}
+
+// Função auxiliar para definir larguras mínimas para cada tipo de coluna
+function getColumnMinWidth(columnId: string): string {
+  switch (columnId) {
+    case 'task_name':
+      return '200px';
+    case 'phase':
+    case 'epic':
+    case 'story':
+      return '120px';
+    case 'hours':
+    case 'fixed_hours':
+    case 'hours_formula':
+      return '100px';
+    case 'owner':
+    case 'status':
+    case 'hours_type':
+      return '80px';
+    case 'is_active':
+      return '60px';
+    case 'order_number':
+      return '70px';
+    case 'dependency':
+      return '110px';
+    case 'created_at':
+      return '100px';
+    default:
+      return '100px';
+  }
 }
