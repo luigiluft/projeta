@@ -62,7 +62,7 @@ export default function TaskDetails() {
         task_name: taskData.task_name || '',
         hours_formula: taskData.hours_formula,
         fixed_hours: taskData.fixed_hours,
-        hours_type: taskData.hours_type || 'formula',
+        hours_type: taskData.hours_type || 'fixed',
         owner: taskData.owner || '',
         created_at: taskData.created_at,
         status: (taskData.status === 'pending' || taskData.status === 'in_progress' || taskData.status === 'completed') 
@@ -130,8 +130,9 @@ export default function TaskDetails() {
 
       const taskDataToUpdate = {
         ...taskData,
-        hours_formula: values.hours_formula,
-        hours_type: values.hours_formula ? 'formula' : 'fixed',
+        hours_type: values.hours_type || 'fixed',
+        hours_formula: values.hours_type === 'formula' ? values.hours_formula : null,
+        fixed_hours: values.hours_type === 'fixed' ? values.fixed_hours : null
       };
 
       console.log('Final data being sent to Supabase:', taskDataToUpdate);
@@ -188,12 +189,8 @@ export default function TaskDetails() {
         <BasicInfoForm 
           task={task} 
           onSubmit={(values) => {
-            const finalValues = {
-              ...values,
-              hours_type: values.hours_formula ? 'formula' : 'fixed',
-            };
-            console.log('Submitting task with values:', finalValues);
-            updateTaskMutation.mutate(finalValues);
+            console.log('Submitting task with values:', values);
+            updateTaskMutation.mutate(values);
           }}
           projectAttributes={projectAttributes || {}}
         />

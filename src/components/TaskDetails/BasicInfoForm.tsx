@@ -13,6 +13,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { Variable } from "lucide-react";
 
 interface BasicInfoFormProps {
@@ -24,12 +31,18 @@ interface BasicInfoFormProps {
 export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFormProps) {
   const form = useForm<Task>();
   const [previewHours, setPreviewHours] = useState<number | null>(null);
+  const [hoursType, setHoursType] = useState<string>('fixed');
+  const [fixedHours, setFixedHours] = useState<number | undefined>(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (task) {
       console.log('Resetting form with task:', task);
       form.reset(task);
+      
+      // Inicializar o tipo de horas e os valores correspondentes
+      setHoursType(task.hours_type || 'fixed');
+      setFixedHours(task.fixed_hours);
 
       if (task.hours_formula) {
         handleFormulaChange(task.hours_formula);
@@ -131,18 +144,21 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
   const handleSubmit = (data: Task) => {
     console.log('Submitting form with data:', data);
     
-    // Garantir que a fórmula de horas seja enviada corretamente
-    const hoursFormula = form.getValues("hours_formula");
-    console.log('Hours formula at submission:', hoursFormula);
-    
     const formValues = {
       ...data,
-      hours_formula: hoursFormula, // Obter o valor exato do campo
-      hours_type: hoursFormula ? 'formula' : 'fixed' // Definir o tipo com base na presença de fórmula
+      hours_type: hoursType,
+      hours_formula: hoursType === 'formula' ? form.getValues("hours_formula") : undefined,
+      fixed_hours: hoursType === 'fixed' ? fixedHours : undefined
     };
     
     console.log('Processed form values:', formValues);
     onSubmit(formValues);
+  };
+
+  const handleHoursTypeChange = (value: string) => {
+    console.log('Hours type changed to:', value);
+    setHoursType(value);
+    form.setValue("hours_type", value);
   };
 
   return (
@@ -171,45 +187,75 @@ export function BasicInfoForm({ task, onSubmit, projectAttributes }: BasicInfoFo
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="hours_formula">Fórmula de Horas</Label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Variable className="h-4 w-4 mr-2" />
-                  Inserir Variável
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="end" 
-                className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
-              >
-                {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
-                  <DropdownMenuItem
-                    key={key}
-                    onClick={() => insertAttributeAtCursor(key)}
-                    className="flex justify-between hover:bg-blue-50"
-                  >
-                    <span className="font-medium">{key}</span>
-                    <span className="text-gray-600">{value}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <Textarea 
-            id="hours_formula" 
-            ref={textareaRef}
-            value={form.watch("hours_formula") || ""}
-            onChange={(e) => handleFormulaChange(e.target.value)}
-            placeholder="Ex: ORDERS_PER_MONTH * 0.5 + SKU_COUNT * 0.1"
-          />
-          {previewHours !== null && (
-            <p className="text-sm text-blue-600">
-              Horas calculadas: {previewHours}
-            </p>
-          )}
+          <Label htmlFor="hours_type">Tipo de Horas</Label>
+          <Select 
+            value={hoursType} 
+            onValueChange={handleHoursTypeChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o tipo de horas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fixed">Horas Fixas</SelectItem>
+              <SelectItem value="formula">Fórmula de Horas</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        {hoursType === 'fixed' ? (
+          <div className="space-y-2">
+            <Label htmlFor="fixed_hours">Horas Fixas</Label>
+            <Input 
+              id="fixed_hours" 
+              type="number" 
+              step="0.01"
+              value={fixedHours || 0}
+              onChange={(e) => setFixedHours(parseFloat(e.target.value))}
+              min="0"
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="hours_formula">Fórmula de Horas</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Variable className="h-4 w-4 mr-2" />
+                    Inserir Variável
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
+                >
+                  {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
+                    <DropdownMenuItem
+                      key={key}
+                      onClick={() => insertAttributeAtCursor(key)}
+                      className="flex justify-between hover:bg-blue-50"
+                    >
+                      <span className="font-medium">{key}</span>
+                      <span className="text-gray-600">{value}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <Textarea 
+              id="hours_formula" 
+              ref={textareaRef}
+              value={form.watch("hours_formula") || ""}
+              onChange={(e) => handleFormulaChange(e.target.value)}
+              placeholder="Ex: ORDERS_PER_MONTH * 0.5 + SKU_COUNT * 0.1"
+            />
+            {previewHours !== null && (
+              <p className="text-sm text-blue-600">
+                Horas calculadas: {previewHours}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="owner">Responsável</Label>
