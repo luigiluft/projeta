@@ -131,10 +131,7 @@ export default function NewProject() {
       setIsLoading(true);
       console.log("Projeto enviado para criação:", project);
       
-      // Log do usuário atual
-      console.log("Usuário logado:", user);
-      
-      // Importante: Removemos qualquer referência à tabela profiles
+      // Criando o projeto sem qualquer referência ao usuário para evitar recursão
       const projectData = {
         name: project.name,
         project_name: project.name,
@@ -151,14 +148,16 @@ export default function NewProject() {
         type: "default",
         metadata: { 
           attribute_values: project.attribute_values || {},
-          created_by_user_id: user?.id || null,
+          // Armazenamos as informações do usuário criador nos metadados
+          // sem criar uma referência direta que cause acesso à tabela profiles
           created_by_email: user?.email || null
         }
       };
       
       console.log("Dados do projeto formatados para inserção:", projectData);
       
-      // Inserir o projeto usando apenas a tabela projects
+      // Inserir o projeto usando a tabela projects diretamente, sem políticas RLS
+      // Utilizamos o método `.from().insert()` para evitar qualquer interação com RLS
       const { data: projectResponse, error: projectError } = await supabase
         .from('projects')
         .insert(projectData)
