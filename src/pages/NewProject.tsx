@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,15 +32,12 @@ export default function NewProject() {
 
       console.log("Atributos carregados:", data);
 
-      // Transformar os dados para o formato de Attribute
       const formattedAttributes: Attribute[] = data.map(attr => {
-        // Garantir que unit seja um dos valores permitidos pelo tipo Attribute
         let unit: "hours" | "quantity" | "percentage" = "hours";
         if (attr.unit === "quantity" || attr.unit === "percentage") {
           unit = attr.unit;
         }
 
-        // Determinar o tipo com base na unidade
         let type: "number" | "list" | "text" = "number";
         if (attr.unit === "list") {
           type = "list";
@@ -69,7 +65,6 @@ export default function NewProject() {
     try {
       setIsLoading(true);
       
-      // Buscar epics distintos das tarefas
       const { data, error } = await supabase
         .from('tasks')
         .select('epic')
@@ -84,11 +79,9 @@ export default function NewProject() {
         return;
       }
 
-      // Extrair epics únicos
       const epics = [...new Set(data.map(item => item.epic))];
       setAvailableEpics(epics);
 
-      // Para cada epic, carregar suas tarefas
       const tasksMap: { [key: string]: Task[] } = {};
       for (const epic of epics) {
         const { data: tasksData, error: tasksError } = await supabase
@@ -102,7 +95,6 @@ export default function NewProject() {
         }
 
         if (tasksData && tasksData.length > 0) {
-          // Mapear as propriedades e garantir que o tipo Task seja respeitado
           const formattedTasks: Task[] = tasksData.map((task, index) => ({
             ...task,
             order_number: index + 1,
@@ -136,7 +128,6 @@ export default function NewProject() {
       setIsLoading(true);
       console.log("Projeto enviado para criação:", project);
       
-      // Simplificar ao máximo o objeto de projeto para evitar problemas
       const projectData = {
         name: project.name,
         project_name: project.name,
@@ -151,38 +142,32 @@ export default function NewProject() {
         status: "draft" as const,
         currency: "BRL" as const,
         type: "default",
-        // Armazenar valores de atributos no metadata
         metadata: { attribute_values: project.attribute_values || {} }
       };
       
       console.log("Dados do projeto formatados para inserção:", projectData);
       
-      // Inserir o projeto
-      const { data, error: projectError } = await supabase
+      const { data: projectResponse, error: projectError } = await supabase
         .from('projects')
         .insert(projectData)
-        .select();
+        .select()
+        .single();
 
       if (projectError) {
         console.error("Erro ao inserir projeto:", projectError);
         throw projectError;
       }
 
-      if (!data || data.length === 0) {
-        throw new Error("Nenhum dado retornado após inserir o projeto");
-      }
+      console.log("Projeto criado com sucesso:", projectResponse);
       
-      const createdProject = data[0];
-      console.log("Projeto criado com sucesso:", createdProject);
-      
-      // Inserir tarefas do projeto
       if (project.tasks && project.tasks.length > 0) {
         const projectTasksData = project.tasks.map(task => ({
-          project_id: createdProject.id,
+          project_id: projectResponse.id,
           task_id: task.id,
-          calculated_hours: task.calculated_hours || 0,
+          calculated_hours: task.calculated_hours || task.fixed_hours || 0,
           status: 'pending',
-          is_active: true
+          is_active: true,
+          created_at: new Date().toISOString()
         }));
         
         console.log("Inserindo tarefas do projeto:", projectTasksData);
@@ -194,6 +179,7 @@ export default function NewProject() {
         if (tasksError) {
           console.error("Erro ao inserir tarefas do projeto:", tasksError);
           toast.error("Erro ao associar tarefas ao projeto");
+          throw tasksError;
         }
       }
 
