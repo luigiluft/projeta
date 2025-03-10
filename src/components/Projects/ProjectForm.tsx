@@ -16,29 +16,41 @@ import { EpicSelector } from "./EpicSelector";
 import { useState, useEffect } from "react";
 
 interface ProjectFormProps {
-  editingId: string | null;
-  attributes: Attribute[];
-  onSubmit: (values: Project) => void;
+  editingId?: string | null;
+  attributes?: Attribute[];
+  onSubmit?: (values: Project) => void;
   initialValues?: Project;
   availableEpics: string[];
-  epicTasks: Task[];
-  onEpicsChange: (epics: string[]) => void;
+  epicTasks: { [key: string]: Task[] };
+  onEpicsChange?: (epics: string[]) => void;
   isLoading?: boolean;
 }
 
 export function ProjectForm({ 
-  editingId, 
-  attributes, 
-  onSubmit, 
+  editingId = null, 
+  attributes = [], 
+  onSubmit = () => {}, 
   initialValues, 
   availableEpics,
   epicTasks,
-  onEpicsChange,
+  onEpicsChange = () => {},
   isLoading = false
 }: ProjectFormProps) {
   const [selectedEpics, setSelectedEpics] = useState<string[]>([]);
-  const { taskColumns, handleColumnsChange } = useProjectTasks(epicTasks);
+  const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
+  const { taskColumns, handleColumnsChange } = useProjectTasks([]);
   const [attributeValues, setAttributeValues] = useState<Record<string, number>>({});
+
+  // Update selected tasks when epics change
+  useEffect(() => {
+    const tasks: Task[] = [];
+    selectedEpics.forEach(epic => {
+      if (epicTasks[epic]) {
+        tasks.push(...epicTasks[epic]);
+      }
+    });
+    setSelectedTasks(tasks);
+  }, [selectedEpics, epicTasks]);
 
   const formSchema = createProjectFormSchema(attributes);
 
@@ -87,14 +99,14 @@ export function ProjectForm({
       return;
     }
 
-    const taskCosts = epicTasks.reduce((acc, task) => {
+    const taskCosts = selectedTasks.reduce((acc, task) => {
       const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
-      const hours = task.hours_formula ? parseFloat(task.hours_formula) : 0;
+      const hours = task.calculated_hours || (task.hours_formula ? parseFloat(task.hours_formula) : 0);
       return acc + (hourlyRate * hours);
     }, 0);
 
-    const totalHours = epicTasks.reduce((sum, task) => {
-      const hours = task.hours_formula ? parseFloat(task.hours_formula) : 0;
+    const totalHours = selectedTasks.reduce((sum, task) => {
+      const hours = task.calculated_hours || (task.hours_formula ? parseFloat(task.hours_formula) : 0);
       return sum + hours;
     }, 0);
 
@@ -117,7 +129,7 @@ export function ProjectForm({
       profit_margin: DEFAULT_PROFIT_MARGIN,
       status: 'draft',
       currency: 'BRL',
-      tasks: epicTasks,
+      tasks: selectedTasks,
       progress: 0,
       delay_days: 0,
       attributes: Object.fromEntries(
@@ -128,21 +140,18 @@ export function ProjectForm({
             : String(values[attr.id]) || ""
         ])
       ),
+      attribute_values: Object.fromEntries(
+        attributes
+          .filter(attr => attr.type === 'number')
+          .map(attr => [attr.id, Number(values[attr.id]) || 0])
+      ),
       favorite: false,
       priority: 0,
       tags: [],
       archived: false,
-      archived_at: undefined,
       deleted: false,
-      deleted_at: undefined,
       version: 1,
-      metadata: {
-        attribute_values: Object.fromEntries(
-          attributes
-            .filter(attr => attr.type === 'number')
-            .map(attr => [attr.id, Number(values[attr.id]) || 0])
-        )
-      },
+      metadata: {},
       settings: {},
     };
     
@@ -175,7 +184,7 @@ export function ProjectForm({
 
           <TabsContent value="scope">
             <ScopeTab 
-              tasks={epicTasks} 
+              tasks={selectedTasks} 
               columns={taskColumns}
               onColumnsChange={handleColumnsChange}
               attributeValues={attributeValues}

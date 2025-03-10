@@ -5,11 +5,20 @@ import { Task, Column } from "@/types/project";
 interface TaskListProps {
   tasks: Task[];
   columns: Column[];
-  onColumnsChange: (columns: Column[]) => void;
+  onColumnsChange?: (columns: Column[]) => void;
   showHoursColumn?: boolean;
+  onTaskSelect?: (taskId: string, selected: boolean) => void;
+  selectedTasks?: string[];
 }
 
-export function TaskList({ tasks, columns, onColumnsChange, showHoursColumn = false }: TaskListProps) {
+export function TaskList({ 
+  tasks, 
+  columns, 
+  onColumnsChange, 
+  showHoursColumn = false,
+  onTaskSelect,
+  selectedTasks = [] 
+}: TaskListProps) {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
 
   useEffect(() => {
@@ -73,6 +82,11 @@ export function TaskList({ tasks, columns, onColumnsChange, showHoursColumn = fa
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
+            {onTaskSelect && (
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <span className="sr-only">Seleção</span>
+              </th>
+            )}
             {visibleColumns.includes('task_name') && (
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tarefa
@@ -123,6 +137,16 @@ export function TaskList({ tasks, columns, onColumnsChange, showHoursColumn = fa
         <tbody className="bg-white divide-y divide-gray-200">
           {tasks.map((task) => (
             <tr key={task.id} className="hover:bg-gray-50">
+              {onTaskSelect && (
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <input 
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                    checked={selectedTasks.includes(task.id)}
+                    onChange={(e) => onTaskSelect(task.id, e.target.checked)}
+                  />
+                </td>
+              )}
               {visibleColumns.map((columnId) => (
                 <td key={`${task.id}-${columnId}`} className="px-6 py-4 whitespace-nowrap text-sm">
                   {renderCellContent(task, columnId)}
