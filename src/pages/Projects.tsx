@@ -1,14 +1,20 @@
-
 import { useState } from "react";
 import { useProjects } from "@/hooks/useProjects";
 import { Task, Column, View } from "@/types/project";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ProjectHeader } from "@/components/Projects/ProjectHeader";
 import { ProjectsTable } from "@/components/Projects/ProjectsTable";
 import { DeleteProjectDialog } from "@/components/Projects/DeleteProjectDialog";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
+import { Filter, Download, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { exportToCSV } from "@/utils/csvExport";
 
 export default function Projects() {
   const {
@@ -17,7 +23,7 @@ export default function Projects() {
     handleDelete,
   } = useProjects();
 
-  const [open, setOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -40,7 +46,7 @@ export default function Projects() {
   const handleTasksSelected = async (tasks: Task[], attributeValues: Record<string, number> = {}) => {
     try {
       await handleSubmit(tasks, attributeValues);
-      setOpen(false);
+      setImportDialogOpen(false);
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success("Projeto criado com sucesso");
     } catch (error) {
@@ -129,33 +135,43 @@ export default function Projects() {
     setColumns(newColumns);
   };
   
-  const handleImportSpreadsheet = () => {
-    console.log("Import spreadsheet clicked");
+  const handleExportCSV = () => {
+    exportToCSV(projects, "projetos");
   };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Projetos</h1>
-        <ActionButtons
-          columns={columns}
-          savedViews={savedViews}
-          onColumnVisibilityChange={handleColumnVisibilityChange}
-          onSaveView={handleSaveView}
-          onLoadView={handleLoadView}
-          onImportSpreadsheet={handleImportSpreadsheet}
-          newButtonText="Adicionar Projeto"
-          data={projects}
-          exportFilename="projetos"
-          onNewClick={() => navigate('/projects/new')}
-        />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filtrar
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportCSV} className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)} className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Importar CSV
+          </Button>
+          <Button onClick={() => navigate('/projects/new')} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Adicionar Projeto
+          </Button>
+          <ActionButtons
+            columns={columns}
+            savedViews={savedViews}
+            onColumnVisibilityChange={handleColumnVisibilityChange}
+            onSaveView={handleSaveView}
+            onLoadView={handleLoadView}
+            onImportSpreadsheet={() => setImportDialogOpen(true)}
+            data={projects}
+            exportFilename="projetos"
+          />
+        </div>
       </div>
-
-      <ProjectHeader
-        open={open}
-        setOpen={setOpen}
-        onTasksSelected={handleTasksSelected}
-      />
 
       <ProjectsTable
         projects={projects}
@@ -173,6 +189,34 @@ export default function Projects() {
         onClose={() => setProjectToDelete(null)}
         onConfirm={confirmDelete}
       />
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Importar Projetos</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="file">Arquivo CSV ou Excel</Label>
+              <Input id="file" type="file" accept=".csv,.xlsx,.xls" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Observações</Label>
+              <Textarea id="notes" placeholder="Adicione informações sobre os dados importados" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="headers" />
+              <Label htmlFor="headers">A primeira linha contém cabeçalhos</Label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">Importar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
