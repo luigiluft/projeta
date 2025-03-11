@@ -64,7 +64,12 @@ export function ProjectFormProvider({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
-        {children}
+        {React.Children.map(children, child => {
+          if (React.isValidElement(child)) {
+            return React.cloneElement(child, { form });
+          }
+          return child;
+        })}
       </form>
     </Form>
   );

@@ -1,3 +1,4 @@
+
 import { Project, Task, Attribute } from "@/types/project";
 import { useState, useEffect } from "react";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
@@ -10,6 +11,23 @@ import { ProjectActions } from "./ProjectActions";
 import { useProjectCalculations } from "@/hooks/projects/useProjectCalculations";
 import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
+import { UseFormReturn } from "react-hook-form";
+import { ProjectFormValues } from "@/utils/projectFormSchema";
+
+// Define constants
+const TEAM_RATES = {
+  "BK": 78.75,
+  "DS": 48.13,
+  "PMO": 87.50,
+  "PO": 35.00,
+  "CS": 48.13,
+  "FRJ": 70.00,
+  "FRP": 119.00,
+  "BKT": 131.04,
+  "ATS": 65.85,
+};
+
+const DEFAULT_PROFIT_MARGIN = 30;
 
 interface ProjectFormProps {
   editingId?: string | null;
@@ -22,6 +40,7 @@ interface ProjectFormProps {
   isLoading?: boolean;
   readOnly?: boolean;
   selectedEpics?: string[];
+  form?: UseFormReturn<ProjectFormValues>;
 }
 
 export function ProjectForm({ 
@@ -34,7 +53,8 @@ export function ProjectForm({
   onEpicsChange = () => {},
   isLoading = false,
   readOnly = false,
-  selectedEpics: initialSelectedEpics = []
+  selectedEpics: initialSelectedEpics = [],
+  form
 }: ProjectFormProps) {
   const [selectedEpics, setSelectedEpics] = useState<string[]>(initialSelectedEpics);
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
@@ -149,13 +169,13 @@ export function ProjectForm({
       task.epic.toLowerCase().includes('sustentacao'));
     
     const implTaskCosts = implementationTasks.reduce((acc, task) => {
-      const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
+      const hourlyRate = TEAM_RATES[task.owner as keyof typeof TEAM_RATES] || 0;
       const hours = task.calculated_hours || (task.hours_formula ? parseFloat(task.hours_formula) : 0);
       return acc + (hourlyRate * hours);
     }, 0);
     
     const taskCosts = selectedTasks.reduce((acc, task) => {
-      const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
+      const hourlyRate = TEAM_RATES[task.owner as keyof typeof TEAM_RATES] || 0;
       const hours = task.calculated_hours || (task.hours_formula ? parseFloat(task.hours_formula) : 0);
       return acc + (hourlyRate * hours);
     }, 0);
@@ -173,7 +193,7 @@ export function ProjectForm({
       name: values.name,
       project_name: values.name,
       epic: selectedEpics.join(', '),
-      type: 'default', // Valor padrão para o campo type
+      type: 'default',
       description: values.description,
       client_name: values.client_name,
       start_date: values.start_date,
@@ -228,38 +248,42 @@ export function ProjectForm({
       attributes={attributes}
       onSubmit={handleSubmit}
     >
-      <ProjectBasicInfo 
-        form={form} 
-        readOnly={readOnly} 
-        estimatedEndDate={estimatedEndDate}
-      />
-      
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Epics do Projeto</h3>
-        <EpicSelector 
-          availableEpics={availableEpics} 
-          selectedEpics={selectedEpics}
-          onChange={handleEpicSelectionChange}
-          readOnly={readOnly}
-        />
-      </div>
+      {form && (
+        <>
+          <ProjectBasicInfo 
+            form={form} 
+            readOnly={readOnly} 
+            estimatedEndDate={estimatedEndDate}
+          />
+          
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Epics do Projeto</h3>
+            <EpicSelector 
+              availableEpics={availableEpics} 
+              selectedEpics={selectedEpics}
+              onChange={handleEpicSelectionChange}
+              readOnly={readOnly}
+            />
+          </div>
 
-      <ProjectContent 
-        form={form}
-        selectedTasks={selectedTasks}
-        taskColumns={taskColumns}
-        handleColumnsChange={handleColumnsChange}
-        attributeValues={attributeValues}
-        attributes={attributes}
-        editingId={editingId}
-        readOnly={readOnly}
-      />
+          <ProjectContent 
+            form={form}
+            selectedTasks={selectedTasks}
+            taskColumns={taskColumns}
+            handleColumnsChange={handleColumnsChange}
+            attributeValues={attributeValues}
+            attributes={attributes}
+            editingId={editingId}
+            readOnly={readOnly}
+          />
 
-      <ProjectActions 
-        isLoading={isLoading}
-        editingId={editingId}
-        readOnly={readOnly}
-      />
+          <ProjectActions 
+            isLoading={isLoading}
+            editingId={editingId}
+            readOnly={readOnly}
+          />
+        </>
+      )}
     </ProjectFormProvider>
   );
 }
