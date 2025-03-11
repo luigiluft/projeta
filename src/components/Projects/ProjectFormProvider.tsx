@@ -62,20 +62,11 @@ export function ProjectFormProvider({
     defaultValues,
   });
 
+  // Renderizar o componente Form e passar o formulário para os filhos
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
-        {React.Children.map(children, child => {
-          // Only add the form prop to valid React elements
-          if (React.isValidElement(child)) {
-            // Clone the element with the additional form prop
-            return React.cloneElement(child, { 
-              ...child.props,
-              form: form 
-            });
-          }
-          return child;
-        })}
+        {children}
       </form>
     </Form>
   );

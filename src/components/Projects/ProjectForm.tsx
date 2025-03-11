@@ -13,6 +13,10 @@ import { ptBR } from "date-fns/locale";
 import { format } from "date-fns";
 import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createProjectFormSchema } from "@/utils/projectFormSchema";
+import { Form } from "@/components/ui/form";
 
 // Define constants
 const TEAM_RATES = {
@@ -40,7 +44,6 @@ interface ProjectFormProps {
   isLoading?: boolean;
   readOnly?: boolean;
   selectedEpics?: string[];
-  form?: UseFormReturn<ProjectFormValues>;
 }
 
 export function ProjectForm({ 
@@ -53,8 +56,7 @@ export function ProjectForm({
   onEpicsChange = () => {},
   isLoading = false,
   readOnly = false,
-  selectedEpics: initialSelectedEpics = [],
-  form
+  selectedEpics: initialSelectedEpics = []
 }: ProjectFormProps) {
   const [selectedEpics, setSelectedEpics] = useState<string[]>(initialSelectedEpics);
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
@@ -62,6 +64,50 @@ export function ProjectForm({
   const [attributeValues, setAttributeValues] = useState<Record<string, number>>({});
   const [estimatedEndDate, setEstimatedEndDate] = useState<string | null>(null);
   const { estimateDeliveryDates } = useProjectCalculations();
+  
+  // Define o formulário no componente principal
+  const formSchema = createProjectFormSchema(attributes);
+  const defaultValues: any = {
+    name: initialValues?.name || "",
+    description: initialValues?.description || "",
+    client_name: initialValues?.client_name || "",
+    start_date: initialValues?.start_date || "",
+  };
+  
+  // Populate default values for attributes from initialValues
+  if (initialValues) {
+    if (initialValues.attribute_values) {
+      Object.entries(initialValues.attribute_values).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          defaultValues[key] = value;
+        }
+      });
+    }
+
+    if (initialValues.attributes && 
+        typeof initialValues.attributes === 'object' && 
+        !Array.isArray(initialValues.attributes)) {
+      Object.entries(initialValues.attributes).forEach(([key, value]) => {
+        if (defaultValues[key] === undefined && value !== undefined && value !== null) {
+          defaultValues[key] = value;
+        }
+      });
+    }
+  }
+
+  attributes.forEach(attr => {
+    if (defaultValues[attr.id] === undefined && attr.defaultValue !== undefined) {
+      const value = attr.type === "number" && attr.defaultValue !== "" 
+        ? Number(attr.defaultValue) 
+        : attr.defaultValue;
+      defaultValues[attr.id] = value;
+    }
+  });
+  
+  const form = useForm<ProjectFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues,
+  });
 
   useEffect(() => {
     const tasks: Task[] = [];
@@ -154,7 +200,7 @@ export function ProjectForm({
     onEpicsChange(epics);
   };
 
-  const handleSubmit = (values: any) => {
+  const handleFormSubmit = (values: ProjectFormValues) => {
     if (selectedEpics.length === 0) {
       toast.error("Selecione pelo menos um Epic para o projeto");
       return;
@@ -243,47 +289,41 @@ export function ProjectForm({
   };
 
   return (
-    <ProjectFormProvider 
-      initialValues={initialValues}
-      attributes={attributes}
-      onSubmit={handleSubmit}
-    >
-      {form && (
-        <>
-          <ProjectBasicInfo 
-            form={form} 
-            readOnly={readOnly} 
-            estimatedEndDate={estimatedEndDate}
-          />
-          
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Epics do Projeto</h3>
-            <EpicSelector 
-              availableEpics={availableEpics} 
-              selectedEpics={selectedEpics}
-              onChange={handleEpicSelectionChange}
-              readOnly={readOnly}
-            />
-          </div>
-
-          <ProjectContent 
-            form={form}
-            selectedTasks={selectedTasks}
-            taskColumns={taskColumns}
-            handleColumnsChange={handleColumnsChange}
-            attributeValues={attributeValues}
-            attributes={attributes}
-            editingId={editingId}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
+        <ProjectBasicInfo 
+          form={form} 
+          readOnly={readOnly} 
+          estimatedEndDate={estimatedEndDate}
+        />
+        
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Epics do Projeto</h3>
+          <EpicSelector 
+            availableEpics={availableEpics} 
+            selectedEpics={selectedEpics}
+            onChange={handleEpicSelectionChange}
             readOnly={readOnly}
           />
+        </div>
 
-          <ProjectActions 
-            isLoading={isLoading}
-            editingId={editingId}
-            readOnly={readOnly}
-          />
-        </>
-      )}
-    </ProjectFormProvider>
+        <ProjectContent 
+          form={form}
+          selectedTasks={selectedTasks}
+          taskColumns={taskColumns}
+          handleColumnsChange={handleColumnsChange}
+          attributeValues={attributeValues}
+          attributes={attributes}
+          editingId={editingId}
+          readOnly={readOnly}
+        />
+
+        <ProjectActions 
+          isLoading={isLoading}
+          editingId={editingId}
+          readOnly={readOnly}
+        />
+      </form>
+    </Form>
   );
 }
