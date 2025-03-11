@@ -19,8 +19,8 @@ export function GanttTab({ tasks }: GanttTabProps) {
     ? tasks[0].project_task_id.split('_')[0] // Assuming format is "projectId_taskId"
     : "";
   
-  // Extract project name from task data if available
-  const projectName = tasks.length > 0 ? tasks[0].project_name || "Projeto" : "Projeto";
+  // Use a default project name since the Task type doesn't have project_name
+  const projectName = "Projeto";
 
   return (
     <div className="space-y-4 mt-4">

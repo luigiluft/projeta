@@ -1,29 +1,56 @@
 
 import { useState } from "react";
 import { Task, Column } from "@/types/project";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-export const useProjectTasks = (initialTasks: Task[] = []) => {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+export const useProjectTasks = (projectId?: string) => {
+  return useQuery({
+    queryKey: ['projectTasks', projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
 
-  const taskColumns: Column[] = [
-    { id: "task_name", label: "Tarefa", visible: true },
-    { id: "phase", label: "Fase", visible: true },
-    { id: "epic", label: "Epic", visible: true },
-    { id: "story", label: "Story", visible: true },
-    { id: "hours", label: "Horas", visible: true },
-    { id: "owner", label: "Responsável", visible: true },
-    { id: "dependency", label: "Dependência", visible: true },
-    { id: "created_at", label: "Criado em", visible: true },
-  ];
+      const { data, error } = await supabase
+        .from('project_tasks')
+        .select(`
+          id,
+          project_id,
+          task_id,
+          calculated_hours,
+          is_active,
+          status,
+          start_date,
+          end_date,
+          owner_id,
+          tasks:task_id(*)
+        `)
+        .eq('project_id', projectId);
 
-  const handleColumnsChange = (newColumns: Column[]) => {
-    // Implementar lógica de atualização de colunas se necessário
-    console.log("Columns changed:", newColumns);
-  };
+      if (error) {
+        console.error("Erro ao carregar tarefas do projeto:", error);
+        throw error;
+      }
 
-  return {
-    tasks,
-    taskColumns,
-    handleColumnsChange
-  };
+      // Format the tasks
+      const formattedTasks = data.map((ptask, index) => {
+        const task = ptask.tasks as any;
+        return {
+          ...task,
+          id: task.id,
+          order_number: index + 1,
+          is_active: ptask.is_active,
+          phase: task.phase || '',
+          epic: task.epic || '',
+          story: task.story || '',
+          owner: task.owner || ptask.owner_id || '',
+          calculated_hours: ptask.calculated_hours,
+          status: ptask.status as "pending" | "in_progress" | "completed",
+          project_task_id: ptask.id
+        } as Task;
+      });
+
+      return formattedTasks;
+    },
+    enabled: !!projectId
+  });
 };
