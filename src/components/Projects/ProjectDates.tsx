@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -243,7 +242,6 @@ export function ProjectDates({
     );
   };
 
-  // Função para determinar a classe CSS baseada no status de disponibilidade
   const getDateClassName = (date: Date): string => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const availability = dateAvailability.get(dateStr);
@@ -260,7 +258,6 @@ export function ProjectDates({
     }
   };
 
-  // Handler para atualização da data de início
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
       const formattedDate = format(date, 'yyyy-MM-dd');
@@ -363,9 +360,6 @@ export function ProjectDates({
                         }}
                         components={{
                           DayContent: (props) => {
-                            const dateStr = format(props.date, 'yyyy-MM-dd');
-                            const availability = dateAvailability.get(dateStr);
-                            
                             return (
                               <div className="relative w-full h-full flex items-center justify-center">
                                 {props.children}
@@ -432,7 +426,6 @@ export function ProjectDates({
           onEndDateCalculated={(date) => {
             setCalculatedEndDate(date);
             if (date) {
-              form.setValue('expected_end_date', date);
             }
           }}
         />

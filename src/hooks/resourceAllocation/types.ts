@@ -19,7 +19,7 @@ export interface Allocation {
   start_date: string;
   end_date: string;
   allocated_hours: number;
-  status: 'scheduled' | 'in_progress' | 'completed';
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 }
 
 export interface ProjectAllocation extends Allocation {
@@ -27,4 +27,17 @@ export interface ProjectAllocation extends Allocation {
   member_last_name?: string;
   member_position?: string;
   task_name?: string;
+}
+
+export interface TeamMember {
+  id: string;
+  first_name: string;
+  last_name: string;
+  position: string;
+  hourly_rate: number;
+  daily_capacity: number;
+  email: string | null;
+  department: string | null;
+  status: string | null;
+  squad: string | null;
 }
