@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
@@ -7,7 +6,7 @@ import { Column, View } from "@/types/project";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { TaskImporter } from "@/components/TaskManagement/TaskImporter";
+import { TeamImporter } from "@/components/Team/TeamImporter";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
@@ -141,7 +140,7 @@ export default function Team() {
             isLoading={loading}
             showAddButton={false}
           />
-          <TaskImporter 
+          <TeamImporter 
             onSuccess={fetchTeamMembers} 
             buttonLabel="Importar CSV" 
           />
