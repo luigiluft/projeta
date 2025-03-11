@@ -152,16 +152,21 @@ export function ProjectForm({
             endDate.setHours(9 + remainingHours, 0, 0, 0);
           }
           
+          task.start_date = currentDate.toISOString();
+          task.end_date = endDate.toISOString();
+          
           ownerAvailability[owner] = endDate;
           taskEndDates[task.id] = endDate;
           
           if (endDate > lastEndDate) {
-            lastEndDate = endDate;
+            lastEndDate = new Date(endDate);
           }
         });
       });
       
-      setEstimatedEndDate(format(lastEndDate, 'dd/MM/yyyy'));
+      const mostFutureDateFormatted = format(lastEndDate, 'dd/MM/yyyy');
+      console.log("Data estimada de término calculada:", mostFutureDateFormatted);
+      setEstimatedEndDate(mostFutureDateFormatted);
     } catch (error) {
       console.error("Erro ao calcular data estimada:", error);
       setEstimatedEndDate(null);

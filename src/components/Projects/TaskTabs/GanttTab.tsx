@@ -7,6 +7,7 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -34,6 +35,7 @@ export function GanttTab({ tasks }: GanttTabProps) {
     owner: task.owner,
     start: task.start_date ? new Date(task.start_date).getTime() : 0,
     end: task.end_date ? new Date(task.end_date).getTime() : 0,
+    duration: task.calculated_hours || task.fixed_hours || 0,
   }));
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -48,6 +50,9 @@ export function GanttTab({ tasks }: GanttTabProps) {
           </p>
           <p className="text-sm">
             Fim: {format(data.end, "dd/MM/yyyy HH:mm", { locale: ptBR })}
+          </p>
+          <p className="text-sm">
+            Duração: {data.duration} horas
           </p>
         </div>
       );
@@ -78,6 +83,12 @@ export function GanttTab({ tasks }: GanttTabProps) {
               tick={{ fontSize: 12 }}
             />
             <Tooltip content={<CustomTooltip />} />
+            {/* Barra que mostra de início a fim da tarefa */}
+            <Bar
+              dataKey="start"
+              fill="transparent"
+              stackId="a"
+            />
             <Bar
               dataKey="end"
               fill="#60a5fa"
