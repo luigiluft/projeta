@@ -1,4 +1,5 @@
 
+import React from "react";
 import { createProjectFormSchema, ProjectFormValues } from "@/utils/projectFormSchema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,8 +66,13 @@ export function ProjectFormProvider({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
         {React.Children.map(children, child => {
+          // Only add the form prop to valid React elements
           if (React.isValidElement(child)) {
-            return React.cloneElement(child, { form });
+            // Clone the element with the additional form prop
+            return React.cloneElement(child, { 
+              ...child.props,
+              form: form 
+            });
           }
           return child;
         })}
