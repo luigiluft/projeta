@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,8 @@ import { createProjectFormSchema, ProjectFormValues } from "@/utils/projectFormS
 import { DEFAULT_PROFIT_MARGIN, teamRates } from "@/constants/projectConstants";
 import { EpicSelector } from "./EpicSelector";
 import { useState, useEffect } from "react";
+import { format, addDays } from "date-fns";
+import { useProjectCalculations } from "@/hooks/projects/useProjectCalculations";
 
 interface ProjectFormProps {
   editingId?: string | null;
@@ -44,6 +45,8 @@ export function ProjectForm({
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
   const { taskColumns, handleColumnsChange } = useProjectTasks([]);
   const [attributeValues, setAttributeValues] = useState<Record<string, number>>({});
+  const [estimatedEndDate, setEstimatedEndDate] = useState<string | null>(null);
+  const { estimateDeliveryDates } = useProjectCalculations();
 
   // Update selected tasks when epics change
   useEffect(() => {
@@ -54,6 +57,7 @@ export function ProjectForm({
       }
     });
     setSelectedTasks(tasks);
+    calculateEstimatedEndDate(tasks);
   }, [selectedEpics, epicTasks]);
 
   // Initialize selected epics if provided in initialValues
@@ -65,6 +69,50 @@ export function ProjectForm({
       setSelectedEpics(initialSelectedEpics);
     }
   }, [initialValues, initialSelectedEpics]);
+
+  // Calcular data estimada de término
+  const calculateEstimatedEndDate = async (tasks: Task[]) => {
+    const startDateValue = form.getValues("start_date");
+    
+    if (!startDateValue || tasks.length === 0) {
+      setEstimatedEndDate(null);
+      return;
+    }
+
+    try {
+      const startDate = new Date(startDateValue);
+      
+      // Estimar datas de entrega com base nas tarefas e capacidades da equipe
+      const tasksWithDurations = await estimateDeliveryDates(tasks, startDate);
+      
+      // Encontrar a tarefa que vai terminar por último
+      let maxDurationDays = 0;
+      tasksWithDurations.forEach(task => {
+        if (task.estimated_duration_days && task.estimated_duration_days > maxDurationDays) {
+          maxDurationDays = task.estimated_duration_days;
+        }
+      });
+      
+      // Adicionar dias úteis (considerando apenas dias de semana)
+      let endDate = new Date(startDate);
+      let daysAdded = 0;
+      
+      while (daysAdded < maxDurationDays) {
+        endDate = addDays(endDate, 1);
+        const dayOfWeek = endDate.getDay();
+        // Se não for fim de semana (0 = domingo, 6 = sábado)
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          daysAdded++;
+        }
+      }
+      
+      // Formatar data para exibição
+      setEstimatedEndDate(format(endDate, 'dd/MM/yyyy'));
+    } catch (error) {
+      console.error("Erro ao calcular data estimada:", error);
+      setEstimatedEndDate(null);
+    }
+  };
 
   const formSchema = createProjectFormSchema(attributes);
 
@@ -181,9 +229,13 @@ export function ProjectForm({
     defaultValues,
   });
 
-  // Atualizar valores dos atributos quando eles mudarem no formulário
+  // Recalcular a data estimada quando a data de início mudar
   useEffect(() => {
     const subscription = form.watch((values) => {
+      if (values.start_date && values.start_date !== defaultValues.start_date) {
+        calculateEstimatedEndDate(selectedTasks);
+      }
+      
       const newAttributeValues: Record<string, number> = {};
       
       attributes.forEach(attr => {
@@ -196,7 +248,7 @@ export function ProjectForm({
     });
     
     return () => subscription.unsubscribe();
-  }, [form, attributes]);
+  }, [form, attributes, selectedTasks]);
 
   const handleEpicSelectionChange = (epics: string[]) => {
     setSelectedEpics(epics);
@@ -231,6 +283,7 @@ export function ProjectForm({
       description: values.description,
       client_name: values.client_name,
       start_date: values.start_date,
+      expected_end_date: estimatedEndDate ? format(new Date(estimatedEndDate.split('/').reverse().join('-')), 'yyyy-MM-dd') : undefined,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       total_hours: totalHours,
@@ -271,7 +324,11 @@ export function ProjectForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
-        <ProjectBasicInfo form={form} readOnly={readOnly} />
+        <ProjectBasicInfo 
+          form={form} 
+          readOnly={readOnly} 
+          estimatedEndDate={estimatedEndDate}
+        />
         
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Epics do Projeto</h3>

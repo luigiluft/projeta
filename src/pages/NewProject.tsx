@@ -150,6 +150,7 @@ export default function NewProject() {
         description: project.description || "",
         client_name: project.client_name || "",
         start_date: project.start_date || null,
+        expected_end_date: project.expected_end_date || null,  // Adicionando a data estimada de término
         epic: project.epic || "",
         total_hours: project.total_hours || 0,
         total_cost: project.total_cost || 0,
