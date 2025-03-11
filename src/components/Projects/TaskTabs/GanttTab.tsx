@@ -14,6 +14,14 @@ export function GanttTab({ tasks }: GanttTabProps) {
   const [activeTab, setActiveTab] = useState<string>("tasks");
   const { allocations, loadingAllocations, minDate, maxDate, xAxisTicks } = useGanttData(tasks);
 
+  // Extract project ID from the first task if available
+  const projectId = tasks.length > 0 && tasks[0].project_task_id 
+    ? tasks[0].project_task_id.split('_')[0] // Assuming format is "projectId_taskId"
+    : "";
+  
+  // Extract project name from task data if available
+  const projectName = tasks.length > 0 ? tasks[0].project_name || "Projeto" : "Projeto";
+
   return (
     <div className="space-y-4 mt-4">
       <Tabs 
@@ -40,6 +48,8 @@ export function GanttTab({ tasks }: GanttTabProps) {
         <TabsContent value="allocations">
           <h3 className="text-lg font-medium mb-4">Alocações de Equipe</h3>
           <AllocationGanttChart 
+            projectId={projectId}
+            projectName={projectName}
             allocations={allocations}
             isLoading={loadingAllocations}
             minDate={minDate}

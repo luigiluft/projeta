@@ -18,8 +18,7 @@ export function useResourceAllocation(projectId?: string) {
   const {
     loading,
     createAllocation,
-    deleteAllocation,
-    autoAllocateTeam
+    deleteAllocation
   } = useAllocationMutations();
 
   const checkAvailability = async (startDate: string, endDate: string, requiredHours: number = 0) => {
@@ -40,8 +39,7 @@ export function useResourceAllocation(projectId?: string) {
     checkingAvailability,
     getAvailability: checkAvailability,
     createAllocation,
-    deleteAllocation,
-    autoAllocateTeam
+    deleteAllocation
   };
 }
 
