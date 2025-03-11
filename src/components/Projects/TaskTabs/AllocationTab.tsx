@@ -43,6 +43,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useQueryClient } from "react-query";
 
 interface AllocationTabProps {
   tasks: Task[];
@@ -70,6 +71,7 @@ export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [availabilityData, setAvailabilityData] = useState<any[]>([]);
   const [editingAllocationId, setEditingAllocationId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const {
     teamMembers,
@@ -125,15 +127,17 @@ export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
       
       // Mostrar resultados
       if (result.allocatedCount > 0) {
-        toast.success(`${result.allocatedCount} tarefas alocadas automaticamente`);
+        toast.success(`${result.allocatedCount} membros alocados automaticamente`);
       }
       
       if (result.notAllocatedCount > 0) {
-        toast.warning(`${result.notAllocatedCount} tarefas não puderam ser alocadas automaticamente`);
+        toast.warning(
+          `Não foi possível alocar membros para os seguintes cargos: ${result.notAllocatedRoles.join(', ')}`
+        );
       }
       
       // Atualizar lista de alocações
-      // useResourceAllocation deve ter uma função de refetch que pode ser chamada aqui
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     } catch (error) {
       console.error("Erro na alocação automática:", error);
       toast.error("Erro ao realizar alocação automática");
