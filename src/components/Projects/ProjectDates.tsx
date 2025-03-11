@@ -259,19 +259,6 @@ export function ProjectDates({
     }
   };
 
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      const formattedDate = format(date, 'yyyy-MM-dd');
-      form.setValue('start_date', formattedDate);
-      
-      // Recalcular a data de término se temos tarefas selecionadas
-      if (selectedTasks.length > 0) {
-        const startDateForCalculation = new Date(formattedDate);
-        startDateForCalculation.setHours(9, 0, 0, 0); // Começa às 9h
-      }
-    }
-  };
-
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Datas do Projeto</h3>
@@ -347,8 +334,9 @@ export function ProjectDates({
                           if (date) {
                             const isoDate = format(date, 'yyyy-MM-dd');
                             field.onChange(isoDate);
-                            handleDateChange(date);
+                            form.setValue('start_date', isoDate);
                           }
+                          setOpenCalendar(false);
                         }}
                         disabled={isDateDisabled}
                         modifiers={{
