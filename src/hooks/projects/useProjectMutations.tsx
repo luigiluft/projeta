@@ -5,10 +5,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProjectCalculations } from "./useProjectCalculations";
 import { format, addDays } from "date-fns";
+import { useAutoAllocation } from "@/hooks/useAutoAllocation";
 
 export const useProjectMutations = () => {
   const queryClient = useQueryClient();
   const { calculateProjectCosts } = useProjectCalculations();
+  const { autoAllocateTeam } = useAutoAllocation();
 
   // Função para criar um novo projeto
   const handleSubmit = async (selectedTasks: Task[], attributeValues: Record<string, number> = {}) => {
@@ -134,9 +136,29 @@ export const useProjectMutations = () => {
           console.error("Erro ao adicionar tarefas ao projeto:", tasksError);
           toast.error("Erro ao registrar tarefas do projeto");
         } else {
-          // 3. Verificar disponibilidade e criar alocações automáticas para tarefas
-          // Devido à complexidade, deixamos isso para ser feito manualmente pelo usuário na interface
-          toast.success("Projeto criado com sucesso! Você pode definir as alocações de recursos na aba 'Alocações'.");
+          // 3. Realizar alocação automática de recursos
+          try {
+            const allocationResult = await autoAllocateTeam(
+              projectId, 
+              selectedTasks, 
+              formattedToday, 
+              estimatedEndDate
+            );
+            
+            if (allocationResult.allocatedCount > 0) {
+              toast.success(`${allocationResult.allocatedCount} tarefas alocadas automaticamente`);
+            }
+            
+            if (allocationResult.notAllocatedCount > 0) {
+              toast.warning(`${allocationResult.notAllocatedCount} tarefas não puderam ser alocadas automaticamente`);
+              console.log("Tarefas não alocadas:", allocationResult.notAllocatedTasks);
+            }
+          } catch (allocError) {
+            console.error("Erro na alocação automática:", allocError);
+            toast.error("Houve um erro na alocação automática de recursos");
+          }
+          
+          toast.success("Projeto criado com sucesso! Verifique as alocações na aba 'Alocações'.");
         }
       }
 

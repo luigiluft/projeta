@@ -1,14 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Task } from "@/types/project";
-import { CalendarIcon, PlusCircle, Trash2, RefreshCw } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarIcon, PlusCircle, Trash2, RefreshCw, Wand2 } from "lucide-react";
+import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useResourceAllocation } from "@/hooks/useResourceAllocation";
+import { useAutoAllocation } from "@/hooks/useAutoAllocation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -65,6 +65,7 @@ type AllocationFormValues = z.infer<typeof allocationFormSchema>;
 
 export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [autoAllocateDialogOpen, setAutoAllocateDialogOpen] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [availabilityData, setAvailabilityData] = useState<any[]>([]);
@@ -82,6 +83,8 @@ export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
     suggestProjectDates,
   } = useResourceAllocation(projectId);
 
+  const { loading: autoAllocLoading, autoAllocateTeam } = useAutoAllocation();
+
   const implementationTasks = tasks.filter(task => 
     !task.epic.toLowerCase().includes('sustentação') &&
     !task.epic.toLowerCase().includes('sustentacao')
@@ -98,6 +101,44 @@ export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
       status: "scheduled",
     },
   });
+
+  // Função para realizar alocação automática
+  const handleAutoAllocate = async () => {
+    if (!projectId || tasks.length === 0) {
+      toast.error("Projeto ou tarefas não encontrados");
+      return;
+    }
+
+    try {
+      const startDate = format(new Date(), 'yyyy-MM-dd');
+      const endDate = format(addDays(new Date(), 30), 'yyyy-MM-dd');
+
+      const result = await autoAllocateTeam(
+        projectId,
+        tasks,
+        startDate,
+        endDate
+      );
+
+      // Fechar diálogo e atualizar lista de alocações
+      setAutoAllocateDialogOpen(false);
+      
+      // Mostrar resultados
+      if (result.allocatedCount > 0) {
+        toast.success(`${result.allocatedCount} tarefas alocadas automaticamente`);
+      }
+      
+      if (result.notAllocatedCount > 0) {
+        toast.warning(`${result.notAllocatedCount} tarefas não puderam ser alocadas automaticamente`);
+      }
+      
+      // Atualizar lista de alocações
+      // useResourceAllocation deve ter uma função de refetch que pode ser chamada aqui
+    } catch (error) {
+      console.error("Erro na alocação automática:", error);
+      toast.error("Erro ao realizar alocação automática");
+    }
+  };
 
   // Função para consultar a disponibilidade
   const checkAvailability = async () => {
@@ -244,279 +285,319 @@ export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Alocações de Recursos</h3>
         
-        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <PlusCircle className="h-4 w-4" />
-              Nova Alocação
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle>
-                {editingAllocationId ? "Editar Alocação" : "Nova Alocação de Recurso"}
-              </DialogTitle>
-              <DialogDescription>
-                Aloque membros da equipe para tarefas específicas do projeto.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="task_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tarefa (Opcional)</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma tarefa" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {implementationTasks.map(task => (
-                            <SelectItem key={task.id} value={task.id}>
-                              {task.task_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Associe esta alocação a uma tarefa específica.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center gap-2">
+          <Dialog open={autoAllocateDialogOpen} onOpenChange={setAutoAllocateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Wand2 className="h-4 w-4" />
+                Alocação Automática
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Alocação Automática de Recursos</DialogTitle>
+                <DialogDescription>
+                  O sistema irá alocar automaticamente membros da equipe para as tarefas com base na correspondência entre o cargo do responsável da tarefa e os cargos dos membros da equipe disponíveis.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Alert className="mt-4">
+                <AlertTitle>Como funciona a alocação automática?</AlertTitle>
+                <AlertDescription className="text-sm">
+                  <ul className="list-disc pl-5 space-y-1 mt-2">
+                    <li>Para cada tarefa, o sistema buscará membros com o cargo correspondente ao responsável da tarefa</li>
+                    <li>Serão verificadas as disponibilidades de cada membro no período</li>
+                    <li>As tarefas serão alocadas para os membros com capacidade disponível</li>
+                    <li>Tarefas sem responsável definido não serão alocadas</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+              
+              <DialogFooter className="mt-6">
+                <Button variant="outline" onClick={() => setAutoAllocateDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleAutoAllocate} disabled={autoAllocLoading}>
+                  {autoAllocLoading ? "Alocando..." : "Alocar Automaticamente"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <PlusCircle className="h-4 w-4" />
+                Nova Alocação
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[525px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingAllocationId ? "Editar Alocação" : "Nova Alocação de Recurso"}
+                </DialogTitle>
+                <DialogDescription>
+                  Aloque membros da equipe para tarefas específicas do projeto.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="start_date"
+                    name="task_id"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Data de Início</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={
-                                  "pl-3 text-left font-normal flex justify-between items-center"
-                                }
-                              >
-                                {field.value ? (
-                                  format(field.value, "dd/MM/yyyy", { locale: ptBR })
-                                ) : (
-                                  <span>Selecione a data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) =>
-                                date < new Date(new Date().setHours(0, 0, 0, 0))
-                              }
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
+                      <FormItem>
+                        <FormLabel>Tarefa (Opcional)</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma tarefa" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {implementationTasks.map(task => (
+                              <SelectItem key={task.id} value={task.id}>
+                                {task.task_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Associe esta alocação a uma tarefa específica.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   
-                  <FormField
-                    control={form.control}
-                    name="end_date"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Data de Fim</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={
-                                  "pl-3 text-left font-normal flex justify-between items-center"
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="start_date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Data de Início</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={
+                                    "pl-3 text-left font-normal flex justify-between items-center"
+                                  }
+                                >
+                                  {field.value ? (
+                                    format(field.value, "dd/MM/yyyy", { locale: ptBR })
+                                  ) : (
+                                    <span>Selecione a data</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date < new Date(new Date().setHours(0, 0, 0, 0))
                                 }
-                              >
-                                {field.value ? (
-                                  format(field.value, "dd/MM/yyyy", { locale: ptBR })
-                                ) : (
-                                  <span>Selecione a data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) => {
-                                const startDate = form.getValues("start_date");
-                                return date < startDate;
-                              }}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-end gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={handleSuggestDates}
-                    disabled={!projectId || implementationTasks.length === 0}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Sugerir Datas
-                  </Button>
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="end_date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Data de Fim</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={
+                                    "pl-3 text-left font-normal flex justify-between items-center"
+                                  }
+                                >
+                                  {field.value ? (
+                                    format(field.value, "dd/MM/yyyy", { locale: ptBR })
+                                  ) : (
+                                    <span>Selecione a data</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) => {
+                                  const startDate = form.getValues("start_date");
+                                  return date < startDate;
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={checkAvailability}
-                  >
-                    Verificar Disponibilidade
-                  </Button>
-                </div>
-                
-                {availabilityData.length > 0 && (
-                  <Alert>
-                    <AlertTitle>Membros Disponíveis</AlertTitle>
-                    <AlertDescription>
-                      <ScrollArea className="h-32 mt-2">
-                        <div className="space-y-2">
-                          {availabilityData.map(member => (
-                            <div key={member.member_id} className="flex justify-between items-center p-2 border rounded hover:bg-gray-50">
-                              <div>
-                                <p className="font-medium">{member.member_name}</p>
-                                <p className="text-sm text-gray-500">{member.position}</p>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={handleSuggestDates}
+                      disabled={!projectId || implementationTasks.length === 0}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Sugerir Datas
+                    </Button>
+                    
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={checkAvailability}
+                    >
+                      Verificar Disponibilidade
+                    </Button>
+                  </div>
+                  
+                  {availabilityData.length > 0 && (
+                    <Alert>
+                      <AlertTitle>Membros Disponíveis</AlertTitle>
+                      <AlertDescription>
+                        <ScrollArea className="h-32 mt-2">
+                          <div className="space-y-2">
+                            {availabilityData.map(member => (
+                              <div key={member.member_id} className="flex justify-between items-center p-2 border rounded hover:bg-gray-50">
+                                <div>
+                                  <p className="font-medium">{member.member_name}</p>
+                                  <p className="text-sm text-gray-500">{member.position}</p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => form.setValue('member_id', member.member_id)}
+                                >
+                                  Selecionar
+                                </Button>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => form.setValue('member_id', member.member_id)}
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <FormField
+                    control={form.control}
+                    name="member_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Membro da Equipe</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um membro" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {teamMembers.map(member => (
+                              <SelectItem 
+                                key={member.id} 
+                                value={member.id}
                               >
-                                Selecionar
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                <FormField
-                  control={form.control}
-                  name="member_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Membro da Equipe</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                      >
+                                {member.first_name} {member.last_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="allocated_hours"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Horas Alocadas</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um membro" />
-                          </SelectTrigger>
+                          <Input 
+                            type="number" 
+                            {...field} 
+                            min={1}
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {teamMembers.map(member => (
-                            <SelectItem 
-                              key={member.id} 
-                              value={member.id}
-                            >
-                              {member.first_name} {member.last_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="allocated_hours"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Horas Alocadas</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          {...field} 
-                          min={1}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Total de horas alocadas para o período.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="scheduled">Agendada</SelectItem>
-                          <SelectItem value="in_progress">Em Andamento</SelectItem>
-                          <SelectItem value="completed">Concluída</SelectItem>
-                          <SelectItem value="cancelled">Cancelada</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <DialogFooter>
-                  <Button 
-                    type="submit" 
-                    disabled={loading}
-                  >
-                    {loading ? "Salvando..." : "Salvar Alocação"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+                        <FormDescription>
+                          Total de horas alocadas para o período.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="scheduled">Agendada</SelectItem>
+                            <SelectItem value="in_progress">Em Andamento</SelectItem>
+                            <SelectItem value="completed">Concluída</SelectItem>
+                            <SelectItem value="cancelled">Cancelada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter>
+                    <Button 
+                      type="submit" 
+                      disabled={loading}
+                    >
+                      {loading ? "Salvando..." : "Salvar Alocação"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
       
       {loadingAllocations ? (

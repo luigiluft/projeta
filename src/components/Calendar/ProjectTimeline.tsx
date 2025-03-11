@@ -1,9 +1,11 @@
 
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { differenceInDays, differenceInBusinessDays, format, isWithinInterval, isSameDay, isWeekend } from "date-fns";
+import { differenceInDays, differenceInBusinessDays, format, isWithinInterval, isSameDay, isWeekend, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, Clock, AlertTriangle } from "lucide-react";
+import { Calendar, Clock, AlertTriangle, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Project {
   id: string;
@@ -12,6 +14,7 @@ interface Project {
   endDate: Date;
   team: string;
   progress: number;
+  allocations?: { name: string; position: string }[];
 }
 
 interface ProjectTimelineProps {
@@ -115,6 +118,61 @@ export function ProjectTimeline({ projects, selectedDate }: ProjectTimelineProps
     );
   };
 
+  // Nova função para mostrar equipe alocada no projeto
+  const renderTeamAllocation = (project: Project) => {
+    if (!project.allocations || project.allocations.length === 0) {
+      return (
+        <div className="flex items-center text-amber-600 mt-1">
+          <AlertTriangle className="h-4 w-4 mr-1" />
+          <span className="text-sm">Sem equipe alocada</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-2">
+        <div className="flex items-center gap-1 mb-1">
+          <Users className="h-4 w-4 text-gray-600" />
+          <span className="text-sm font-medium text-gray-600">Equipe alocada:</span>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {project.allocations.slice(0, 3).map((member, index) => (
+            <TooltipProvider key={index}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="text-xs">
+                    {member.name}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{member.position}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ))}
+          {project.allocations.length > 3 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="text-xs">
+                    +{project.allocations.length - 3}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="space-y-1">
+                    {project.allocations.slice(3).map((member, index) => (
+                      <p key={index} className="text-sm">{member.name} ({member.position})</p>
+                    ))}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {projects
@@ -189,6 +247,8 @@ export function ProjectTimeline({ projects, selectedDate }: ProjectTimelineProps
                       </span>
                     </div>
                   </div>
+
+                  {renderTeamAllocation(project)}
 
                   <div className="text-sm">
                     <span className={`font-medium ${
