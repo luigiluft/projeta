@@ -47,38 +47,42 @@ export function useAutoAllocation() {
 
       // Para cada membro, verificar disponibilidade no período
       for (const member of teamMembers) {
-        // Verificar alocações existentes para o período
-        const { data: existingAllocations, error: allocError } = await supabase
-          .from('project_allocations')
-          .select('allocated_hours')
-          .eq('member_id', member.id)
-          .or(`start_date.lte.${endDate},end_date.gte.${startDate}`);
+        try {
+          // Verificar alocações existentes para o período
+          const { data: existingAllocations, error: allocError } = await supabase
+            .from('project_allocations')
+            .select('allocated_hours')
+            .eq('member_id', member.id)
+            .or(`start_date.lte.${endDate},end_date.gte.${startDate}`);
 
-        if (allocError) throw allocError;
+          if (allocError) throw allocError;
 
-        // Calcular total de horas já alocadas
-        const totalAllocatedHours = existingAllocations?.reduce(
-          (sum, alloc) => sum + (alloc.allocated_hours || 0), 
-          0
-        ) || 0;
+          // Calcular total de horas já alocadas
+          const totalAllocatedHours = existingAllocations?.reduce(
+            (sum, alloc) => sum + (alloc.allocated_hours || 0), 
+            0
+          ) || 0;
 
-        // Calcular total de dias úteis no período
-        const startDateObj = new Date(startDate);
-        const endDateObj = new Date(endDate);
-        const dayDiff = Math.max(1, Math.round((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
-        
-        // Considerando apenas dias úteis (5 dias por semana em média)
-        const workDays = Math.ceil(dayDiff * 5/7);
-        
-        // Capacidade total do membro no período
-        const totalCapacity = workDays * member.daily_capacity;
-        
-        // Se membro tem capacidade disponível, adicioná-lo à lista
-        if (totalCapacity - totalAllocatedHours >= totalHours * 0.25) { // Permitir dividir a carga
-          availableMembers.push({
-            ...member,
-            availableHours: totalCapacity - totalAllocatedHours
-          });
+          // Calcular total de dias úteis no período
+          const startDateObj = new Date(startDate);
+          const endDateObj = new Date(endDate);
+          const dayDiff = Math.max(1, Math.round((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+          
+          // Considerando apenas dias úteis (5 dias por semana em média)
+          const workDays = Math.ceil(dayDiff * 5/7);
+          
+          // Capacidade total do membro no período
+          const totalCapacity = workDays * member.daily_capacity;
+          
+          // Se membro tem capacidade disponível, adicioná-lo à lista
+          if (totalCapacity - totalAllocatedHours >= totalHours) {
+            availableMembers.push({
+              ...member,
+              availableHours: totalCapacity - totalAllocatedHours
+            });
+          }
+        } catch (err) {
+          console.error(`Erro ao verificar disponibilidade do membro ${member.first_name}:`, err);
         }
       }
 
@@ -134,38 +138,46 @@ export function useAutoAllocation() {
           continue;
         }
 
+        console.log(`Tentando alocar cargo ${role} - Total de horas: ${allocation.totalHours}`);
+        
         const availableMembers = await findAvailableTeamMembers(role, startDate, endDate, allocation.totalHours);
 
         if (availableMembers.length === 0) {
-          notAllocatedCount++;
+          console.log(`Não foi possível encontrar membros disponíveis para o cargo ${role}`);
+          notAllocatedCount += allocation.tasks.length;
           notAllocatedRoles.push(role);
           continue;
         }
 
-        // Distribuir horas entre os membros disponíveis
-        // Limitamos a no máximo 2 membros para evitar fragmentação excessiva
-        const membersToUse = availableMembers.slice(0, 2);
-        const hoursPerMember = allocation.totalHours / membersToUse.length;
+        // Alocar para o membro mais disponível
+        const selectedMember = availableMembers[0];
+        console.log(`Alocando para ${selectedMember.first_name} - Horas disponíveis: ${selectedMember.availableHours}`);
 
-        // Criar alocações para cada membro
-        for (const member of membersToUse) {
+        try {
+          // Criar uma única alocação para todas as tarefas deste cargo
           const { error } = await supabase
             .from('project_allocations')
             .insert({
               project_id: projectId,
-              member_id: member.id,
+              member_id: selectedMember.id,
               start_date: startDate,
               end_date: endDate,
-              allocated_hours: Math.ceil(hoursPerMember), // Arredondar para cima
+              allocated_hours: Math.ceil(allocation.totalHours),
               status: 'scheduled'
             });
 
           if (error) {
-            console.error(`Erro ao alocar membro ${member.first_name}:`, error);
-            notAllocatedCount++;
+            console.error(`Erro ao alocar membro ${selectedMember.first_name}:`, error);
+            notAllocatedCount += allocation.tasks.length;
+            notAllocatedRoles.push(role);
           } else {
             allocatedCount++;
+            console.log(`Alocação bem-sucedida para ${selectedMember.first_name} - ${allocation.totalHours} horas`);
           }
+        } catch (err) {
+          console.error(`Erro ao inserir alocação para ${selectedMember.first_name}:`, err);
+          notAllocatedCount += allocation.tasks.length;
+          notAllocatedRoles.push(role);
         }
       }
 

@@ -28,6 +28,26 @@ export function AutoAllocation({ tasks, projectId, onSuccess }: AutoAllocationPr
       return;
     }
 
+    // Verificar se há tarefas sem responsável
+    const tasksWithoutOwner = tasks.filter(task => !task.owner);
+    if (tasksWithoutOwner.length > 0) {
+      toast.warning(`${tasksWithoutOwner.length} tarefas não possuem responsável definido e não serão alocadas`);
+    }
+
+    // Agrupar tarefas por responsável para feedback
+    const roleGroups = tasks.reduce((acc, task) => {
+      if (task.owner) {
+        if (!acc[task.owner]) {
+          acc[task.owner] = [];
+        }
+        acc[task.owner].push(task);
+      }
+      return acc;
+    }, {} as Record<string, Task[]>);
+
+    console.log("Distribuição de tarefas por responsável:", 
+      Object.entries(roleGroups).map(([role, tasks]) => `${role}: ${tasks.length} tarefas`));
+
     setIsAllocating(true);
     
     try {
@@ -38,15 +58,15 @@ export function AutoAllocation({ tasks, projectId, onSuccess }: AutoAllocationPr
       const result = await autoAllocateTeam(projectId, tasks, startDate, endDate);
       
       if (result.allocatedCount > 0) {
-        toast.success(`${result.allocatedCount} alocações realizadas com sucesso`);
+        toast.success(`${result.allocatedCount} cargos alocados com sucesso`);
         if (onSuccess) onSuccess();
       } else {
         toast.warning("Não foi possível realizar alocações automáticas");
       }
       
       if (result.notAllocatedCount > 0) {
-        toast.warning(`${result.notAllocatedCount} tarefas não puderam ser alocadas automaticamente`);
-        console.log("Cargos não alocados:", result.notAllocatedRoles);
+        toast.warning(`Não foi possível alocar tarefas para ${result.notAllocatedRoles.length} cargos`);
+        console.log("Cargos não alocados:", result.notAllocatedRoles.join(", "));
       }
     } catch (error) {
       console.error("Erro na alocação automática:", error);
@@ -63,7 +83,8 @@ export function AutoAllocation({ tasks, projectId, onSuccess }: AutoAllocationPr
         <AlertTitle>Alocação Automática</AlertTitle>
         <AlertDescription>
           A alocação automática distribui as tarefas entre os membros da equipe disponíveis,
-          com base em seus cargos e capacidade. Você pode ajustar manualmente após a alocação.
+          com base em seus cargos e capacidade. Cada responsável terá todas suas tarefas alocadas
+          para um membro da equipe do mesmo cargo.
         </AlertDescription>
       </Alert>
       <div className="mt-4">
