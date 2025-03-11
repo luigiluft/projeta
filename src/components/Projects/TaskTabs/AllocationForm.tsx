@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { FormLabel } from "@/components/ui/label";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription, Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
@@ -11,8 +12,13 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format, addDays, isAfter, isBefore } from "date-fns";
-import { Allocation } from "@/hooks/resourceAllocation/types";
-import { Task } from "@/types/project";
+import { ptBR } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
 
 const allocationFormSchema = z.object({
