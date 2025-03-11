@@ -1,68 +1,95 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { PlusCircle, RefreshCw } from "lucide-react";
 import { Task } from "@/types/project";
-import { CalendarIcon, PlusCircle, Trash2, RefreshCw, Wand2 } from "lucide-react";
-import { format, addDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { useResourceAllocation } from "@/hooks/useResourceAllocation";
-import { useAutoAllocation } from "@/hooks/useAutoAllocation";
+import { useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "sonner";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useQueryClient } from "@tanstack/react-query";
+import { AllocationForm } from "./AllocationForm";
+import { AllocationList } from "./AllocationList";
+import { AutoAllocation } from "./AutoAllocation";
 
 interface AllocationTabProps {
   tasks: Task[];
   projectId?: string;
 }
 
-const allocationFormSchema = z.object({
-  task_id: z.string().optional(),
-  member_id: z.string({ required_error: "Selecione um membro da equipe" }),
-  start_date: z.date({ required_error: "Data de início é obrigatória" }),
-  end_date: z.date({ required_error: "Data de fim é obrigatória" }),
-  allocated_hours: z.coerce.number().min(1, "Deve alocar pelo menos 1 hora"),
-  status: z.enum(["scheduled", "in_progress", "completed", "cancelled"], {
-    required_error: "Selecione um status",
-  }),
-});
-
-type AllocationFormValues = z.infer<typeof allocationFormSchema>;
-
 export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
-  // Rest of the component implementation remains unchanged
+  const [isOpen, setIsOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const queryClient = useQueryClient();
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['projectAllocations'] });
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleSuccess = () => {
+    handleRefresh();
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold tracking-tight">Alocações de Recursos</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
+          
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Nova Alocação
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Adicionar Alocação</DialogTitle>
+                <DialogDescription>
+                  Aloque membros da equipe para trabalhar neste projeto.
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="max-h-[60vh]">
+                <AllocationForm 
+                  projectId={projectId} 
+                  onSuccess={handleSuccess} 
+                />
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <Separator />
+      
+      <AutoAllocation 
+        tasks={tasks} 
+        projectId={projectId} 
+        onSuccess={handleRefresh}
+      />
+
+      <Card key={refreshKey}>
+        <CardContent className="p-6">
+          <AllocationList 
+            projectId={projectId} 
+            onAllocationDeleted={handleRefresh} 
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

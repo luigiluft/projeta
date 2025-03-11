@@ -9,6 +9,13 @@ interface RoleAllocation {
   role: string;
   members: string[];
   tasks: Task[];
+  totalHours: number;
+}
+
+interface AllocationResult {
+  allocatedCount: number;
+  notAllocatedCount: number;
+  notAllocatedRoles: string[];
 }
 
 export function useAutoAllocation() {
@@ -67,7 +74,7 @@ export function useAutoAllocation() {
         const totalCapacity = workDays * member.daily_capacity;
         
         // Se membro tem capacidade disponível, adicioná-lo à lista
-        if (totalCapacity - totalAllocatedHours >= totalHours * 0.5) { // Permitir dividir a carga
+        if (totalCapacity - totalAllocatedHours >= totalHours * 0.25) { // Permitir dividir a carga
           availableMembers.push({
             ...member,
             availableHours: totalCapacity - totalAllocatedHours
@@ -88,12 +95,12 @@ export function useAutoAllocation() {
     tasks: Task[], 
     startDate: string,
     endDate: string
-  ) => {
+  ): Promise<AllocationResult> => {
     try {
       setLoading(true);
 
       // Agrupar tarefas por cargo do responsável
-      const roleAllocations: { [key: string]: RoleAllocation } = {};
+      const roleAllocations: Record<string, RoleAllocation> = {};
       
       tasks.forEach(task => {
         if (!task.owner) return;
@@ -102,11 +109,16 @@ export function useAutoAllocation() {
           roleAllocations[task.owner] = {
             role: task.owner,
             members: [],
-            tasks: []
+            tasks: [],
+            totalHours: 0
           };
         }
         
         roleAllocations[task.owner].tasks.push(task);
+        // Adicionar horas da tarefa ao total do cargo
+        roleAllocations[task.owner].totalHours += (
+          task.calculated_hours || task.fixed_hours || 0
+        );
       });
 
       let allocatedCount = 0;
@@ -116,22 +128,27 @@ export function useAutoAllocation() {
       // Para cada cargo, encontrar membros disponíveis e fazer alocação
       for (const role of Object.keys(roleAllocations)) {
         const allocation = roleAllocations[role];
-        const totalHours = allocation.tasks.reduce((sum, task) => 
-          sum + (task.calculated_hours || task.fixed_hours || 0), 0);
+        
+        // Não prosseguir se não houver horas para alocar
+        if (allocation.totalHours <= 0) {
+          continue;
+        }
 
-        const availableMembers = await findAvailableTeamMembers(role, startDate, endDate, totalHours);
+        const availableMembers = await findAvailableTeamMembers(role, startDate, endDate, allocation.totalHours);
 
         if (availableMembers.length === 0) {
-          notAllocatedCount += allocation.tasks.length;
+          notAllocatedCount++;
           notAllocatedRoles.push(role);
           continue;
         }
 
         // Distribuir horas entre os membros disponíveis
-        const hoursPerMember = totalHours / availableMembers.length;
+        // Limitamos a no máximo 2 membros para evitar fragmentação excessiva
+        const membersToUse = availableMembers.slice(0, 2);
+        const hoursPerMember = allocation.totalHours / membersToUse.length;
 
         // Criar alocações para cada membro
-        for (const member of availableMembers) {
+        for (const member of membersToUse) {
           const { error } = await supabase
             .from('project_allocations')
             .insert({
@@ -139,7 +156,7 @@ export function useAutoAllocation() {
               member_id: member.id,
               start_date: startDate,
               end_date: endDate,
-              allocated_hours: hoursPerMember,
+              allocated_hours: Math.ceil(hoursPerMember), // Arredondar para cima
               status: 'scheduled'
             });
 
