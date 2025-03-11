@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, addDays, differenceInDays, isBefore } from "date-fns";
+import { Task } from "@/types/project";
 
 interface TeamMember {
   id: string;
@@ -35,13 +35,28 @@ interface ResourceAvailability {
   }[];
 }
 
+interface ProjectAllocation {
+  id: string;
+  project_id: string;
+  member_id: string;
+  task_id?: string;
+  start_date: string;
+  end_date: string;
+  allocated_hours: number;
+  status: string;
+  member_first_name?: string;
+  member_last_name?: string;
+  member_position?: string;
+  task_name?: string;
+}
+
 export function useResourceAllocation(projectId?: string) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   // Buscar membros da equipe
-  const { data: teamMembers = [], isLoading: loadingTeam } = useQuery({
+  const { data: teamMembers = [], isLoading: teamMembersLoading } = useQuery({
     queryKey: ['team'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -58,9 +73,34 @@ export function useResourceAllocation(projectId?: string) {
     },
   });
 
+  // Buscar tarefas do projeto
+  const { data: projectTasks = [], isLoading: projectTasksLoading } = useQuery({
+    queryKey: ['projectTasks', projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+
+      const { data, error } = await supabase
+        .from('project_tasks')
+        .select(`
+          id,
+          task_id,
+          tasks:task_id(*)
+        `)
+        .eq('project_id', projectId);
+
+      if (error) {
+        console.error("Erro ao carregar tarefas do projeto:", error);
+        throw error;
+      }
+
+      return data.map(pt => pt.tasks) as Task[];
+    },
+    enabled: !!projectId
+  });
+
   // Buscar alocações existentes para o projeto
-  const { data: allocations = [], isLoading: loadingAllocations } = useQuery({
-    queryKey: ['allocations', projectId],
+  const { data: projectAllocations = [], isLoading: allocationsLoading } = useQuery({
+    queryKey: ['projectAllocations', projectId],
     queryFn: async () => {
       if (!projectId) return [];
 
@@ -76,7 +116,7 @@ export function useResourceAllocation(projectId?: string) {
           allocated_hours,
           status,
           tasks:task_id(task_name),
-          team_members:member_id(first_name, last_name)
+          team_members:member_id(first_name, last_name, position)
         `)
         .eq('project_id', projectId);
 
@@ -87,9 +127,11 @@ export function useResourceAllocation(projectId?: string) {
 
       return data.map(allocation => ({
         ...allocation,
-        member_name: `${allocation.team_members.first_name} ${allocation.team_members.last_name}`,
+        member_first_name: allocation.team_members?.first_name,
+        member_last_name: allocation.team_members?.last_name,
+        member_position: allocation.team_members?.position,
         task_name: allocation.tasks?.task_name || "Sem tarefa"
-      }));
+      })) as ProjectAllocation[];
     },
     enabled: !!projectId
   });
@@ -192,51 +234,29 @@ export function useResourceAllocation(projectId?: string) {
     }
   };
 
-  // Criar ou atualizar alocação
-  const allocateResource = async (allocation: Allocation) => {
+  // Criar alocação
+  const createAllocation = async (allocation: Allocation) => {
     try {
       setLoading(true);
       
-      // Verificar se é uma nova alocação ou atualização
-      if (allocation.id) {
-        // Atualizar alocação existente
-        const { data, error } = await supabase
-          .from('project_allocations')
-          .update({
-            member_id: allocation.member_id,
-            task_id: allocation.task_id,
-            start_date: allocation.start_date,
-            end_date: allocation.end_date,
-            allocated_hours: allocation.allocated_hours,
-            status: allocation.status
-          })
-          .eq('id', allocation.id)
-          .select();
+      const { data, error } = await supabase
+        .from('project_allocations')
+        .insert({
+          project_id: allocation.project_id,
+          member_id: allocation.member_id,
+          task_id: allocation.task_id,
+          start_date: allocation.start_date,
+          end_date: allocation.end_date,
+          allocated_hours: allocation.allocated_hours,
+          status: allocation.status
+        })
+        .select();
           
-        if (error) throw error;
-        
-        toast.success("Alocação atualizada com sucesso");
-        return data?.[0];
-      } else {
-        // Criar nova alocação
-        const { data, error } = await supabase
-          .from('project_allocations')
-          .insert({
-            project_id: allocation.project_id,
-            member_id: allocation.member_id,
-            task_id: allocation.task_id,
-            start_date: allocation.start_date,
-            end_date: allocation.end_date,
-            allocated_hours: allocation.allocated_hours,
-            status: allocation.status
-          })
-          .select();
-          
-        if (error) throw error;
-        
-        toast.success("Recurso alocado com sucesso");
-        return data?.[0];
-      }
+      if (error) throw error;
+      
+      toast.success("Recurso alocado com sucesso");
+      queryClient.invalidateQueries({ queryKey: ['projectAllocations', projectId] });
+      return data?.[0];
     } catch (error: any) {
       console.error("Erro ao alocar recurso:", error);
       
@@ -250,7 +270,6 @@ export function useResourceAllocation(projectId?: string) {
       throw error;
     } finally {
       setLoading(false);
-      queryClient.invalidateQueries({ queryKey: ['allocations', projectId] });
     }
   };
 
@@ -267,7 +286,7 @@ export function useResourceAllocation(projectId?: string) {
       if (error) throw error;
       
       toast.success("Alocação removida com sucesso");
-      queryClient.invalidateQueries({ queryKey: ['allocations', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projectAllocations', projectId] });
     } catch (error) {
       console.error("Erro ao remover alocação:", error);
       toast.error("Erro ao remover alocação");
@@ -416,13 +435,15 @@ export function useResourceAllocation(projectId?: string) {
 
   return {
     teamMembers,
-    allocations,
+    projectAllocations,
+    projectTasks,
     loading,
-    loadingTeam,
-    loadingAllocations,
+    teamMembersLoading,
+    projectTasksLoading,
+    allocationsLoading,
     checkingAvailability,
     getAvailability,
-    allocateResource,
+    createAllocation,
     deleteAllocation,
     suggestProjectDates
   };
