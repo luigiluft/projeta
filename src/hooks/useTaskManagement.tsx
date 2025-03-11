@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Column, Task, View } from "@/types/project";
 import { toast } from "sonner";
@@ -93,20 +94,41 @@ export function useTaskManagement() {
 
   const deleteTasksMutation = useMutation({
     mutationFn: async (taskIds: string[]) => {
+      console.log("Tentando excluir tarefas com IDs:", taskIds);
+      
+      // Primeiro, remover as referências na tabela project_tasks
+      const { error: projectTasksError } = await supabase
+        .from('project_tasks')
+        .delete()
+        .in('task_id', taskIds);
+
+      if (projectTasksError) {
+        console.error("Erro ao remover referências em project_tasks:", projectTasksError);
+        throw new Error(`Erro ao remover referências: ${projectTasksError.message}`);
+      }
+
+      // Depois, excluir as tarefas da tabela tasks
       const { data, error } = await supabase
         .from('tasks')
         .delete()
         .in('id', taskIds)
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao excluir tarefas:", error);
+        throw error;
+      }
+      
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Tarefas excluídas com sucesso:", data);
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] }); // Também atualizar projetos já que project_tasks foi alterado
       toast.success("Tarefas excluídas com sucesso!");
     },
     onError: (error) => {
+      console.error("Erro completo ao excluir tarefas:", error);
       toast.error(`Erro ao excluir tarefas: ${error.message}`);
     },
   });
@@ -160,6 +182,7 @@ export function useTaskManagement() {
   };
 
   const deleteTasks = (taskIds: string[]) => {
+    console.log("Solicitando exclusão das tarefas:", taskIds);
     deleteTasksMutation.mutate(taskIds);
   };
 

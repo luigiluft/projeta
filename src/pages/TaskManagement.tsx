@@ -46,11 +46,10 @@ export default function TaskManagement() {
 
   const confirmDelete = async () => {
     try {
+      console.log("Confirmando exclusão das tarefas:", selectedTasks);
       await deleteTasks(selectedTasks);
       setSelectedTasks([]);
-      toast.success("Tarefas excluídas com sucesso");
     } catch (error) {
-      toast.error("Erro ao excluir tarefas");
       console.error("Erro ao excluir tarefas:", error);
     } finally {
       setDeleteDialogOpen(false);
