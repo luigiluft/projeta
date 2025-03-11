@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -111,11 +110,10 @@ export function ProjectForm({
       });
 
       const ownerAvailability: Record<string, Date> = {};
-      
       const taskEndDates: Record<string, Date> = {};
       
-      // Começamos com a data de início do projeto
-      let lastEndDate = startDate;
+      // Inicializa com a menor data possível para garantir que qualquer data real será maior
+      let latestEndDate = new Date(0);
 
       Object.entries(tasksByOwner).forEach(([owner, tasks]) => {
         let currentDate = new Date(startDate);
@@ -164,14 +162,14 @@ export function ProjectForm({
           taskEndDates[task.id] = endDate;
           
           // Atualiza a data de término mais tardia
-          if (endDate > lastEndDate) {
-            lastEndDate = new Date(endDate);
+          if (endDate > latestEndDate) {
+            latestEndDate = new Date(endDate);
           }
         });
       });
       
-      // Aqui usamos a data de término mais tardia para definir a data estimada de término do projeto
-      const mostFutureDateFormatted = format(lastEndDate, 'dd/MM/yyyy');
+      // Usa a data de término mais tardia para definir a data estimada de término do projeto
+      const mostFutureDateFormatted = format(latestEndDate, 'dd/MM/yyyy');
       console.log("Data estimada de término calculada:", mostFutureDateFormatted);
       setEstimatedEndDate(mostFutureDateFormatted);
     } catch (error) {
