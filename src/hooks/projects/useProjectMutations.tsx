@@ -21,6 +21,17 @@ export const useProjectMutations = () => {
     
     const costs = calculateProjectCosts(selectedTasks, attributeValues);
     
+    // Separar tarefas de implementação e sustentação
+    const implementationTasks = selectedTasks.filter(task => 
+      !task.epic.toLowerCase().includes('sustentação') && 
+      !task.epic.toLowerCase().includes('sustentacao'));
+    
+    const sustainmentTasks = selectedTasks.filter(task => 
+      task.epic.toLowerCase().includes('sustentação') || 
+      task.epic.toLowerCase().includes('sustentacao'));
+    
+    console.log(`Tarefas de implementação: ${implementationTasks.length}, Tarefas de sustentação: ${sustainmentTasks.length}`);
+    
     // Garantir que ticket_medio seja processado corretamente
     console.log("Valores de atributos a serem salvos:", attributeValues);
     
@@ -53,7 +64,11 @@ export const useProjectMutations = () => {
           archived: false,
           deleted: false,
           version: 1,
-          metadata: { attribute_values: attributeValues },
+          metadata: { 
+            attribute_values: attributeValues,
+            implementation_tasks_count: implementationTasks.length,
+            sustainment_tasks_count: sustainmentTasks.length
+          },
           attributes: attributeValues, // Também salvar os valores em attributes para compatibilidade
           settings: {},
           project_name: epicNames,
