@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { ProjectTimeline } from "@/components/Calendar/ProjectTimeline";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addDays, getDaysInMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useProjects } from "@/hooks/useProjects";
@@ -26,7 +26,7 @@ export default function CalendarPage() {
   const [activeTab, setActiveTab] = useState<string>("projects");
   const [formattedProjects, setFormattedProjects] = useState<Project[]>([]);
   const { projects } = useProjects();
-  const { teamMembers, getAvailability } = useResourceAllocation();
+  const { teamMembers, allocations, getAvailability } = useResourceAllocation();
   const [teamAvailability, setTeamAvailability] = useState<any[]>([]);
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   
@@ -49,7 +49,7 @@ export default function CalendarPage() {
     }
   }, [projects]);
 
-  // Carregar disponibilidade da equipe
+  // Carregar disponibilidade da equipe considerando alocações de projetos
   const loadTeamAvailability = async () => {
     if (!date) return;
 
@@ -64,14 +64,77 @@ export default function CalendarPage() {
       const formattedStartDate = format(startDate, 'yyyy-MM-dd');
       const formattedEndDate = format(endDate, 'yyyy-MM-dd');
       
-      // Buscar disponibilidade para todos os membros da equipe
+      // Buscar disponibilidade para todos os membros da equipe, considerando alocações
       const availability = await getAvailability(
-        formattedStartDate,
+        formattedStartDate, 
         formattedEndDate,
         0
       );
       
-      setTeamAvailability(availability);
+      // Buscar todas as alocações de projetos para o período
+      const { data: projectAllocations, error: allocationsError } = await supabase
+        .from('project_allocations')
+        .select(`
+          id, 
+          member_id, 
+          start_date, 
+          end_date, 
+          allocated_hours,
+          status,
+          projects:project_id(name)
+        `)
+        .or(`start_date.lte.${formattedEndDate},end_date.gte.${formattedStartDate}`);
+        
+      if (allocationsError) {
+        console.error("Erro ao buscar alocações:", allocationsError);
+        throw allocationsError;
+      }
+
+      // Processar a disponibilidade de cada membro, considerando suas alocações
+      const processedAvailability = availability.map(member => {
+        // Encontrar alocações para este membro
+        const memberAllocations = projectAllocations?.filter(
+          alloc => alloc.member_id === member.member_id
+        ) || [];
+
+        // Atualizar os dias disponíveis considerando as alocações
+        const updatedDates = member.available_dates.map(day => {
+          const dayDate = new Date(day.date);
+          let hoursAllocated = 0;
+          
+          // Calcular horas já alocadas para este dia
+          memberAllocations.forEach(alloc => {
+            const allocStart = new Date(alloc.start_date);
+            const allocEnd = new Date(alloc.end_date);
+            
+            if (dayDate >= allocStart && dayDate <= allocEnd) {
+              // Distribuir horas uniformemente pelos dias da alocação
+              const allocDays = Math.max(1, Math.round((allocEnd.getTime() - allocStart.getTime()) / (1000 * 60 * 60 * 24))) || 1;
+              const hoursPerDay = alloc.allocated_hours / allocDays;
+              
+              hoursAllocated += hoursPerDay;
+            }
+          });
+          
+          return {
+            ...day,
+            available_hours: Math.max(0, day.available_hours - hoursAllocated),
+            allocated_hours: hoursAllocated,
+            allocations: memberAllocations.filter(alloc => {
+              const allocStart = new Date(alloc.start_date);
+              const allocEnd = new Date(alloc.end_date);
+              return dayDate >= allocStart && dayDate <= allocEnd;
+            })
+          };
+        });
+        
+        return {
+          ...member,
+          available_dates: updatedDates
+        };
+      });
+      
+      setTeamAvailability(processedAvailability);
     } catch (error) {
       console.error("Erro ao carregar disponibilidade:", error);
       toast.error("Erro ao carregar disponibilidade da equipe");
@@ -103,7 +166,7 @@ export default function CalendarPage() {
     }
     
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         {teamAvailability.map(member => (
           <div key={member.member_id} className="border rounded-md p-4">
             <h3 className="font-medium text-lg mb-2">{member.member_name}</h3>
@@ -129,12 +192,26 @@ export default function CalendarPage() {
                     bgColor = "bg-orange-100";
                   }
                   
+                  // Título detalhado com informações de alocação
+                  const allocationsInfo = d.allocations && d.allocations.length > 0
+                    ? d.allocations.map(a => `\n- ${a.projects.name}: ${(a.allocated_hours / (Math.round((new Date(a.end_date).getTime() - new Date(a.start_date).getTime()) / (1000 * 60 * 60 * 24)) || 1)).toFixed(1)}h`).join('')
+                    : '\nSem alocações';
+                  
+                  const tooltipTitle = `${d.available_hours.toFixed(1)} horas disponíveis\n${d.allocated_hours.toFixed(1)} horas alocadas${allocationsInfo}`;
+                  
                   return (
-                    <div key={d.date} 
-                      className={`${bgColor} p-2 text-center rounded-sm`}
-                      title={`${d.available_hours} horas disponíveis`}>
+                    <div 
+                      key={d.date} 
+                      className={`${bgColor} p-2 text-center rounded-sm hover:shadow-md cursor-help transition-shadow`}
+                      title={tooltipTitle}
+                    >
                       <span className="text-xs font-medium">{day}</span>
-                      <div className="text-xs mt-1">{d.available_hours}h</div>
+                      <div className="flex flex-col text-[10px] mt-1">
+                        <span>{d.available_hours.toFixed(1)}h disponível</span>
+                        {d.allocated_hours > 0 && 
+                          <span className="text-red-700">{d.allocated_hours.toFixed(1)}h alocado</span>
+                        }
+                      </div>
                     </div>
                   );
                 })}
@@ -169,6 +246,28 @@ export default function CalendarPage() {
               disabled={isLoadingAvailability}>
               {isLoadingAvailability ? "Carregando..." : "Atualizar Disponibilidade"}
             </Button>
+          </div>
+          
+          <div className="mt-4 p-3 border rounded-md">
+            <h3 className="font-medium mb-2">Legenda - Disponibilidade</h3>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-green-100 mr-2 rounded"></div>
+                <span>≥ 8h disponíveis</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-yellow-100 mr-2 rounded"></div>
+                <span>4-8h disponíveis</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-orange-100 mr-2 rounded"></div>
+                <span>0-4h disponíveis</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-red-100 mr-2 rounded"></div>
+                <span>0h disponíveis</span>
+              </div>
+            </div>
           </div>
         </Card>
 
