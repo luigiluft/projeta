@@ -76,6 +76,12 @@ export function ProjectForm({
     start_date: initialValues?.start_date || "",
   };
 
+  // Log para debug dos valores iniciais recebidos
+  console.log("Valores iniciais recebidos:", initialValues);
+  console.log("Atributos especiais no initialValues:", 
+    initialValues?.attribute_values?.ticket_medio, 
+    initialValues?.attributes?.ticket_medio);
+
   // Adicionar valores específicos que podem vir do attribute_values ou attributes
   if (initialValues) {
     // Primeiro, adicionar todos os valores dos atributos
@@ -103,18 +109,24 @@ export function ProjectForm({
     }
   });
 
-  console.log("Valores iniciais do formulário:", defaultValues);
-
   // Verificar e corrigir valores especiais como tempo_de_atendimento_por_cliente, pedidos_mes e ticket_medio
   const specialFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
   specialFields.forEach(field => {
-    if (initialValues?.attribute_values?.[field] !== undefined) {
+    console.log(`Verificando campo especial ${field}:`, defaultValues[field]);
+    
+    // Verificar em attribute_values
+    if (initialValues?.attribute_values && initialValues.attribute_values[field] !== undefined) {
       defaultValues[field] = initialValues.attribute_values[field];
+      console.log(`Definido ${field} de attribute_values:`, defaultValues[field]);
     }
-    else if (initialValues?.attributes?.[field] !== undefined) {
+    // Verificar em attributes
+    else if (initialValues?.attributes && initialValues.attributes[field] !== undefined) {
       defaultValues[field] = initialValues.attributes[field];
+      console.log(`Definido ${field} de attributes:`, defaultValues[field]);
     }
   });
+
+  console.log("Valores iniciais do formulário após processamento:", defaultValues);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(formSchema),

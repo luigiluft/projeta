@@ -27,6 +27,10 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
     });
   }, [attributes, form]);
 
+  // Log para debug
+  console.log("Valores atuais no formulário:", form.getValues());
+  console.log("Atributos recebidos:", attributes);
+
   return (
     <div className="space-y-4 mt-4">
       {attributes.map((attribute) => (
@@ -35,8 +39,18 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
           control={form.control}
           name={attribute.id}
           render={({ field }) => {
+            // Log para debug deste campo específico
+            console.log(`Campo ${attribute.id} valor:`, field.value);
+            
             // Tratar valores inválidos (NaN, undefined) para exibição
             const displayValue = (() => {
+              // Verificar se é um dos campos específicos
+              const isSpecialField = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'].includes(attribute.id);
+              
+              if (isSpecialField) {
+                console.log(`Campo especial ${attribute.id}:`, field.value);
+              }
+              
               if (field.value === undefined || field.value === "") return "";
               
               // Se for um objeto com _type definido (casos especiais)
@@ -50,7 +64,7 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
               return field.value;
             })();
 
-            // Verificar se é um dos campos específicos que precisamos tratar
+            // Verificar se é um dos campos específicos que precisamos tratar com destaque
             const isSpecialField = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'].includes(attribute.id);
 
             return (
@@ -71,7 +85,7 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
                       }
                     }}
                     readOnly={readOnly}
-                    className={`${readOnly ? "bg-gray-50" : ""} ${isSpecialField ? "focus:ring-2 focus:ring-primary" : ""}`}
+                    className={`${readOnly ? "bg-gray-50" : ""} ${isSpecialField ? "border-primary focus:ring-2 focus:ring-primary" : ""}`}
                   />
                 </FormControl>
                 <FormMessage />

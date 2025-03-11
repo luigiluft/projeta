@@ -109,20 +109,20 @@ export default function ProjectDetails() {
         setProjectAttributes(formattedAttributes);
 
         // Extrair valores dos atributos do campo metadata
-        let attributeValues = {};
+        let attributeValues: Record<string, any> = {};
         
+        // Verificar se existe metadata e se é um objeto
         if (projectData.metadata && typeof projectData.metadata === 'object') {
-          const metadata = projectData.metadata as Record<string, any>;
-          if (metadata.attribute_values && typeof metadata.attribute_values === 'object') {
-            attributeValues = metadata.attribute_values;
+          // Verificar se existe attribute_values no metadata
+          if (projectData.metadata.attribute_values && typeof projectData.metadata.attribute_values === 'object') {
+            attributeValues = { ...projectData.metadata.attribute_values };
           }
         }
 
         // Verificar se existem atributos na tabela projects diretamente
         if (projectData.attributes && typeof projectData.attributes === 'object') {
-          const attributes = projectData.attributes as Record<string, any>;
-          Object.keys(attributes).forEach(key => {
-            attributeValues[key] = attributes[key];
+          Object.entries(projectData.attributes).forEach(([key, value]) => {
+            attributeValues[key] = value;
           });
         }
 
@@ -130,14 +130,23 @@ export default function ProjectDetails() {
         const specificFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
         specificFields.forEach(field => {
           // Se o atributo existe em metadata.attribute_values
-          if (projectData.metadata?.attribute_values?.[field] !== undefined) {
+          if (projectData.metadata && 
+              typeof projectData.metadata === 'object' && 
+              projectData.metadata.attribute_values && 
+              typeof projectData.metadata.attribute_values === 'object' && 
+              projectData.metadata.attribute_values[field] !== undefined) {
             attributeValues[field] = projectData.metadata.attribute_values[field];
           }
           // Se o atributo existe em attributes
-          else if (projectData.attributes?.[field] !== undefined) {
+          else if (projectData.attributes && 
+                  typeof projectData.attributes === 'object' && 
+                  projectData.attributes[field] !== undefined) {
             attributeValues[field] = projectData.attributes[field];
           }
         });
+
+        console.log("Valores dos atributos extraídos:", attributeValues);
+        console.log("Verificando ticket_medio:", attributeValues.ticket_medio);
 
         const fullProject = {
           ...projectData,
