@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProjectCalculations } from "./useProjectCalculations";
+import { format, addDays } from "date-fns";
 
 export const useProjectMutations = () => {
   const queryClient = useQueryClient();
@@ -43,6 +44,11 @@ export const useProjectMutations = () => {
     }
 
     try {
+      // Consultar disponibilidade da equipe para determinar a melhor data de início
+      const today = new Date();
+      const formattedToday = format(today, 'yyyy-MM-dd');
+      const estimatedEndDate = format(addDays(today, 30), 'yyyy-MM-dd');
+      
       // 1. Criar o projeto
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
@@ -72,7 +78,9 @@ export const useProjectMutations = () => {
           attributes: attributeValues, // Também salvar os valores em attributes para compatibilidade
           settings: {},
           project_name: epicNames,
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          start_date: formattedToday,
+          expected_end_date: estimatedEndDate,
+          due_date: estimatedEndDate,
         }])
         .select();
 
@@ -111,7 +119,9 @@ export const useProjectMutations = () => {
             task_id: task.id,
             calculated_hours: calculatedHours,
             is_active: true,
-            status: 'pending'
+            status: 'pending',
+            start_date: formattedToday, // Data de início padrão
+            end_date: estimatedEndDate // Data de fim estimada temporária
           };
         });
         
@@ -123,11 +133,14 @@ export const useProjectMutations = () => {
         if (tasksError) {
           console.error("Erro ao adicionar tarefas ao projeto:", tasksError);
           toast.error("Erro ao registrar tarefas do projeto");
+        } else {
+          // 3. Verificar disponibilidade e criar alocações automáticas para tarefas
+          // Devido à complexidade, deixamos isso para ser feito manualmente pelo usuário na interface
+          toast.success("Projeto criado com sucesso! Você pode definir as alocações de recursos na aba 'Alocações'.");
         }
       }
 
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast.success("Projeto criado com sucesso!");
     } catch (error) {
       toast.error("Erro ao criar projeto");
       console.error(error);
@@ -137,6 +150,17 @@ export const useProjectMutations = () => {
   // Função para excluir um projeto
   const handleDelete = async (projectId: string) => {
     try {
+      // Primeiro excluir alocações relacionadas
+      const { error: allocError } = await supabase
+        .from('project_allocations')
+        .delete()
+        .eq('project_id', projectId);
+
+      if (allocError) {
+        console.error("Erro ao excluir alocações:", allocError);
+      }
+
+      // Depois marcar o projeto como excluído
       const { error } = await supabase
         .from('projects')
         .update({

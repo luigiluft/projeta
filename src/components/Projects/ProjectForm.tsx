@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { PricingTab } from "./PricingTab";
 import { ImplementationTasksTab } from "./TaskTabs/ImplementationTasksTab";
 import { SustainmentTasksTab } from "./TaskTabs/SustainmentTasksTab";
 import { GanttTab } from "./TaskTabs/GanttTab";
+import { AllocationTab } from "./TaskTabs/AllocationTab";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
 import { Attribute, Project, Task } from "@/types/project";
 import { ProjectBasicInfo } from "./ProjectBasicInfo";
@@ -377,6 +379,7 @@ export function ProjectForm({
             <TabsTrigger value="pricing" className="flex-1">Precificação</TabsTrigger>
             <TabsTrigger value="implementation" className="flex-1">Implementação</TabsTrigger>
             <TabsTrigger value="sustainment" className="flex-1">Sustentação</TabsTrigger>
+            <TabsTrigger value="allocations" className="flex-1">Alocações</TabsTrigger>
             <TabsTrigger value="gantt" className="flex-1">Gantt</TabsTrigger>
           </TabsList>
 
@@ -399,6 +402,13 @@ export function ProjectForm({
               columns={taskColumns}
               onColumnsChange={handleColumnsChange}
               attributeValues={attributeValues}
+            />
+          </TabsContent>
+
+          <TabsContent value="allocations">
+            <AllocationTab 
+              tasks={selectedTasks}
+              projectId={editingId || undefined}
             />
           </TabsContent>
 

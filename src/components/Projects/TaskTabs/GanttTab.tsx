@@ -9,21 +9,103 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   CartesianGrid,
+  Legend,
 } from "recharts";
 import { format, parseISO, isValid, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface GanttTabProps {
   tasks: Task[];
 }
 
+interface TeamAllocation {
+  id: string;
+  member_id: string;
+  member_name: string;
+  project_id: string;
+  task_id: string;
+  task_name: string;
+  start_date: string;
+  end_date: string;
+  allocated_hours: number;
+  status: string;
+}
+
 export function GanttTab({ tasks }: GanttTabProps) {
+  const [allocations, setAllocations] = useState<TeamAllocation[]>([]);
+  const [loadingAllocations, setLoadingAllocations] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("tasks");
+
   // Filtrar tarefas que são apenas de implementação
   const implementationTasks = tasks.filter(task => 
     !task.epic.toLowerCase().includes('sustentação') &&
     !task.epic.toLowerCase().includes('sustentacao')
   );
+
+  useEffect(() => {
+    if (tasks.length > 0) {
+      const projectId = tasks[0].project_task_id 
+        ? tasks.find(t => t.project_task_id)?.project_id 
+        : null;
+      
+      if (projectId) {
+        fetchAllocations(projectId);
+      }
+    }
+  }, [tasks]);
+
+  const fetchAllocations = async (projectId: string) => {
+    try {
+      setLoadingAllocations(true);
+      
+      // Buscar alocações para este projeto
+      const { data: allocationData, error: allocationError } = await supabase
+        .from('project_allocations')
+        .select(`
+          id,
+          project_id,
+          member_id,
+          task_id,
+          start_date,
+          end_date,
+          allocated_hours,
+          status,
+          tasks:task_id(task_name),
+          team_members:member_id(first_name, last_name)
+        `)
+        .eq('project_id', projectId);
+
+      if (allocationError) {
+        console.error("Erro ao buscar alocações:", allocationError);
+        return;
+      }
+
+      // Formatar os dados de alocação
+      const formattedAllocations = allocationData.map(alloc => ({
+        id: alloc.id,
+        member_id: alloc.member_id,
+        member_name: `${alloc.team_members.first_name} ${alloc.team_members.last_name}`,
+        project_id: alloc.project_id,
+        task_id: alloc.task_id,
+        task_name: alloc.tasks?.task_name || "Sem tarefa",
+        start_date: alloc.start_date,
+        end_date: alloc.end_date,
+        allocated_hours: alloc.allocated_hours,
+        status: alloc.status
+      }));
+
+      setAllocations(formattedAllocations);
+    } catch (error) {
+      console.error("Erro ao carregar alocações:", error);
+    } finally {
+      setLoadingAllocations(false);
+    }
+  };
 
   // Organizar tarefas por data de início
   const sortedTasks = [...implementationTasks].sort((a, b) => {
@@ -67,8 +149,24 @@ export function GanttTab({ tasks }: GanttTabProps) {
     maxDate = addDays(maxDate, 1);
   }
 
-  // Preparar dados para o gráfico
-  const chartData = sortedTasks.map(task => {
+  // Se temos alocações, considerar suas datas também para o domínio do gráfico
+  if (allocations.length > 0) {
+    allocations.forEach(allocation => {
+      const allocStart = new Date(allocation.start_date);
+      const allocEnd = new Date(allocation.end_date);
+      
+      if (isValid(allocStart) && allocStart < minDate) {
+        minDate = allocStart;
+      }
+      
+      if (isValid(allocEnd) && allocEnd > maxDate) {
+        maxDate = allocEnd;
+      }
+    });
+  }
+
+  // Preparar dados para o gráfico de tarefas
+  const taskChartData = sortedTasks.map(task => {
     // Garantir que temos datas válidas
     const startDate = task.start_date ? new Date(task.start_date) : new Date();
     const endDate = task.end_date ? new Date(task.end_date) : new Date(startDate);
@@ -85,6 +183,24 @@ export function GanttTab({ tasks }: GanttTabProps) {
     };
   });
 
+  // Preparar dados para o gráfico de alocações
+  const allocationChartData = allocations.map(allocation => {
+    const startDate = new Date(allocation.start_date);
+    const endDate = new Date(allocation.end_date);
+    
+    return {
+      name: allocation.task_name,
+      member: allocation.member_name,
+      startTime: startDate.getTime(),
+      endTime: endDate.getTime(),
+      value: [startDate.getTime(), endDate.getTime()],
+      displayStartDate: format(startDate, "dd/MM/yyyy", { locale: ptBR }),
+      displayEndDate: format(endDate, "dd/MM/yyyy", { locale: ptBR }),
+      displayDuration: allocation.allocated_hours,
+      status: allocation.status
+    };
+  });
+
   // Criar um array com todas as datas entre o início do projeto e o final
   const dateRange: Date[] = [];
   if (minDate && maxDate) {
@@ -98,7 +214,7 @@ export function GanttTab({ tasks }: GanttTabProps) {
   // Formatar o conjunto de dados para o eixo X
   const xAxisTicks = dateRange.map(date => date.getTime());
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const TaskTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -120,60 +236,163 @@ export function GanttTab({ tasks }: GanttTabProps) {
     return null;
   };
 
-  // Calcular a altura necessária baseada no número de tarefas
-  const chartHeight = Math.max(500, chartData.length * 40);
+  const AllocationTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-3 border rounded shadow">
+          <p className="font-medium text-sm mb-1">{data.name}</p>
+          <p className="text-xs text-gray-600 mb-1">Alocado para: {data.member}</p>
+          <p className="text-xs mb-1">
+            Início: {data.displayStartDate}
+          </p>
+          <p className="text-xs mb-1">
+            Fim: {data.displayEndDate}
+          </p>
+          <p className="text-xs mb-1">
+            Horas alocadas: {data.displayDuration}
+          </p>
+          <p className="text-xs">
+            Status: {data.status === 'scheduled' ? 'Agendada' : 
+                   data.status === 'in_progress' ? 'Em Andamento' : 
+                   data.status === 'completed' ? 'Concluída' : data.status}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Calcular a altura necessária baseada no número de tarefas ou alocações
+  const taskChartHeight = Math.max(500, taskChartData.length * 40);
+  const allocationChartHeight = Math.max(500, allocationChartData.length * 40);
 
   return (
     <div className="space-y-4 mt-4">
-      <h3 className="text-lg font-medium mb-4">Cronograma do Projeto</h3>
-      
-      {chartData.length === 0 ? (
-        <div className="flex justify-center items-center h-64 bg-gray-50 rounded-md border">
-          <p className="text-gray-500">Nenhuma tarefa de implementação encontrada.</p>
-        </div>
-      ) : (
-        <ScrollArea className="border rounded-md p-4 bg-white shadow-sm h-[500px]">
-          <div style={{ height: `${chartHeight}px`, minWidth: "100%" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={chartData}
-                layout="vertical"
-                margin={{ top: 20, right: 30, left: 150, bottom: 20 }}
-                barGap={0}
-                barCategoryGap={5}
-              >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis 
-                  type="number"
-                  domain={[minDate.getTime(), maxDate.getTime()]}
-                  tickFormatter={(timestamp) => format(new Date(timestamp), "dd/MM", { locale: ptBR })}
-                  scale="time"
-                  ticks={xAxisTicks}
-                  allowDataOverflow={true}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={140}
-                  tick={{ fontSize: 12 }}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                
-                {/* Barra representando a duração entre início e fim da tarefa */}
-                <Bar
-                  dataKey="value"
-                  name="Duração"
-                  minPointSize={3}
-                  barSize={20}
-                  fill="#60a5fa"
-                  radius={[4, 4, 4, 4]}
-                  background={{ fill: "#eee" }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </ScrollArea>
-      )}
+      <Tabs 
+        defaultValue="tasks" 
+        className="w-full" 
+        value={activeTab}
+        onValueChange={setActiveTab}
+      >
+        <TabsList className="grid grid-cols-2 w-64 mb-4">
+          <TabsTrigger value="tasks">Tarefas</TabsTrigger>
+          <TabsTrigger value="allocations">Alocações</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tasks">
+          <h3 className="text-lg font-medium mb-4">Cronograma de Tarefas</h3>
+          
+          {taskChartData.length === 0 ? (
+            <div className="flex justify-center items-center h-64 bg-gray-50 rounded-md border">
+              <p className="text-gray-500">Nenhuma tarefa de implementação encontrada.</p>
+            </div>
+          ) : (
+            <ScrollArea className="border rounded-md p-4 bg-white shadow-sm h-[500px]">
+              <div style={{ height: `${taskChartHeight}px`, minWidth: "100%" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={taskChartData}
+                    layout="vertical"
+                    margin={{ top: 20, right: 30, left: 150, bottom: 20 }}
+                    barGap={0}
+                    barCategoryGap={5}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis 
+                      type="number"
+                      domain={[minDate.getTime(), maxDate.getTime()]}
+                      tickFormatter={(timestamp) => format(new Date(timestamp), "dd/MM", { locale: ptBR })}
+                      scale="time"
+                      ticks={xAxisTicks}
+                      allowDataOverflow={true}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={140}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip content={<TaskTooltip />} />
+                    
+                    {/* Barra representando a duração entre início e fim da tarefa */}
+                    <Bar
+                      dataKey="value"
+                      name="Duração"
+                      minPointSize={3}
+                      barSize={20}
+                      fill="#60a5fa"
+                      radius={[4, 4, 4, 4]}
+                      background={{ fill: "#eee" }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </ScrollArea>
+          )}
+        </TabsContent>
+
+        <TabsContent value="allocations">
+          <h3 className="text-lg font-medium mb-4">Alocações de Equipe</h3>
+          
+          {loadingAllocations ? (
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ) : allocationChartData.length === 0 ? (
+            <div className="flex justify-center items-center h-64 bg-gray-50 rounded-md border">
+              <p className="text-gray-500">
+                Não há alocações de recursos para este projeto.
+              </p>
+            </div>
+          ) : (
+            <ScrollArea className="border rounded-md p-4 bg-white shadow-sm h-[500px]">
+              <div style={{ height: `${allocationChartHeight}px`, minWidth: "100%" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={allocationChartData}
+                    layout="vertical"
+                    margin={{ top: 20, right: 30, left: 150, bottom: 20 }}
+                    barGap={0}
+                    barCategoryGap={5}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis 
+                      type="number"
+                      domain={[minDate.getTime(), maxDate.getTime()]}
+                      tickFormatter={(timestamp) => format(new Date(timestamp), "dd/MM", { locale: ptBR })}
+                      scale="time"
+                      ticks={xAxisTicks}
+                      allowDataOverflow={true}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={140}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip content={<AllocationTooltip />} />
+                    <Legend />
+                    
+                    {/* Barra representando a duração entre início e fim da alocação */}
+                    <Bar
+                      dataKey="value"
+                      name="Alocação"
+                      minPointSize={3}
+                      barSize={20}
+                      fill="#10b981"
+                      radius={[4, 4, 4, 4]}
+                      background={{ fill: "#eee" }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </ScrollArea>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

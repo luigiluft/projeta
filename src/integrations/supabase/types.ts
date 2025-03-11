@@ -63,6 +63,64 @@ export type Database = {
         }
         Relationships: []
       }
+      project_allocations: {
+        Row: {
+          allocated_hours: number
+          created_at: string | null
+          end_date: string
+          id: string
+          member_id: string
+          project_id: string
+          start_date: string
+          status: string
+          task_id: string | null
+        }
+        Insert: {
+          allocated_hours: number
+          created_at?: string | null
+          end_date: string
+          id?: string
+          member_id: string
+          project_id: string
+          start_date: string
+          status?: string
+          task_id?: string | null
+        }
+        Update: {
+          allocated_hours?: number
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          member_id?: string
+          project_id?: string
+          start_date?: string
+          status?: string
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_allocations_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_allocations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_allocations_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_attributes: {
         Row: {
           code: string | null
@@ -538,6 +596,44 @@ export type Database = {
             columns: ["depends_on"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_availability: {
+        Row: {
+          created_at: string | null
+          daily_hours: number
+          end_date: string
+          id: string
+          member_id: string
+          start_date: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          daily_hours?: number
+          end_date: string
+          id?: string
+          member_id: string
+          start_date: string
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          daily_hours?: number
+          end_date?: string
+          id?: string
+          member_id?: string
+          start_date?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_availability_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
             referencedColumns: ["id"]
           },
         ]
