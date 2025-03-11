@@ -4,7 +4,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Task } from "@/types/project";
 
 interface EpicSelectorProps {
   availableEpics: string[];
@@ -24,30 +23,68 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     }
   };
 
-  // Classificar os epics com maior precisão
-  const sustainmentEpics = availableEpics.filter(epic => 
-    epic.toLowerCase().includes('sustentação') ||
-    epic.toLowerCase().includes('sustentacao') ||
-    epic.toLowerCase().includes('atendimento ao consumidor') ||
-    epic.toLowerCase().includes('sac 4.0') ||
-    epic.toLowerCase().includes('faturamento de gestão operacional') ||
-    epic.toLowerCase().includes('faturamento de gestao operacional')
-  );
-  
-  // Epics de integração
-  const integrationEpics = availableEpics.filter(epic => 
-    !sustainmentEpics.includes(epic) &&
-    epic.toLowerCase().includes('integração') ||
-    epic.toLowerCase().includes('integracao')
+  // Definição das ordens específicas para cada categoria
+  const implementationOrder = [
+    'Implementação Ecommmerce B2C',
+    'Implementação Ecommmerce B2B',
+    'Implementação Distribuidora Digital',
+    'Implementação Hub de Atendimento',
+    'Implementação do Anymarket',
+    'Implementação ERP AGREGA',
+    'Implementação ERP'
+  ];
+
+  const integrationOrder = [
+    'Integração com Luft digital',
+    'Integração com ERP Homologado',
+    'Integração com ERP Não- Homologado',
+    'Integração com AGRIQ',
+    'Integração com CRM'
+  ];
+
+  const sustainmentOrder = [
+    'Sustentação Ecommerce',
+    'Atendimento ao Consumidor (SAC 4.0)',
+    'Sustentação do Anymarket',
+    'Faturamento e gestao operacional',
+    'Faturamento e gestão operacional agrega'
+  ];
+
+  // Função auxiliar para ordenar epics baseado em uma ordem específica
+  const sortBySpecificOrder = (epics: string[], order: string[]) => {
+    return epics.sort((a, b) => {
+      const indexA = order.indexOf(a);
+      const indexB = order.indexOf(b);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+  };
+
+  // Classificar os epics por categoria
+  const implementationEpics = availableEpics.filter(epic => 
+    epic.toLowerCase().startsWith('implementação') ||
+    epic.toLowerCase().startsWith('implementacao')
   );
 
-  // Todos os outros epics que não são de sustentação nem integração são de implementação
-  const implementationEpics = availableEpics.filter(epic => 
-    !sustainmentEpics.includes(epic) && 
-    !integrationEpics.includes(epic) &&
-    epic.toLowerCase().includes('implementação') ||
-    epic.toLowerCase().includes('implementacao')
+  const integrationEpics = availableEpics.filter(epic => 
+    epic.toLowerCase().startsWith('integração') ||
+    epic.toLowerCase().startsWith('integracao')
   );
+
+  const sustainmentEpics = availableEpics.filter(epic => 
+    epic.toLowerCase().startsWith('sustentação') ||
+    epic.toLowerCase().startsWith('sustentacao') ||
+    epic.toLowerCase().includes('atendimento ao consumidor') ||
+    epic.toLowerCase().includes('sac 4.0') ||
+    epic.toLowerCase().includes('faturamento e gestao') ||
+    epic.toLowerCase().includes('faturamento e gestão')
+  );
+
+  // Ordenar cada categoria conforme a ordem especificada
+  const sortedImplementationEpics = sortBySpecificOrder(implementationEpics, implementationOrder);
+  const sortedIntegrationEpics = sortBySpecificOrder(integrationEpics, integrationOrder);
+  const sortedSustainmentEpics = sortBySpecificOrder(sustainmentEpics, sustainmentOrder);
 
   return (
     <Card>
@@ -60,8 +97,8 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
             <div>
               <h4 className="text-sm font-semibold mb-3">Implementação</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {implementationEpics.length > 0 ? (
-                  implementationEpics.map((epic) => (
+                {sortedImplementationEpics.length > 0 ? (
+                  sortedImplementationEpics.map((epic) => (
                     <div key={epic} className="flex items-center space-x-2">
                       {readOnly ? (
                         <Badge 
@@ -97,8 +134,8 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
             <div>
               <h4 className="text-sm font-semibold mb-3">Integração</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {integrationEpics.length > 0 ? (
-                  integrationEpics.map((epic) => (
+                {sortedIntegrationEpics.length > 0 ? (
+                  sortedIntegrationEpics.map((epic) => (
                     <div key={epic} className="flex items-center space-x-2">
                       {readOnly ? (
                         <Badge 
@@ -134,8 +171,8 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
             <div>
               <h4 className="text-sm font-semibold mb-3">Sustentação</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sustainmentEpics.length > 0 ? (
-                  sustainmentEpics.map((epic) => (
+                {sortedSustainmentEpics.length > 0 ? (
+                  sortedSustainmentEpics.map((epic) => (
                     <div key={epic} className="flex items-center space-x-2">
                       {readOnly ? (
                         <Badge 
