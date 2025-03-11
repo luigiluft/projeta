@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Column, Task, View } from "@/types/project";
 import { toast } from "sonner";
@@ -19,6 +20,8 @@ export function useTaskManagement() {
     { id: "fixed_hours", label: "Horas Fixas", visible: true },
     { id: "owner", label: "Responsável", visible: true },
     { id: "is_active", label: "Ativo", visible: true },
+    { id: "is_third_party_cost", label: "Custo Terceiros", visible: true },
+    { id: "cost_amount", label: "Valor (R$)", visible: true },
     { id: "status", label: "Status", visible: true },
     { id: "order", label: "Ordem", visible: true },
     { id: "depends_on", label: "Dependência", visible: true },
@@ -57,7 +60,9 @@ export function useTaskManagement() {
         story: task.story || '',
         owner: task.owner || '',
         status: (task.status as 'pending' | 'in_progress' | 'completed') || 'pending',
-        hours: task.fixed_hours || 0
+        hours: task.fixed_hours || 0,
+        is_third_party_cost: task.is_third_party_cost || false,
+        cost_amount: task.cost_amount || 0
       }));
       
       return transformedTasks;

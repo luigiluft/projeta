@@ -1,3 +1,4 @@
+
 export interface Project {
   id: string;
   name: string;
@@ -66,6 +67,10 @@ export interface Task {
   // Campos adicionados para compatibilidade e novos recursos
   order?: number; // Para compatibilidade com o campo 'order' do banco
   project_task_id?: string; // ID da relação na tabela project_tasks
+  
+  // Novos campos para custos com terceiros
+  is_third_party_cost?: boolean; // Indica se é um custo com terceiros
+  cost_amount?: number; // Valor em reais do custo
 }
 
 export interface Column {

@@ -1,3 +1,4 @@
+
 import { Task } from "@/types/project";
 
 // Rates para diferentes papéis na equipe
@@ -16,13 +17,22 @@ export const teamRates = {
 // Função para calcular custos a partir de uma lista de tarefas
 export const calculateCosts = (taskList: Task[]) => {
   const costs = taskList.reduce((acc, task) => {
-    const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
-    const hours = task.calculated_hours || 0;
-    const taskCost = hourlyRate * hours;
-    return {
-      hours: acc.hours + hours,
-      cost: acc.cost + taskCost
-    };
+    if (task.is_third_party_cost && task.cost_amount) {
+      // Se for um custo com terceiros, adiciona diretamente ao custo total
+      return {
+        hours: acc.hours,
+        cost: acc.cost + task.cost_amount
+      };
+    } else {
+      // Caso contrário, calcula normalmente com base nas horas
+      const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
+      const hours = task.calculated_hours || 0;
+      const taskCost = hourlyRate * hours;
+      return {
+        hours: acc.hours + hours,
+        cost: acc.cost + taskCost
+      };
+    }
   }, { hours: 0, cost: 0 });
 
   return {
@@ -109,6 +119,11 @@ export const processHoursFormula = (formula: string, attributeValues: Record<str
 
 // Função para calcular horas das tarefas com base em uma fórmula
 export const calculateTaskHours = (task: Task, attributeValues: Record<string, number>): number => {
+  // Se for um custo com terceiros, retorna 0 horas
+  if (task.is_third_party_cost) {
+    return 0;
+  }
+  
   if (task.hours_formula && task.hours_type !== 'fixed') {
     try {
       const formula = processHoursFormula(task.hours_formula, attributeValues);

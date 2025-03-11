@@ -1,3 +1,4 @@
+
 import { Task } from "@/types/project";
 import {
   BarChart,
@@ -18,8 +19,16 @@ interface GanttTabProps {
 export function GanttTab({ tasks }: GanttTabProps) {
   // Filtrar tarefas de implementação excluindo específicamente todas as que são de sustentação ou integração
   const implementationTasks = tasks.filter(task => 
-    task.epic.toLowerCase().startsWith('implementação') ||
-    task.epic.toLowerCase().startsWith('implementacao')
+    // Implementações
+    (task.epic.toLowerCase().startsWith('implementação') ||
+    task.epic.toLowerCase().startsWith('implementacao')) &&
+    
+    // Excluir integrações
+    !task.epic.toLowerCase().includes('integração com') &&
+    !task.epic.toLowerCase().includes('integracao com') &&
+    
+    // Excluir terceiros
+    !task.is_third_party_cost
   );
 
   // Organizar tarefas por data de início
