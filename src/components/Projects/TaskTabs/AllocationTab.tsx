@@ -1,15 +1,15 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from "lucide-react";
-import { AllocationForm } from "./AllocationForm";
-import { AllocationList } from "./AllocationList";
-import { AutoAllocation } from "./AutoAllocation";
-import { useProjectAllocations } from "@/hooks/resourceAllocation/useProjectAllocations";
-import { useProjectTasks } from "@/hooks/resourceAllocation/useProjectTasks";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AllocationGanttChart } from "./Gantt/AllocationGanttChart";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AllocationForm } from "./AllocationForm";
+import { AutoAllocation } from "./AutoAllocation";
+import { AllocationList } from "./AllocationList";
+import { AllocationGanttChart } from "./Gantt/AllocationGanttChart";
+import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { GetAllocationListProps } from "@/hooks/resourceAllocation/types";
 
 interface AllocationTabProps {
   projectId: string;
@@ -17,95 +17,89 @@ interface AllocationTabProps {
 }
 
 export function AllocationTab({ projectId, projectName }: AllocationTabProps) {
-  const [showAllocationForm, setShowAllocationForm] = useState(false);
-  const [showAutoAllocForm, setShowAutoAllocForm] = useState(false);
-  const { refetch } = useProjectAllocations(projectId);
-  const { data: projectTasks = [] } = useProjectTasks(projectId);
-  const [activeTab, setActiveTab] = useState("list");
+  const [activeTab, setActiveTab] = useState("manual");
+  const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
   
-  const handleRefetch = () => {
-    refetch();
+  const { projectTasks, projectAllocations } = useResourceAllocation(projectId);
+  
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["project-allocations", projectId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["project-tasks", projectId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["team-members"],
+        }),
+      ]);
+    } catch (error) {
+      console.error("Erro ao atualizar dados:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
   
+  const handleAllocationSuccess = () => {
+    // Atualiza os dados após uma alocação bem-sucedida
+    handleRefresh();
+  };
+
   const handleAllocationDeleted = () => {
-    refetch();
+    // Atualiza os dados após uma alocação ser excluída
+    handleRefresh();
   };
   
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-semibold">Alocações do Projeto</h2>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleRefetch}
-            variant="outline"
-            size="sm"
-          >
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Atualizar
-          </Button>
-          
-          <Dialog open={showAutoAllocForm} onOpenChange={setShowAutoAllocForm}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                Alocação Automática
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[650px]">
-              <DialogHeader>
-                <DialogTitle>Alocação Automática de Recursos</DialogTitle>
-              </DialogHeader>
-              <AutoAllocation 
-                projectId={projectId}
-                tasks={projectTasks}
-                onSuccess={() => {
-                  setShowAutoAllocForm(false);
-                  handleRefetch();
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog open={showAllocationForm} onOpenChange={setShowAllocationForm}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Nova Alocação
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[550px]">
-              <DialogHeader>
-                <DialogTitle>Nova Alocação</DialogTitle>
-              </DialogHeader>
-              <AllocationForm 
-                projectId={projectId}
-                onSuccess={() => {
-                  setShowAllocationForm(false);
-                  handleRefetch();
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Alocação de Recursos</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+          Atualizar
+        </Button>
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="list">Lista</TabsTrigger>
-          <TabsTrigger value="gantt">Gantt</TabsTrigger>
+      <Tabs defaultValue="manual" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-3 w-full max-w-md mb-4">
+          <TabsTrigger value="manual">Alocação Manual</TabsTrigger>
+          <TabsTrigger value="auto">Auto-Alocação</TabsTrigger>
+          <TabsTrigger value="gantt">Visualização Gantt</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="list" className="mt-0">
+        <TabsContent value="manual" className="space-y-6">
+          <AllocationForm 
+            projectId={projectId}
+            onSuccess={handleAllocationSuccess}
+          />
+          
           <AllocationList 
-            projectId={projectId} 
-            onAllocationDeleted={handleAllocationDeleted} 
+            projectId={projectId}
+            onAllocationDeleted={handleAllocationDeleted}
           />
         </TabsContent>
         
-        <TabsContent value="gantt" className="mt-0">
-          <AllocationGanttChart 
-            projectId={projectId} 
+        <TabsContent value="auto" className="space-y-6">
+          <AutoAllocation 
+            projectId={projectId}
+            onSuccess={handleAllocationSuccess}
+            tasks={projectTasks.data || []}
+          />
+        </TabsContent>
+        
+        <TabsContent value="gantt" className="space-y-6">
+          <AllocationGanttChart
+            projectId={projectId}
             projectName={projectName}
           />
         </TabsContent>

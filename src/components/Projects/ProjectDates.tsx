@@ -345,8 +345,8 @@ export function ProjectDates({
                         selected={field.value ? new Date(field.value) : undefined}
                         onSelect={(date) => {
                           if (date) {
-                            handleDateChange(date);
                             field.onChange(format(date, 'yyyy-MM-dd'));
+                            handleDateChange(date);
                           }
                         }}
                         disabled={isDateDisabled}
@@ -360,26 +360,30 @@ export function ProjectDates({
                           partial: "bg-amber-100 text-amber-800 hover:bg-amber-200"
                         }}
                         components={{
-                          DayContent: (props) => {
-                            const dateStr = format(props.date, 'yyyy-MM-dd');
-                            const dateAvail = dateAvailability.get(dateStr);
-                            
-                            return (
-                              <div className="relative w-full h-full flex items-center justify-center text-foreground">
-                                {props.date.getDate()}
-                                {dateAvail?.status === 'partial' && (
-                                  <div className="absolute -top-0.5 -right-0.5">
-                                    <AlertCircle className="h-2 w-2 text-amber-500" />
-                                  </div>
-                                )}
-                                {dateAvail?.status === 'available' && (
-                                  <div className="absolute -top-0.5 -right-0.5">
-                                    <Check className="h-2 w-2 text-green-500" />
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          }
+                          DayContent: ({ date }) => (
+                            <div className="relative w-full h-full flex items-center justify-center text-foreground">
+                              {date.getDate()}
+                              {(() => {
+                                const dateStr = format(date, 'yyyy-MM-dd');
+                                const dateAvail = dateAvailability.get(dateStr);
+                                
+                                if (dateAvail?.status === 'partial') {
+                                  return (
+                                    <div className="absolute -top-0.5 -right-0.5">
+                                      <AlertCircle className="h-2 w-2 text-amber-500" />
+                                    </div>
+                                  );
+                                } else if (dateAvail?.status === 'available') {
+                                  return (
+                                    <div className="absolute -top-0.5 -right-0.5">
+                                      <Check className="h-2 w-2 text-green-500" />
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </div>
+                          )
                         }}
                         initialFocus
                         className="pointer-events-auto"
