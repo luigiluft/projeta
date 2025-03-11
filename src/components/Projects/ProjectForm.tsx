@@ -15,7 +15,7 @@ import { createProjectFormSchema, ProjectFormValues } from "@/utils/projectFormS
 import { DEFAULT_PROFIT_MARGIN, teamRates } from "@/constants/projectConstants";
 import { EpicSelector } from "./EpicSelector";
 import { useState, useEffect } from "react";
-import { format, addDays, addBusinessDays } from "date-fns";
+import { format, addDays, addBusinessDays, parseISO } from "date-fns";
 import { useProjectCalculations } from "@/hooks/projects/useProjectCalculations";
 
 interface ProjectFormProps {
@@ -112,7 +112,6 @@ export function ProjectForm({
       const ownerAvailability: Record<string, Date> = {};
       const taskEndDates: Record<string, Date> = {};
       
-      // Inicializa com a menor data possível para garantir que qualquer data real será maior
       let latestEndDate = new Date(0);
 
       Object.entries(tasksByOwner).forEach(([owner, tasks]) => {
@@ -130,7 +129,6 @@ export function ProjectForm({
             }
           }
           
-          // Ajusta para o início do dia de trabalho se necessário
           if (currentDate.getHours() >= 17) {
             currentDate = addBusinessDays(currentDate, 1);
             currentDate.setHours(9, 0, 0, 0);
@@ -141,14 +139,12 @@ export function ProjectForm({
           const taskHours = task.calculated_hours || task.fixed_hours || 0;
           let endDate = new Date(currentDate);
           
-          // Adiciona uma hora para almoço se o trabalho cruzar o meio-dia
           if (currentDate.getHours() < 12 && (currentDate.getHours() + taskHours) >= 12) {
             endDate.setHours(currentDate.getHours() + taskHours + 1);
           } else {
             endDate.setHours(currentDate.getHours() + taskHours);
           }
           
-          // Se terminar depois do horário de trabalho, continua no próximo dia
           if (endDate.getHours() >= 17) {
             const remainingHours = endDate.getHours() - 17;
             endDate = addBusinessDays(currentDate, 1);
@@ -161,16 +157,14 @@ export function ProjectForm({
           ownerAvailability[owner] = endDate;
           taskEndDates[task.id] = endDate;
           
-          // Atualiza a data de término mais tardia
           if (endDate > latestEndDate) {
             latestEndDate = new Date(endDate);
           }
         });
       });
       
-      // Usa a data de término mais tardia para definir a data estimada de término do projeto
       const mostFutureDateFormatted = format(latestEndDate, 'dd/MM/yyyy');
-      console.log("Data estimada de término calculada:", mostFutureDateFormatted);
+      console.log("Data estimada de término calculada:", mostFutureDateFormatted, "Data mais tardia:", latestEndDate);
       setEstimatedEndDate(mostFutureDateFormatted);
     } catch (error) {
       console.error("Erro ao calcular data estimada:", error);
