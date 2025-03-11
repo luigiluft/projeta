@@ -1,103 +1,57 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AllocationForm } from "./AllocationForm";
-import { AutoAllocation } from "./AutoAllocation";
 import { AllocationList } from "./AllocationList";
+import { AutoAllocation } from "./AutoAllocation";
 import { AllocationGanttChart } from "./Gantt/AllocationGanttChart";
 import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { GetAllocationListProps } from "@/hooks/resourceAllocation/types";
+import { Task } from "@/types/project";
 
 interface AllocationTabProps {
   projectId: string;
   projectName: string;
+  tasks: Task[];
 }
 
-export function AllocationTab({ projectId, projectName }: AllocationTabProps) {
-  const [activeTab, setActiveTab] = useState("manual");
-  const [refreshing, setRefreshing] = useState(false);
-  const queryClient = useQueryClient();
-  
-  const { projectTasks, projectAllocations } = useResourceAllocation(projectId);
-  
-  const handleRefresh = async () => {
-    try {
-      setRefreshing(true);
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["project-allocations", projectId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["project-tasks", projectId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["team-members"],
-        }),
-      ]);
-    } catch (error) {
-      console.error("Erro ao atualizar dados:", error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-  
-  const handleAllocationSuccess = () => {
-    // Atualiza os dados após uma alocação bem-sucedida
-    handleRefresh();
+export function AllocationTab({ projectId, projectName, tasks }: AllocationTabProps) {
+  const [activeTab, setActiveTab] = useState("list");
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
   };
 
-  const handleAllocationDeleted = () => {
-    // Atualiza os dados após uma alocação ser excluída
-    handleRefresh();
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
   };
-  
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Alocação de Recursos</h2>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
-      </div>
+    <div className="space-y-4" key={refreshKey}>
+      <h2 className="text-xl font-semibold">Gestão de Alocações</h2>
       
-      <Tabs defaultValue="manual" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-3 w-full max-w-md mb-4">
-          <TabsTrigger value="manual">Alocação Manual</TabsTrigger>
-          <TabsTrigger value="auto">Auto-Alocação</TabsTrigger>
+      <Tabs defaultValue="list" onValueChange={handleTabChange}>
+        <TabsList>
+          <TabsTrigger value="list">Lista de Alocações</TabsTrigger>
+          <TabsTrigger value="auto">Alocação Automática</TabsTrigger>
           <TabsTrigger value="gantt">Visualização Gantt</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="manual" className="space-y-6">
-          <AllocationForm 
-            projectId={projectId}
-            onSuccess={handleAllocationSuccess}
-          />
-          
+        <TabsContent value="list" className="mt-6">
           <AllocationList 
-            projectId={projectId}
-            onAllocationDeleted={handleAllocationDeleted}
+            projectId={projectId} 
+            onAllocationDeleted={handleRefresh}
           />
         </TabsContent>
         
-        <TabsContent value="auto" className="space-y-6">
-          <AutoAllocation 
+        <TabsContent value="auto" className="mt-6">
+          <AutoAllocation
             projectId={projectId}
-            onSuccess={handleAllocationSuccess}
-            tasks={projectTasks.data || []}
+            tasks={tasks}
+            onSuccess={handleRefresh}
           />
         </TabsContent>
         
-        <TabsContent value="gantt" className="space-y-6">
+        <TabsContent value="gantt" className="mt-6">
           <AllocationGanttChart
             projectId={projectId}
             projectName={projectName}

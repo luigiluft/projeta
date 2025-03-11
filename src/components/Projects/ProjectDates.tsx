@@ -6,7 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, AlertCircle, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, isBefore, addDays } from "date-fns";
+import { format, isBefore, addDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
 import { toast } from "sonner";
@@ -342,10 +342,11 @@ export function ProjectDates({
                       </div>
                       <Calendar
                         mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
+                        selected={field.value ? parseISO(field.value) : undefined}
                         onSelect={(date) => {
                           if (date) {
-                            field.onChange(format(date, 'yyyy-MM-dd'));
+                            const isoDate = format(date, 'yyyy-MM-dd');
+                            field.onChange(isoDate);
                             handleDateChange(date);
                           }
                         }}

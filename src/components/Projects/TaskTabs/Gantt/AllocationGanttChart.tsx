@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
+import { Allocation } from "@/hooks/resourceAllocation/types";
 
 export interface AllocationGanttChartProps {
   projectId: string;

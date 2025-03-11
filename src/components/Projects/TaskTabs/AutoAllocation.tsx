@@ -1,220 +1,106 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Switch } from "@/components/ui/switch";
 import { DatePicker } from "@/components/ui/datepicker";
-import { addDays, format } from "date-fns";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import { useAutoAllocation } from "@/hooks/useAutoAllocation";
+import { Label } from "@/components/ui/label";
+import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
+import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 import { Task } from "@/types/project";
 
 export interface AutoAllocationProps {
   projectId: string;
-  onSuccess?: () => void;
   tasks: Task[];
+  onSuccess?: () => void;
 }
 
-const autoAllocationSchema = z.object({
-  startDate: z.date({ required_error: "Data de início é obrigatória" }),
-  distributeEvenly: z.boolean().default(true),
-  prioritizeDueDate: z.boolean().default(false),
-  respectRoles: z.boolean().default(true),
-  includeWeekends: z.boolean().default(false),
-});
-
-type AutoAllocationFormValues = z.infer<typeof autoAllocationSchema>;
-
-export function AutoAllocation({ projectId, onSuccess, tasks }: AutoAllocationProps) {
-  const [allocating, setAllocating] = useState(false);
-  const { allocateAutomatically } = useAutoAllocation();
+export function AutoAllocation({ projectId, tasks, onSuccess }: AutoAllocationProps) {
+  const [startDate, setStartDate] = useState<Date | undefined>(
+    addDays(new Date(), 1)
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(
+    addDays(new Date(), 30)
+  );
   
-  const form = useForm<AutoAllocationFormValues>({
-    resolver: zodResolver(autoAllocationSchema),
-    defaultValues: {
-      startDate: addDays(new Date(), 1),
-      distributeEvenly: true,
-      prioritizeDueDate: false,
-      respectRoles: true,
-      includeWeekends: false,
-    },
-  });
+  const { autoAllocateTeam, loading } = useResourceAllocation(projectId);
   
-  const hasTasks = tasks && tasks.length > 0;
-  
-  const onSubmit = async (values: AutoAllocationFormValues) => {
-    if (!hasTasks) {
-      toast.error("Não há tarefas disponíveis para alocar");
+  const handleAutoAllocation = async () => {
+    if (!startDate || !endDate) {
+      toast.error("Selecione as datas de início e término");
+      return;
+    }
+    
+    if (!tasks || tasks.length === 0) {
+      toast.error("Nenhuma tarefa disponível para alocar");
       return;
     }
     
     try {
-      setAllocating(true);
-      
-      const params = {
+      const result = await autoAllocateTeam(
         projectId,
-        startDate: format(values.startDate, 'yyyy-MM-dd'),
-        distributeEvenly: values.distributeEvenly,
-        prioritizeDueDate: values.prioritizeDueDate,
-        respectRoles: values.respectRoles,
-        includeWeekends: values.includeWeekends,
-      };
+        tasks,
+        format(startDate, 'yyyy-MM-dd'),
+        format(endDate, 'yyyy-MM-dd')
+      );
       
-      await allocateAutomatically(params);
-      
-      toast.success("Alocação automática concluída com sucesso!");
-      
-      if (onSuccess) {
-        onSuccess();
+      if (result.success) {
+        toast.success(`Alocação automática concluída. ${result.allocationsCreated} alocações criadas.`);
+        if (onSuccess) onSuccess();
+      } else {
+        toast.error("Erro na alocação automática: " + result.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro na alocação automática:", error);
-      toast.error("Erro ao realizar alocação automática. Tente novamente.");
-    } finally {
-      setAllocating(false);
+      toast.error(error.message || "Erro ao realizar alocação automática");
     }
   };
   
   return (
-    <div className="space-y-4">
-      <h3 className="font-medium">Alocação Automática</h3>
+    <div className="space-y-6 p-4 border rounded-md">
+      <div>
+        <h3 className="text-lg font-medium mb-4">Alocação Automática de Equipe</h3>
+        <p className="text-sm text-muted-foreground mb-6">
+          Esta ferramenta irá tentar alocar automaticamente os membros da equipe às tarefas 
+          do projeto, considerando suas disponibilidades e habilidades.
+        </p>
+      </div>
       
-      {!hasTasks && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Não há tarefas disponíveis para alocar automaticamente.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="startDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data de Início</FormLabel>
-                <FormControl>
-                  <DatePicker
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    minDate={new Date()}
-                    disabled={allocating || !hasTasks}
-                  />
-                </FormControl>
-                <FormDescription>
-                  A alocação será feita a partir desta data
-                </FormDescription>
-              </FormItem>
-            )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="start-date">Data de Início</Label>
+          <DatePicker
+            date={startDate}
+            setDate={setStartDate}
+            disabled={(date) => date < new Date()}
           />
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="distributeEvenly"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Distribuir Uniformemente</FormLabel>
-                    <FormDescription>
-                      Tenta balancear a carga de trabalho entre membros da equipe
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={allocating || !hasTasks}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="prioritizeDueDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Priorizar por Prazo</FormLabel>
-                    <FormDescription>
-                      Aloca primeiro tarefas com prazos mais próximos
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={allocating || !hasTasks}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="respectRoles"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Respeitar Papéis</FormLabel>
-                    <FormDescription>
-                      Aloca tarefas apenas para membros com o papel requerido
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={allocating || !hasTasks}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="includeWeekends"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Incluir Finais de Semana</FormLabel>
-                    <FormDescription>
-                      Permite alocação em sábados e domingos
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={allocating || !hasTasks}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={allocating || !hasTasks}
-          >
-            {allocating ? "Alocando..." : "Alocar Automaticamente"}
-          </Button>
-        </form>
-      </Form>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="end-date">Data de Término</Label>
+          <DatePicker
+            date={endDate}
+            setDate={setEndDate}
+            disabled={(date) => date < new Date() || (startDate ? date < startDate : false)}
+          />
+        </div>
+      </div>
+      
+      <div className="pt-4">
+        <Button 
+          onClick={handleAutoAllocation} 
+          disabled={!startDate || !endDate || loading}
+          className="w-full"
+        >
+          {loading ? (
+            <>
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent"></div>
+              Alocando...
+            </>
+          ) : (
+            "Alocar Automaticamente"
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
