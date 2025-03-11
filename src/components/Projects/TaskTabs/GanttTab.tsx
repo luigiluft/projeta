@@ -1,3 +1,4 @@
+
 import { Task } from "@/types/project";
 import {
   BarChart,
@@ -11,16 +12,17 @@ import {
 } from "recharts";
 import { format, parseISO, isValid, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface GanttTabProps {
   tasks: Task[];
 }
 
 export function GanttTab({ tasks }: GanttTabProps) {
-  // Filtrar tarefas de implementação excluindo específicamente todas as que são de sustentação ou integração
+  // Filtrar tarefas que são apenas de implementação
   const implementationTasks = tasks.filter(task => 
-    task.epic.toLowerCase().startsWith('implementação') ||
-    task.epic.toLowerCase().startsWith('implementacao')
+    !task.epic.toLowerCase().includes('sustentação') &&
+    !task.epic.toLowerCase().includes('sustentacao')
   );
 
   // Organizar tarefas por data de início
@@ -118,6 +120,9 @@ export function GanttTab({ tasks }: GanttTabProps) {
     return null;
   };
 
+  // Calcular a altura necessária baseada no número de tarefas
+  const chartHeight = Math.max(500, chartData.length * 40);
+
   return (
     <div className="space-y-4 mt-4">
       <h3 className="text-lg font-medium mb-4">Cronograma do Projeto</h3>
@@ -127,45 +132,47 @@ export function GanttTab({ tasks }: GanttTabProps) {
           <p className="text-gray-500">Nenhuma tarefa de implementação encontrada.</p>
         </div>
       ) : (
-        <div className="border rounded-md p-4 bg-white shadow-sm" style={{ height: '500px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              layout="vertical"
-              margin={{ top: 20, right: 30, left: 150, bottom: 20 }}
-              barGap={0}
-              barCategoryGap={5}
-            >
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis 
-                type="number"
-                domain={[minDate.getTime(), maxDate.getTime()]}
-                tickFormatter={(timestamp) => format(new Date(timestamp), "dd/MM", { locale: ptBR })}
-                scale="time"
-                ticks={xAxisTicks}
-                allowDataOverflow={true}
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                width={140}
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              
-              {/* Barra representando a duração entre início e fim da tarefa */}
-              <Bar
-                dataKey="value"
-                name="Duração"
-                minPointSize={3}
-                barSize={20}
-                fill="#60a5fa"
-                radius={[4, 4, 4, 4]}
-                background={{ fill: "#eee" }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <ScrollArea className="border rounded-md p-4 bg-white shadow-sm h-[500px]">
+          <div style={{ height: `${chartHeight}px`, minWidth: "100%" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 20, right: 30, left: 150, bottom: 20 }}
+                barGap={0}
+                barCategoryGap={5}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis 
+                  type="number"
+                  domain={[minDate.getTime(), maxDate.getTime()]}
+                  tickFormatter={(timestamp) => format(new Date(timestamp), "dd/MM", { locale: ptBR })}
+                  scale="time"
+                  ticks={xAxisTicks}
+                  allowDataOverflow={true}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={140}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                
+                {/* Barra representando a duração entre início e fim da tarefa */}
+                <Bar
+                  dataKey="value"
+                  name="Duração"
+                  minPointSize={3}
+                  barSize={20}
+                  fill="#60a5fa"
+                  radius={[4, 4, 4, 4]}
+                  background={{ fill: "#eee" }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </ScrollArea>
       )}
     </div>
   );
