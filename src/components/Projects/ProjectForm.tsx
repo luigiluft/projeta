@@ -17,6 +17,7 @@ import { EpicSelector } from "./EpicSelector";
 import { useState, useEffect } from "react";
 import { format, addDays, addBusinessDays, parseISO } from "date-fns";
 import { useProjectCalculations } from "@/hooks/projects/useProjectCalculations";
+import { ptBR } from "date-fns/locale";
 
 interface ProjectFormProps {
   editingId?: string | null;
@@ -79,8 +80,6 @@ export function ProjectForm({
     }
 
     try {
-      const startDate = new Date(startDateValue);
-      
       const implementationTasks = tasks.filter(task => 
         !task.epic.toLowerCase().includes('sustentação') && 
         !task.epic.toLowerCase().includes('sustentacao'));
@@ -89,83 +88,49 @@ export function ProjectForm({
         setEstimatedEndDate(null);
         return;
       }
-      
-      const tasksByOwner: { [key: string]: Task[] } = {};
-      implementationTasks.forEach(task => {
-        if (!tasksByOwner[task.owner || '']) {
-          tasksByOwner[task.owner || ''] = [];
+
+      const orderedTasks = [...implementationTasks].sort((a, b) => {
+        if (a.depends_on === b.id) return 1;
+        if (b.depends_on === a.id) return -1;
+        return (a.order || 0) - (b.order || 0);
+      });
+
+      const startDate = new Date(startDateValue);
+      startDate.setHours(9, 0, 0, 0);
+
+      let currentDate = new Date(startDate);
+      let latestEndDate = new Date(startDate);
+
+      const taskEndDates = new Map<string, Date>();
+
+      for (const task of orderedTasks) {
+        if (task.depends_on && taskEndDates.has(task.depends_on)) {
+          const dependencyEndDate = taskEndDates.get(task.depends_on)!;
+          if (dependencyEndDate > currentDate) {
+            currentDate = new Date(dependencyEndDate);
+          }
         }
-        tasksByOwner[task.owner || ''].push(task);
-      });
 
-      Object.keys(tasksByOwner).forEach(owner => {
-        tasksByOwner[owner].sort((a, b) => {
-          if (a.depends_on && a.depends_on === b.id) return 1;
-          if (b.depends_on && b.depends_on === a.id) return -1;
-          
-          const orderA = a.order || 0;
-          const orderB = b.order || 0;
-          return orderA - orderB;
-        });
-      });
+        const taskHours = task.calculated_hours || task.fixed_hours || 0;
+        let workDays = Math.ceil(taskHours / 8);
 
-      const ownerAvailability: Record<string, Date> = {};
-      const taskEndDates: Record<string, Date> = {};
+        for (let i = 0; i < workDays; i++) {
+          while (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        taskEndDates.set(task.id, new Date(currentDate));
+
+        if (currentDate > latestEndDate) {
+          latestEndDate = new Date(currentDate);
+        }
+      }
+
+      const formattedEndDate = format(latestEndDate, 'dd/MM/yyyy', { locale: ptBR });
+      setEstimatedEndDate(formattedEndDate);
       
-      let latestEndDate = new Date(0);
-
-      Object.entries(tasksByOwner).forEach(([owner, tasks]) => {
-        let currentDate = new Date(startDate);
-        
-        tasks.forEach(task => {
-          if (ownerAvailability[owner]) {
-            currentDate = new Date(ownerAvailability[owner]);
-          }
-          
-          if (task.depends_on && taskEndDates[task.depends_on]) {
-            const dependencyEndDate = new Date(taskEndDates[task.depends_on]);
-            if (dependencyEndDate > currentDate) {
-              currentDate = new Date(dependencyEndDate);
-            }
-          }
-          
-          if (currentDate.getHours() >= 17) {
-            currentDate = addBusinessDays(currentDate, 1);
-            currentDate.setHours(9, 0, 0, 0);
-          } else if (currentDate.getHours() < 9) {
-            currentDate.setHours(9, 0, 0, 0);
-          }
-
-          const taskHours = task.calculated_hours || task.fixed_hours || 0;
-          let endDate = new Date(currentDate);
-          
-          if (currentDate.getHours() < 12 && (currentDate.getHours() + taskHours) >= 12) {
-            endDate.setHours(currentDate.getHours() + taskHours + 1);
-          } else {
-            endDate.setHours(currentDate.getHours() + taskHours);
-          }
-          
-          if (endDate.getHours() >= 17) {
-            const remainingHours = endDate.getHours() - 17;
-            endDate = addBusinessDays(currentDate, 1);
-            endDate.setHours(9 + remainingHours, 0, 0, 0);
-          }
-          
-          task.start_date = currentDate.toISOString();
-          task.end_date = endDate.toISOString();
-          
-          ownerAvailability[owner] = endDate;
-          taskEndDates[task.id] = endDate;
-          
-          if (endDate > latestEndDate) {
-            latestEndDate = new Date(endDate);
-          }
-        });
-      });
-      
-      const mostFutureDateFormatted = format(latestEndDate, 'dd/MM/yyyy');
-      console.log("Data estimada de término calculada:", mostFutureDateFormatted, "Data mais tardia:", latestEndDate);
-      setEstimatedEndDate(mostFutureDateFormatted);
     } catch (error) {
       console.error("Erro ao calcular data estimada:", error);
       setEstimatedEndDate(null);
