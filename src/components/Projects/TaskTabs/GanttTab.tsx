@@ -1,4 +1,3 @@
-
 import { Task } from "@/types/project";
 import {
   BarChart,
@@ -9,7 +8,6 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   CartesianGrid,
-  Cell,
 } from "recharts";
 import { format, parseISO, isValid, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -67,22 +65,18 @@ export function GanttTab({ tasks }: GanttTabProps) {
     maxDate = addDays(maxDate, 1);
   }
 
-  // Preparar dados para o gráfico de uma forma diferente para evitar o uso de stackedOffset
+  // Preparar dados para o gráfico
   const chartData = sortedTasks.map(task => {
     // Garantir que temos datas válidas
     const startDate = task.start_date ? new Date(task.start_date) : new Date();
     const endDate = task.end_date ? new Date(task.end_date) : new Date(startDate);
     
-    // Calcular a duração em dias para o tamanho da barra
-    const durationDays = Math.max(1, differenceInDays(endDate, startDate) + 1);
-    
     return {
       name: task.task_name,
       owner: task.owner,
-      startDate,
-      endDate,
-      start: startDate.getTime(),
-      duration: durationDays,
+      startTime: startDate.getTime(),
+      endTime: endDate.getTime(),
+      value: [startDate.getTime(), endDate.getTime()], // Array com início e fim
       displayStartDate: format(startDate, "dd/MM/yyyy", { locale: ptBR }),
       displayEndDate: format(endDate, "dd/MM/yyyy", { locale: ptBR }),
       displayDuration: task.calculated_hours || task.fixed_hours || 0,
@@ -159,24 +153,16 @@ export function GanttTab({ tasks }: GanttTabProps) {
               />
               <Tooltip content={<CustomTooltip />} />
               
-              {/* Barra representando a duração de cada tarefa */}
+              {/* Barra representando a duração entre início e fim da tarefa */}
               <Bar
-                dataKey="duration"
+                dataKey="value"
                 name="Duração"
                 minPointSize={3}
                 barSize={20}
                 fill="#60a5fa"
                 radius={[4, 4, 4, 4]}
                 background={{ fill: "#eee" }}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`}
-                    // Ajustamos a posição de cada célula usando o ponto de início da tarefa
-                    x={entry.start - minDate.getTime()}
-                  />
-                ))}
-              </Bar>
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
