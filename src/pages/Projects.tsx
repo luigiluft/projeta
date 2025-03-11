@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useProjects } from "@/hooks/useProjects";
 import { Task, Column, View } from "@/types/project";
@@ -77,7 +76,7 @@ export default function Projects() {
   };
 
   const handleEditProject = (projectId: string) => {
-    navigate(`/projects/edit/${projectId}`);
+    navigate(`/projects/details/${projectId}`);
   };
 
   const formatCurrency = (value: number) => {

@@ -42,7 +42,6 @@ function App() {
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/new" element={<NewProject />} />
               <Route path="/projects/details/:id" element={<ProjectDetails />} />
-              <Route path="/projects/edit/:id" element={<Navigate to="/projects/details/:id" replace />} />
               <Route path="/task-management" element={<TaskManagement />} />
               <Route path="/task-management/:id" element={<TaskDetails />} />
               <Route path="/task-management/new" element={<NewTask />} />

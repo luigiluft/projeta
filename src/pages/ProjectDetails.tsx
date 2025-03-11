@@ -25,7 +25,7 @@ export default function ProjectDetails() {
         setLoading(true);
         
         // Verificar se ID é válido
-        if (!id || id === ":id") {
+        if (!id) {
           throw new Error('ID do projeto inválido');
         }
         
