@@ -4,7 +4,6 @@ import { PricingTab } from "./PricingTab";
 import { ImplementationTasksTab } from "./TaskTabs/ImplementationTasksTab";
 import { SustainmentTasksTab } from "./TaskTabs/SustainmentTasksTab";
 import { GanttTab } from "./TaskTabs/GanttTab";
-import { AllocationTab } from "./TaskTabs/AllocationTab";
 import { Attribute, Task } from "@/types/project";
 import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
@@ -36,7 +35,6 @@ export function ProjectContent({
         <TabsTrigger value="pricing" className="flex-1">Precificação</TabsTrigger>
         <TabsTrigger value="implementation" className="flex-1">Implementação</TabsTrigger>
         <TabsTrigger value="sustainment" className="flex-1">Sustentação</TabsTrigger>
-        <TabsTrigger value="allocations" className="flex-1">Alocações</TabsTrigger>
         <TabsTrigger value="gantt" className="flex-1">Gantt</TabsTrigger>
       </TabsList>
 
@@ -59,13 +57,6 @@ export function ProjectContent({
           columns={taskColumns}
           onColumnsChange={handleColumnsChange}
           attributeValues={attributeValues}
-        />
-      </TabsContent>
-
-      <TabsContent value="allocations">
-        <AllocationTab 
-          tasks={selectedTasks}
-          projectId={editingId || undefined}
         />
       </TabsContent>
 

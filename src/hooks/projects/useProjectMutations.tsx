@@ -4,12 +4,68 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProjectCalculations } from "./useProjectCalculations";
 import { format, addDays } from "date-fns";
-import { useAutoAllocation } from "@/hooks/useAutoAllocation";
 
 export const useProjectMutations = () => {
   const queryClient = useQueryClient();
   const { calculateProjectCosts } = useProjectCalculations();
-  const { autoAllocateTeam } = useAutoAllocation();
+
+  // Função auxiliar para verificar disponibilidade de membros
+  const findAvailableTeamMembers = async (
+    role: string,
+    startDate: string,
+    endDate: string,
+    totalHours: number
+  ) => {
+    try {
+      const { data: teamMembers, error: teamError } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('position', role)
+        .eq('status', 'active');
+
+      if (teamError) throw teamError;
+      
+      if (!teamMembers || teamMembers.length === 0) {
+        console.log(`Nenhum membro da equipe encontrado com o cargo ${role}`);
+        return [];
+      }
+
+      const availableMembers = [];
+
+      for (const member of teamMembers) {
+        const { data: existingAllocations, error: allocError } = await supabase
+          .from('project_allocations')
+          .select('allocated_hours')
+          .eq('member_id', member.id)
+          .or(`start_date.lte.${endDate},end_date.gte.${startDate}`);
+
+        if (allocError) throw allocError;
+
+        const totalAllocatedHours = existingAllocations?.reduce(
+          (sum, alloc) => sum + (alloc.allocated_hours || 0), 
+          0
+        ) || 0;
+
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
+        const dayDiff = Math.max(1, Math.round((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)));
+        const workDays = Math.ceil(dayDiff * 5/7);
+        const totalCapacity = workDays * member.daily_capacity;
+        
+        if (totalCapacity - totalAllocatedHours >= totalHours) {
+          availableMembers.push({
+            ...member,
+            availableHours: totalCapacity - totalAllocatedHours
+          });
+        }
+      }
+
+      return availableMembers;
+    } catch (error) {
+      console.error("Erro ao buscar membros disponíveis:", error);
+      throw error;
+    }
+  };
 
   // Função para criar um novo projeto
   const handleSubmit = async (selectedTasks: Task[], attributeValues: Record<string, number> = {}) => {
@@ -20,36 +76,55 @@ export const useProjectMutations = () => {
 
     const epics = Array.from(new Set(selectedTasks.map(task => task.epic))).filter(Boolean);
     const epicNames = epics.join(', ');
-    
     const costs = calculateProjectCosts(selectedTasks, attributeValues);
     
-    // Separar tarefas de implementação e sustentação
-    const implementationTasks = selectedTasks.filter(task => 
-      !task.epic.toLowerCase().includes('sustentação') && 
-      !task.epic.toLowerCase().includes('sustentacao'));
-    
-    const sustainmentTasks = selectedTasks.filter(task => 
-      task.epic.toLowerCase().includes('sustentação') || 
-      task.epic.toLowerCase().includes('sustentacao'));
-    
-    console.log(`Tarefas de implementação: ${implementationTasks.length}, Tarefas de sustentação: ${sustainmentTasks.length}`);
-    
-    // Garantir que ticket_medio seja processado corretamente
-    console.log("Valores de atributos a serem salvos:", attributeValues);
-    
-    // Debug para ver se ticket_medio está presente
-    if ('ticket_medio' in attributeValues) {
-      console.log("Ticket médio recebido:", attributeValues.ticket_medio);
-    } else {
-      console.log("Ticket médio não encontrado nos valores de atributos");
-    }
+    // Agrupar tarefas por responsável para verificação de disponibilidade
+    const roleGroups: Record<string, Task[]> = {};
+    selectedTasks.forEach(task => {
+      if (task.owner) {
+        if (!roleGroups[task.owner]) {
+          roleGroups[task.owner] = [];
+        }
+        roleGroups[task.owner].push(task);
+      }
+    });
+
+    // Verificar disponibilidade antes de criar o projeto
+    const today = new Date();
+    const formattedToday = format(today, 'yyyy-MM-dd');
+    const estimatedEndDate = format(addDays(today, 30), 'yyyy-MM-dd');
 
     try {
-      // Consultar disponibilidade da equipe para determinar a melhor data de início
-      const today = new Date();
-      const formattedToday = format(today, 'yyyy-MM-dd');
-      const estimatedEndDate = format(addDays(today, 30), 'yyyy-MM-dd');
-      
+      // Verificar disponibilidade para cada cargo
+      const availabilityChecks = await Promise.all(
+        Object.entries(roleGroups).map(async ([role, tasks]) => {
+          const totalHours = tasks.reduce((sum, task) => {
+            return sum + (task.calculated_hours || task.fixed_hours || 0);
+          }, 0);
+
+          const availableMembers = await findAvailableTeamMembers(
+            role,
+            formattedToday,
+            estimatedEndDate,
+            totalHours
+          );
+
+          return {
+            role,
+            hasAvailable: availableMembers.length > 0,
+            member: availableMembers[0],
+            tasks,
+            totalHours
+          };
+        })
+      );
+
+      const unavailableRoles = availabilityChecks.filter(check => !check.hasAvailable);
+      if (unavailableRoles.length > 0) {
+        toast.error(`Não há membros disponíveis para os cargos: ${unavailableRoles.map(r => r.role).join(', ')}`);
+        return;
+      }
+
       // 1. Criar o projeto
       const { data: projectData, error: projectError } = await supabase
         .from('projects')
@@ -73,10 +148,10 @@ export const useProjectMutations = () => {
           version: 1,
           metadata: { 
             attribute_values: attributeValues,
-            implementation_tasks_count: implementationTasks.length,
-            sustainment_tasks_count: sustainmentTasks.length
+            implementation_tasks_count: selectedTasks.filter(t => !t.epic.toLowerCase().includes('sustentação')).length,
+            sustainment_tasks_count: selectedTasks.filter(t => t.epic.toLowerCase().includes('sustentação')).length
           },
-          attributes: attributeValues, // Também salvar os valores em attributes para compatibilidade
+          attributes: attributeValues,
           settings: {},
           project_name: epicNames,
           start_date: formattedToday,
@@ -87,84 +162,60 @@ export const useProjectMutations = () => {
 
       if (projectError) throw projectError;
       
-      // 2. Adicionar tarefas na tabela de relacionamento
       if (projectData && projectData.length > 0) {
         const projectId = projectData[0].id;
         
-        // Preparar os dados para a tabela project_tasks
-        const projectTasks = selectedTasks.map(task => {
-          // Calcular as horas com base na fórmula ou usar horas fixas
-          let calculatedHours = 0;
-          
-          if (task.hours_formula) {
-            try {
-              let formula = task.hours_formula;
-              // Substituir os atributos pelos seus valores na fórmula
-              Object.entries(attributeValues).forEach(([key, value]) => {
-                const regex = new RegExp(`\\b${key}\\b`, 'g');
-                formula = formula.replace(regex, value.toString());
+        // 2. Criar as alocações e associar as tarefas
+        for (const check of availabilityChecks) {
+          if (check.member) {
+            // Criar alocação para o membro
+            const { error: allocError } = await supabase
+              .from('project_allocations')
+              .insert({
+                project_id: projectId,
+                member_id: check.member.id,
+                allocated_hours: check.totalHours,
+                start_date: formattedToday,
+                end_date: estimatedEndDate,
+                status: 'scheduled'
               });
-              
-              const result = eval(formula);
-              calculatedHours = isNaN(result) ? 0 : result;
-            } catch (e) {
-              console.error(`Erro ao calcular fórmula para tarefa ${task.id}:`, e);
-              calculatedHours = 0;
-            }
-          } else if (task.fixed_hours) {
-            calculatedHours = task.fixed_hours;
-          }
-          
-          return {
-            project_id: projectId,
-            task_id: task.id,
-            calculated_hours: calculatedHours,
-            is_active: true,
-            status: 'pending',
-            start_date: formattedToday, // Data de início padrão
-            end_date: estimatedEndDate // Data de fim estimada temporária
-          };
-        });
-        
-        // Inserir na tabela project_tasks
-        const { error: tasksError } = await supabase
-          .from('project_tasks')
-          .insert(projectTasks);
-          
-        if (tasksError) {
-          console.error("Erro ao adicionar tarefas ao projeto:", tasksError);
-          toast.error("Erro ao registrar tarefas do projeto");
-        } else {
-          // 3. Realizar alocação automática de recursos
-          try {
-            const allocationResult = await autoAllocateTeam(
-              projectId, 
-              selectedTasks, 
-              formattedToday, 
-              estimatedEndDate
-            );
-            
-            if (allocationResult.allocatedCount > 0) {
-              toast.success(`${allocationResult.allocatedCount} tarefas alocadas automaticamente`);
-            }
-            
-            if (allocationResult.notAllocatedCount > 0) {
-              toast.warning(`${allocationResult.notAllocatedCount} tarefas não puderam ser alocadas automaticamente`);
-              console.log("Cargos não alocados:", allocationResult.notAllocatedRoles);
-            }
-          } catch (allocError) {
-            console.error("Erro na alocação automática:", allocError);
-            toast.error("Houve um erro na alocação automática de recursos");
-          }
-          
-          toast.success("Projeto criado com sucesso! Verifique as alocações na aba 'Alocações'.");
-        }
-      }
 
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+            if (allocError) {
+              console.error(`Erro ao alocar membro para ${check.role}:`, allocError);
+              continue;
+            }
+
+            // Associar tarefas ao projeto
+            const projectTasks = check.tasks.map(task => ({
+              project_id: projectId,
+              task_id: task.id,
+              calculated_hours: task.calculated_hours || task.fixed_hours || 0,
+              is_active: true,
+              status: 'pending',
+              start_date: formattedToday,
+              end_date: estimatedEndDate,
+              owner_id: check.member.id
+            }));
+
+            const { error: tasksError } = await supabase
+              .from('project_tasks')
+              .insert(projectTasks);
+
+            if (tasksError) {
+              console.error("Erro ao associar tarefas ao projeto:", tasksError);
+              toast.error("Erro ao registrar tarefas do projeto");
+            }
+          }
+        }
+
+        toast.success("Projeto criado com sucesso e recursos alocados!");
+        queryClient.invalidateQueries({ queryKey: ['projects'] });
+        return projectId;
+      }
     } catch (error) {
-      toast.error("Erro ao criar projeto");
-      console.error(error);
+      console.error("Erro ao criar projeto:", error);
+      toast.error("Erro ao criar projeto e alocar recursos");
+      throw error;
     }
   };
 
