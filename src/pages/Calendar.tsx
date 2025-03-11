@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
@@ -26,11 +25,10 @@ export default function CalendarPage() {
   const [activeTab, setActiveTab] = useState<string>("projects");
   const [formattedProjects, setFormattedProjects] = useState<Project[]>([]);
   const { projects } = useProjects();
-  const { teamMembers, allocations, getAvailability } = useResourceAllocation();
+  const { teamMembers, getAvailability } = useResourceAllocation();
   const [teamAvailability, setTeamAvailability] = useState<any[]>([]);
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   
-  // Formatar projetos para o formato esperado pelo componente ProjectTimeline
   useEffect(() => {
     if (projects && projects.length > 0) {
       const formatted = projects
@@ -49,14 +47,12 @@ export default function CalendarPage() {
     }
   }, [projects]);
 
-  // Carregar disponibilidade da equipe considerando alocações de projetos
   const loadTeamAvailability = async () => {
     if (!date) return;
 
     setIsLoadingAvailability(true);
     
     try {
-      // Definir período para verificar disponibilidade (mês atual)
       const currentDate = new Date(date);
       const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -64,14 +60,12 @@ export default function CalendarPage() {
       const formattedStartDate = format(startDate, 'yyyy-MM-dd');
       const formattedEndDate = format(endDate, 'yyyy-MM-dd');
       
-      // Buscar disponibilidade para todos os membros da equipe, considerando alocações
       const availability = await getAvailability(
         formattedStartDate, 
         formattedEndDate,
         0
       );
       
-      // Buscar todas as alocações de projetos para o período
       const { data: projectAllocations, error: allocationsError } = await supabase
         .from('project_allocations')
         .select(`
@@ -90,25 +84,20 @@ export default function CalendarPage() {
         throw allocationsError;
       }
 
-      // Processar a disponibilidade de cada membro, considerando suas alocações
       const processedAvailability = availability.map(member => {
-        // Encontrar alocações para este membro
         const memberAllocations = projectAllocations?.filter(
           alloc => alloc.member_id === member.member_id
         ) || [];
 
-        // Atualizar os dias disponíveis considerando as alocações
         const updatedDates = member.available_dates.map(day => {
           const dayDate = new Date(day.date);
           let hoursAllocated = 0;
           
-          // Calcular horas já alocadas para este dia
           memberAllocations.forEach(alloc => {
             const allocStart = new Date(alloc.start_date);
             const allocEnd = new Date(alloc.end_date);
             
             if (dayDate >= allocStart && dayDate <= allocEnd) {
-              // Distribuir horas uniformemente pelos dias da alocação
               const allocDays = Math.max(1, Math.round((allocEnd.getTime() - allocStart.getTime()) / (1000 * 60 * 60 * 24))) || 1;
               const hoursPerDay = alloc.allocated_hours / allocDays;
               
@@ -143,14 +132,12 @@ export default function CalendarPage() {
     }
   };
 
-  // Carregar disponibilidade quando a data muda ou o tab muda para "team"
   useEffect(() => {
     if (activeTab === "team" && date) {
       loadTeamAvailability();
     }
   }, [date, activeTab]);
 
-  // Renderizar disponibilidade da equipe
   const renderTeamAvailability = () => {
     if (isLoadingAvailability) {
       return <div className="text-center py-8">Carregando disponibilidade...</div>;
@@ -182,7 +169,6 @@ export default function CalendarPage() {
                   const dateObj = new Date(d.date);
                   const day = dateObj.getDate();
                   
-                  // Calcular cor baseada na disponibilidade
                   let bgColor = "bg-red-100";
                   if (d.available_hours >= 8) {
                     bgColor = "bg-green-100";
@@ -192,7 +178,6 @@ export default function CalendarPage() {
                     bgColor = "bg-orange-100";
                   }
                   
-                  // Título detalhado com informações de alocação
                   const allocationsInfo = d.allocations && d.allocations.length > 0
                     ? d.allocations.map(a => `\n- ${a.projects.name}: ${(a.allocated_hours / (Math.round((new Date(a.end_date).getTime() - new Date(a.start_date).getTime()) / (1000 * 60 * 60 * 24)) || 1)).toFixed(1)}h`).join('')
                     : '\nSem alocações';
@@ -307,3 +292,4 @@ export default function CalendarPage() {
     </div>
   );
 }
+
