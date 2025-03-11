@@ -9,8 +9,9 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   CartesianGrid,
+  Cell,
 } from "recharts";
-import { format, parseISO, isValid, addDays } from "date-fns";
+import { format, parseISO, isValid, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface GanttTabProps {
@@ -66,26 +67,40 @@ export function GanttTab({ tasks }: GanttTabProps) {
     maxDate = addDays(maxDate, 1);
   }
 
-  // Preparar dados para o gráfico
+  // Preparar dados para o gráfico de uma forma diferente para evitar o uso de stackedOffset
   const chartData = sortedTasks.map(task => {
     // Garantir que temos datas válidas
     const startDate = task.start_date ? new Date(task.start_date) : new Date();
     const endDate = task.end_date ? new Date(task.end_date) : new Date(startDate);
     
-    // Duração em milissegundos
-    const duration = endDate.getTime() - startDate.getTime();
+    // Calcular a duração em dias para o tamanho da barra
+    const durationDays = Math.max(1, differenceInDays(endDate, startDate) + 1);
     
     return {
       name: task.task_name,
       owner: task.owner,
-      startTime: startDate.getTime(),
-      endTime: endDate.getTime(),
-      duration: duration,
+      startDate,
+      endDate,
+      start: startDate.getTime(),
+      duration: durationDays,
       displayStartDate: format(startDate, "dd/MM/yyyy", { locale: ptBR }),
       displayEndDate: format(endDate, "dd/MM/yyyy", { locale: ptBR }),
       displayDuration: task.calculated_hours || task.fixed_hours || 0,
     };
   });
+
+  // Criar um array com todas as datas entre o início do projeto e o final
+  const dateRange: Date[] = [];
+  if (minDate && maxDate) {
+    let currentDate = new Date(minDate);
+    while (currentDate <= maxDate) {
+      dateRange.push(new Date(currentDate));
+      currentDate = addDays(currentDate, 1);
+    }
+  }
+
+  // Formatar o conjunto de dados para o eixo X
+  const xAxisTicks = dateRange.map(date => date.getTime());
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -131,9 +146,10 @@ export function GanttTab({ tasks }: GanttTabProps) {
               <XAxis 
                 type="number"
                 domain={[minDate.getTime(), maxDate.getTime()]}
-                tickFormatter={(timestamp) => format(timestamp, "dd/MM", { locale: ptBR })}
+                tickFormatter={(timestamp) => format(new Date(timestamp), "dd/MM", { locale: ptBR })}
                 scale="time"
-                dataKey="x"
+                ticks={xAxisTicks}
+                allowDataOverflow={true}
               />
               <YAxis
                 type="category"
@@ -143,7 +159,7 @@ export function GanttTab({ tasks }: GanttTabProps) {
               />
               <Tooltip content={<CustomTooltip />} />
               
-              {/* Barra que mostra a duração entre início e fim da tarefa */}
+              {/* Barra representando a duração de cada tarefa */}
               <Bar
                 dataKey="duration"
                 name="Duração"
@@ -151,10 +167,16 @@ export function GanttTab({ tasks }: GanttTabProps) {
                 barSize={20}
                 fill="#60a5fa"
                 radius={[4, 4, 4, 4]}
-                stackId="a"
-                // Configurando a posição para começar a partir da data de início
-                stackedOffset={(entry) => entry.startTime - minDate.getTime()}
-              />
+                background={{ fill: "#eee" }}
+              >
+                {chartData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`}
+                    // Ajustamos a posição de cada célula usando o ponto de início da tarefa
+                    x={entry.start - minDate.getTime()}
+                  />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
