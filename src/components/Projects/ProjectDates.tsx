@@ -185,7 +185,7 @@ export function ProjectDates({
       console.log("Disponibilidade recebida:", availability);
       
       const roleMembers = availability.filter(member => {
-        const teamMember = teamMembers.find(tm => tm.id === member.member_id);
+        const teamMember = teamMembers.data?.find(tm => tm.id === member.member_id);
         return teamMember?.position === role;
       });
       
@@ -245,11 +245,11 @@ export function ProjectDates({
 
   const getDateClassName = (date: Date): string => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const availability = dateAvailability.get(dateStr);
+    const dateAvail = dateAvailability.get(dateStr);
     
-    if (!availability) return "";
+    if (!dateAvail) return "";
     
-    switch (availability.status) {
+    switch (dateAvail.status) {
       case 'partial':
         return "bg-amber-100 text-amber-800 hover:bg-amber-200";
       case 'unavailable':

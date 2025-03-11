@@ -29,12 +29,14 @@ export function useAllocationMutations() {
             
         if (error) throw error;
         
-        toast.success("Recurso alocado com sucesso");
-        queryClient.invalidateQueries({ queryKey: ['projectAllocations'] });
         return data?.[0];
       } finally {
         setLoading(false);
       }
+    },
+    onSuccess: () => {
+      toast.success("Recurso alocado com sucesso");
+      queryClient.invalidateQueries({ queryKey: ['projectAllocations'] });
     },
     onError: (error: any) => {
       console.error("Erro ao alocar recurso:", error);
@@ -58,12 +60,13 @@ export function useAllocationMutations() {
           .eq('id', allocationId);
           
         if (error) throw error;
-        
-        toast.success("Alocação removida com sucesso");
-        queryClient.invalidateQueries({ queryKey: ['projectAllocations'] });
       } finally {
         setLoading(false);
       }
+    },
+    onSuccess: () => {
+      toast.success("Alocação removida com sucesso");
+      queryClient.invalidateQueries({ queryKey: ['projectAllocations'] });
     },
     onError: (error) => {
       console.error("Erro ao remover alocação:", error);

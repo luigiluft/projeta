@@ -1,200 +1,186 @@
 
-import { useState, useEffect } from "react";
-import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
-import { useProjectTasks } from "@/hooks/resourceAllocation/useProjectTasks";
-import { useTeamMembers } from "@/hooks/resourceAllocation/useTeamMembers";
-import { useAllocationMutations } from "@/hooks/resourceAllocation/useAllocationMutations";
-import { FormLabel } from "@/components/ui/form";
-import { DatePicker } from "@/components/ui/datepicker";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/datepicker";
+import { format, addDays, addBusinessDays, isWeekend } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
 import { toast } from "sonner";
 import { Allocation } from "@/hooks/resourceAllocation/types";
 
-interface AllocationFormProps {
+export interface AllocationFormProps {
   projectId: string;
   onSuccess?: () => void;
 }
 
 export function AllocationForm({ projectId, onSuccess }: AllocationFormProps) {
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  const [memberId, setMemberId] = useState("");
+  const [taskId, setTaskId] = useState("");
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
   const [allocatedHours, setAllocatedHours] = useState<number>(0);
-  const [selectedMemberId, setSelectedMemberId] = useState<string>("");
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [status, setStatus] = useState<"scheduled" | "in_progress" | "completed" | "cancelled">("scheduled");
   
-  const { teamMembers, isLoading: loadingTeam } = useTeamMembers();
-  const { tasks, isLoading: loadingTasks } = useProjectTasks(projectId);
-  const { checkingAvailability } = useResourceAllocation();
-  const { createAllocation, isCreating } = useAllocationMutations();
+  const {
+    teamMembers: teamMembersQuery,
+    projectTasks: projectTasksQuery,
+    loading,
+    createAllocation
+  } = useResourceAllocation(projectId);
   
-  // Reset formulário quando a tarefa mudar
-  useEffect(() => {
-    if (selectedTaskId) {
-      const task = tasks.find(t => t.id === selectedTaskId);
-      if (task) {
-        // Usar datas da tarefa se estiverem disponíveis
-        if (task.start_date) setStartDate(task.start_date);
-        if (task.end_date) setEndDate(task.end_date);
-        
-        // Definir horas alocadas com base nas horas calculadas da tarefa
-        const taskHours = task.calculated_hours || 0;
-        setAllocatedHours(taskHours);
-      }
+  const teamMembers = teamMembersQuery.data || [];
+  const tasks = projectTasksQuery.data || [];
+  
+  const handleMemberChange = (value: string) => {
+    setMemberId(value);
+  };
+  
+  const handleTaskChange = (value: string) => {
+    setTaskId(value);
+    
+    // Get task hours if available
+    const selectedTask = tasks.find(t => t.id === value);
+    if (selectedTask) {
+      const taskHours = selectedTask.calculated_hours || selectedTask.fixed_hours || 0;
+      setAllocatedHours(taskHours);
     }
-  }, [selectedTaskId, tasks]);
+  };
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleStartDateChange = (date: Date | null) => {
+    setStartDate(date);
+    
+    // Automatically set end date based on allocated hours
+    if (date) {
+      // Basic calculation: add work days based on hours (8h per day)
+      const daysNeeded = Math.ceil(allocatedHours / 8);
+      let endDate = date;
+      
+      for (let i = 0; i < daysNeeded; i++) {
+        endDate = addDays(endDate, 1);
+        // Skip weekends
+        if (isWeekend(endDate)) {
+          endDate = addDays(endDate, 1);
+          if (isWeekend(endDate)) {
+            endDate = addDays(endDate, 1);
+          }
+        }
+      }
+      
+      setEndDate(endDate);
+    }
+  };
+  
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!startDate || !endDate || allocatedHours <= 0 || !selectedMemberId) {
+    if (!memberId || !startDate || !endDate) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
     
-    // Verificar se a data final é posterior à data inicial
-    if (new Date(endDate) < new Date(startDate)) {
-      toast.error("A data final deve ser posterior à data inicial");
-      return;
-    }
-    
-    const allocationData: Allocation = {
+    const allocation: Allocation = {
       project_id: projectId,
-      member_id: selectedMemberId,
-      task_id: selectedTaskId,
-      start_date: startDate,
-      end_date: endDate,
+      member_id: memberId,
+      task_id: taskId || null,
+      start_date: format(startDate, 'yyyy-MM-dd'),
+      end_date: format(endDate, 'yyyy-MM-dd'),
       allocated_hours: allocatedHours,
-      status: status,
+      status: 'scheduled'
     };
     
-    try {
-      await createAllocation(allocationData);
-      toast.success("Alocação criada com sucesso");
-      
-      // Limpar formulário
-      setStartDate("");
-      setEndDate("");
-      setAllocatedHours(0);
-      setSelectedMemberId("");
-      setSelectedTaskId(null);
-      setStatus("scheduled");
-      
-      // Notificar componente pai
-      if (onSuccess) {
-        onSuccess();
+    createAllocation(allocation, {
+      onSuccess: () => {
+        toast.success("Alocação criada com sucesso");
+        // Reset form
+        setMemberId("");
+        setTaskId("");
+        setStartDate(null);
+        setEndDate(null);
+        setAllocatedHours(0);
+        
+        if (onSuccess) {
+          onSuccess();
+        }
+      },
+      onError: (error: any) => {
+        console.error("Erro ao criar alocação:", error);
+        toast.error(error.message || "Erro ao criar alocação");
       }
-    } catch (error) {
-      console.error("Erro ao criar alocação:", error);
-      toast.error("Erro ao criar alocação");
-    }
+    });
   };
   
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-md">
-      <h3 className="text-lg font-medium mb-4">Nova Alocação</h3>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="member">Membro da Equipe</Label>
+        <Select value={memberId} onValueChange={handleMemberChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione um membro" />
+          </SelectTrigger>
+          <SelectContent>
+            {teamMembers.map((member) => (
+              <SelectItem key={member.id} value={member.id}>
+                {member.first_name} {member.last_name} ({member.position})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       
-      <div className="space-y-4">
-        <div>
-          <FormLabel>Membro da Equipe</FormLabel>
-          <Select
-            value={selectedMemberId}
-            onValueChange={setSelectedMemberId}
-            disabled={loadingTeam}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um membro" />
-            </SelectTrigger>
-            <SelectContent>
-              {teamMembers.map((member) => (
-                <SelectItem key={member.id} value={member.id}>
-                  {member.first_name} {member.last_name} ({member.position})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div>
-          <FormLabel>Tarefa (opcional)</FormLabel>
-          <Select
-            value={selectedTaskId || ""}
-            onValueChange={value => setSelectedTaskId(value || null)}
-            disabled={loadingTasks}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma tarefa (opcional)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Sem tarefa específica</SelectItem>
-              {tasks.map((task) => (
-                <SelectItem key={task.id} value={task.id}>
-                  {task.name || task.epic || task.story || `Tarefa ${task.id}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <FormLabel>Data Inicial</FormLabel>
-            <DatePicker
-              value={startDate}
-              onChange={setStartDate}
-              placeholder="Data inicial"
-            />
-          </div>
-          
-          <div>
-            <FormLabel>Data Final</FormLabel>
-            <DatePicker
-              value={endDate}
-              onChange={setEndDate}
-              placeholder="Data final"
-              disableBefore={startDate}
-            />
-          </div>
-        </div>
-        
-        <div>
-          <FormLabel>Horas Alocadas</FormLabel>
-          <Input
-            type="number"
-            min="1"
-            step="1"
-            value={allocatedHours}
-            onChange={(e) => setAllocatedHours(parseInt(e.target.value) || 0)}
+      <div className="space-y-2">
+        <Label htmlFor="task">Tarefa (opcional)</Label>
+        <Select value={taskId} onValueChange={handleTaskChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione uma tarefa" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Sem tarefa específica</SelectItem>
+            {tasks.map((task) => (
+              <SelectItem key={task.id} value={task.id}>
+                {task.task_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="startDate">Data de Início</Label>
+          <DatePicker
+            selected={startDate}
+            onSelect={handleStartDateChange}
+            placeholderText="Selecione a data"
+            minDate={new Date()}
           />
         </div>
         
-        <div>
-          <FormLabel>Status</FormLabel>
-          <Select
-            value={status}
-            onValueChange={(value) => setStatus(value as "scheduled" | "in_progress" | "completed" | "cancelled")}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="scheduled">Agendada</SelectItem>
-              <SelectItem value="in_progress">Em Andamento</SelectItem>
-              <SelectItem value="completed">Concluída</SelectItem>
-              <SelectItem value="cancelled">Cancelada</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="space-y-2">
+          <Label htmlFor="endDate">Data de Término</Label>
+          <DatePicker
+            selected={endDate}
+            onSelect={setEndDate}
+            placeholderText="Selecione a data"
+            minDate={startDate || new Date()}
+          />
         </div>
       </div>
       
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={isCreating || checkingAvailability}
-      >
-        {isCreating ? "Salvando..." : "Salvar Alocação"}
+      <div className="space-y-2">
+        <Label htmlFor="hours">Horas Alocadas</Label>
+        <Input
+          id="hours"
+          type="number"
+          min="1"
+          value={allocatedHours}
+          onChange={(e) => setAllocatedHours(Number(e.target.value))}
+        />
+      </div>
+      
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Criando..." : "Criar Alocação"}
       </Button>
     </form>
   );

@@ -6,6 +6,7 @@ import { AllocationForm } from "./AllocationForm";
 import { AllocationList } from "./AllocationList";
 import { AutoAllocation } from "./AutoAllocation";
 import { useProjectAllocations } from "@/hooks/resourceAllocation/useProjectAllocations";
+import { useProjectTasks } from "@/hooks/resourceAllocation/useProjectTasks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AllocationGanttChart } from "./Gantt/AllocationGanttChart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,9 +20,14 @@ export function AllocationTab({ projectId, projectName }: AllocationTabProps) {
   const [showAllocationForm, setShowAllocationForm] = useState(false);
   const [showAutoAllocForm, setShowAutoAllocForm] = useState(false);
   const { refetch } = useProjectAllocations(projectId);
+  const { data: projectTasks = [] } = useProjectTasks(projectId);
   const [activeTab, setActiveTab] = useState("list");
   
   const handleRefetch = () => {
+    refetch();
+  };
+  
+  const handleAllocationDeleted = () => {
     refetch();
   };
   
@@ -52,6 +58,7 @@ export function AllocationTab({ projectId, projectName }: AllocationTabProps) {
               </DialogHeader>
               <AutoAllocation 
                 projectId={projectId}
+                tasks={projectTasks}
                 onSuccess={() => {
                   setShowAutoAllocForm(false);
                   handleRefetch();
@@ -90,7 +97,10 @@ export function AllocationTab({ projectId, projectName }: AllocationTabProps) {
         </TabsList>
         
         <TabsContent value="list" className="mt-0">
-          <AllocationList projectId={projectId} />
+          <AllocationList 
+            projectId={projectId} 
+            onAllocationDeleted={handleAllocationDeleted} 
+          />
         </TabsContent>
         
         <TabsContent value="gantt" className="mt-0">
