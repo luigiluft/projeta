@@ -1,4 +1,3 @@
-
 import { Project, Task, Attribute } from "@/types/project";
 import { useState, useEffect } from "react";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
@@ -17,6 +16,7 @@ import { Form } from "@/components/ui/form";
 import { TaskSelector } from "./TaskSelector";
 import { EndDateCalculator } from "./EndDateCalculator";
 import { ProjectCostCalculator } from "./ProjectCostCalculator";
+import { ProjectDates } from "./ProjectDates";
 
 interface ProjectFormProps {
   editingId?: string | null;
@@ -49,7 +49,6 @@ export function ProjectForm({
   const [attributeValues, setAttributeValues] = useState<Record<string, number>>({});
   const [estimatedEndDate, setEstimatedEndDate] = useState<string | null>(null);
   
-  // Project cost calculations
   const [projectCosts, setProjectCosts] = useState({
     totalHours: 0,
     taskCosts: 0,
@@ -185,13 +184,13 @@ export function ProjectForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
-        <ProjectBasicInfo 
-          form={form} 
-          readOnly={readOnly} 
-          estimatedEndDate={estimatedEndDate}
-          selectedEpics={selectedEpics}
-          selectedTasks={selectedTasks}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ProjectBasicInfo 
+            form={form} 
+            readOnly={readOnly} 
+            hideDates={true}
+          />
+        </div>
         
         <TaskSelector
           availableEpics={availableEpics}
@@ -200,6 +199,19 @@ export function ProjectForm({
           onEpicsChange={handleEpicSelectionChange}
           onTasksChange={setSelectedTasks}
           readOnly={readOnly}
+        />
+
+        <ProjectDates 
+          form={form}
+          selectedTasks={selectedTasks}
+          estimatedEndDate={estimatedEndDate}
+          readOnly={readOnly}
+        />
+
+        <EndDateCalculator 
+          tasks={selectedTasks}
+          startDate={form.watch("start_date")}
+          onEndDateCalculated={setEstimatedEndDate}
         />
 
         <ProjectContent 
@@ -211,12 +223,6 @@ export function ProjectForm({
           attributes={attributes}
           editingId={editingId}
           readOnly={readOnly}
-        />
-
-        <EndDateCalculator 
-          tasks={selectedTasks}
-          startDate={form.watch("start_date")}
-          onEndDateCalculated={setEstimatedEndDate}
         />
 
         <ProjectCostCalculator 
