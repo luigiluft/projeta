@@ -15,6 +15,8 @@ export default function EditProject() {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [availableEpics, setAvailableEpics] = useState<string[]>([]);
+  const [epicTasks, setEpicTasks] = useState<{ [key: string]: any }>({});
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -91,6 +93,22 @@ export default function EditProject() {
           tasks: allTasks,
           attribute_values: attributeValues
         } as Project;
+
+        // Extrair epics únicos das tarefas
+        const epics = [...new Set(allTasks.map(task => task.epic))].filter(Boolean);
+        setAvailableEpics(epics);
+
+        // Organizar tarefas por epic
+        const tasksByEpic: { [key: string]: any } = {};
+        allTasks.forEach(task => {
+          if (task.epic) {
+            if (!tasksByEpic[task.epic]) {
+              tasksByEpic[task.epic] = [];
+            }
+            tasksByEpic[task.epic].push(task);
+          }
+        });
+        setEpicTasks(tasksByEpic);
 
         setProject(fullProject);
         setLoading(false);
@@ -215,9 +233,11 @@ export default function EditProject() {
       </div>
       
       <ProjectForm 
-        initialProject={project} 
+        initialValues={project} 
         onSubmit={handleSubmit} 
-        submitButtonText="Atualizar Projeto"
+        availableEpics={availableEpics}
+        epicTasks={epicTasks}
+        editingId={id}
       />
     </div>
   );
