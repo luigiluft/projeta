@@ -17,11 +17,19 @@ export default function ProjectDetails() {
   const [error, setError] = useState<string | null>(null);
   const [availableEpics, setAvailableEpics] = useState<string[]>([]);
   const [epicTasks, setEpicTasks] = useState<{ [key: string]: any }>({});
+  const [selectedEpics, setSelectedEpics] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchProject = async () => {
       try {
         setLoading(true);
+        
+        // Verificar se ID é válido
+        if (!id || id === ":id") {
+          throw new Error('ID do projeto inválido');
+        }
+        
+        console.log("Buscando projeto com ID:", id);
         
         // Buscar o projeto pelo ID
         const { data: projectData, error: projectError } = await supabase
@@ -129,8 +137,6 @@ export default function ProjectDetails() {
       fetchProject();
     }
   }, [id]);
-
-  const [selectedEpics, setSelectedEpics] = useState<string[]>([]);
 
   const handleBack = () => {
     navigate('/projects');
