@@ -80,6 +80,9 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
 
             // Verificar se é um dos campos específicos que precisamos tratar com destaque
             const isSpecialField = specialFields.includes(attribute.id);
+            
+            // Destacar campo de ticket_medio com uma borda diferente
+            const isTicketMedio = attribute.id === 'ticket_medio';
 
             return (
               <FormItem>
@@ -95,11 +98,21 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
                         const value = attribute.type === "number"
                           ? e.target.value === "" ? "" : Number(e.target.value)
                           : e.target.value;
+                        
+                        // Log para debug ao alterar o valor
+                        if (isSpecialField) {
+                          console.log(`Alterando campo especial ${attribute.id} para:`, value);
+                        }
+                        
                         field.onChange(value);
                       }
                     }}
                     readOnly={readOnly}
-                    className={`${readOnly ? "bg-gray-50" : ""} ${isSpecialField ? "border-primary focus:ring-2 focus:ring-primary" : ""}`}
+                    className={`
+                      ${readOnly ? "bg-gray-50" : ""} 
+                      ${isSpecialField ? "border-primary focus:ring-2 focus:ring-primary" : ""}
+                      ${isTicketMedio ? "border-2 border-green-500 focus:ring-2 focus:ring-green-500" : ""}
+                    `}
                   />
                 </FormControl>
                 <FormMessage />

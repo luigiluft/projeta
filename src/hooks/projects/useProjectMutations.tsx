@@ -20,6 +20,16 @@ export const useProjectMutations = () => {
     const epicNames = epics.join(', ');
     
     const costs = calculateProjectCosts(selectedTasks, attributeValues);
+    
+    // Garantir que ticket_medio seja processado corretamente
+    console.log("Valores de atributos a serem salvos:", attributeValues);
+    
+    // Debug para ver se ticket_medio está presente
+    if ('ticket_medio' in attributeValues) {
+      console.log("Ticket médio recebido:", attributeValues.ticket_medio);
+    } else {
+      console.log("Ticket médio não encontrado nos valores de atributos");
+    }
 
     try {
       // 1. Criar o projeto
@@ -44,6 +54,7 @@ export const useProjectMutations = () => {
           deleted: false,
           version: 1,
           metadata: { attribute_values: attributeValues },
+          attributes: attributeValues, // Também salvar os valores em attributes para compatibilidade
           settings: {},
           project_name: epicNames,
           due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),

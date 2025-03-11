@@ -38,14 +38,19 @@ export default function NewProject() {
       const formattedAttributes: Attribute[] = data.map(attr => {
         let unit: "hours" | "quantity" | "percentage" = "hours";
         if (attr.unit === "quantity" || attr.unit === "percentage") {
-          unit = attr.unit;
+          unit = attr.unit as "quantity" | "percentage";
         }
 
         let type: "number" | "list" | "text" = "number";
         if (attr.unit === "list") {
           type = "list";
-        } else if (attr.unit !== "hours" && attr.unit !== "quantity" && attr.unit !== "percentage") {
+        } else if (attr.unit !== "hours" && attr.unit !== "quantity" && attr.unit !== "percentage" && attr.unit !== "currency") {
           type = "text";
+        }
+
+        // Tratar corretamente o caso do ticket_medio com unit = currency
+        if (attr.code === "ticket_medio" || attr.unit === "currency") {
+          type = "number";
         }
 
         return {
@@ -131,6 +136,14 @@ export default function NewProject() {
       setIsLoading(true);
       console.log("Projeto enviado para criação:", project);
       
+      // Log específico para verificar os valores do ticket_medio
+      if (project.attribute_values) {
+        console.log("Ticket médio nos attribute_values:", project.attribute_values.ticket_medio);
+      }
+      if (project.attributes && typeof project.attributes === 'object') {
+        console.log("Ticket médio nos attributes:", project.attributes.ticket_medio);
+      }
+      
       const projectData = {
         name: project.name,
         project_name: project.name,
@@ -147,7 +160,8 @@ export default function NewProject() {
         type: "default",
         metadata: { 
           attribute_values: project.attribute_values || {}
-        }
+        },
+        attributes: project.attributes || {} // Adicionar attributes para compatibilidade
       };
       
       console.log("Dados do projeto formatados para inserção:", projectData);
