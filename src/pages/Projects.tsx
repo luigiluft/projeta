@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ProjectsTable } from "@/components/Projects/ProjectsTable";
 import { DeleteProjectDialog } from "@/components/Projects/DeleteProjectDialog";
 import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
-import { Download, Plus, AlertCircle } from "lucide-react";
+import { Download, Plus, AlertCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { exportToCSV } from "@/utils/csvExport";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { ColumnManager } from "@/components/ProjectAttributes/ColumnManager";
+import { ViewManager } from "@/components/ProjectAttributes/ViewManager";
 
 export default function Projects() {
   const {
@@ -146,31 +148,27 @@ export default function Projects() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Projetos</h1>
         <div className="flex items-center gap-2">
+          <ColumnManager
+            columns={columns}
+            onColumnVisibilityChange={handleColumnVisibilityChange}
+          />
+          <ViewManager
+            onSaveView={handleSaveView}
+            onLoadView={handleLoadView}
+            savedViews={savedViews}
+          />
           <Button variant="outline" size="sm" onClick={handleExportCSV} className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Exportar CSV
           </Button>
           <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)} className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
+            <Upload className="h-4 w-4" />
             Importar CSV
           </Button>
           <Button onClick={() => navigate('/projects/new')} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Adicionar Projeto
           </Button>
-          <ActionButtons
-            columns={columns}
-            savedViews={savedViews}
-            onColumnVisibilityChange={handleColumnVisibilityChange}
-            onSaveView={handleSaveView}
-            onLoadView={handleLoadView}
-            onImportSpreadsheet={() => setImportDialogOpen(true)}
-            data={projects}
-            exportFilename="projetos"
-            showExportButton={false}
-            showAddButton={false}
-            newButtonText="Adicionar Projeto"
-          />
         </div>
       </div>
 
