@@ -7,6 +7,9 @@ import { Column, View } from "@/types/project";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { TaskImporter } from "@/components/TaskManagement/TaskImporter";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export default function Team() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -113,8 +116,9 @@ export default function Team() {
     setColumns(newColumns);
   };
 
-  const handleImportSpreadsheet = () => {
-    console.log("Import spreadsheet clicked");
+  const handleImportCSV = async () => {
+    // Implementar importação de CSV quando necessário
+    console.log("Importação de CSV para membros da equipe");
   };
 
   const handleNewMember = () => {
@@ -125,19 +129,30 @@ export default function Team() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Equipe</h1>
-        <ActionButtons
-          columns={columns}
-          savedViews={savedViews}
-          onColumnVisibilityChange={handleColumnVisibilityChange}
-          onSaveView={handleSaveView}
-          onLoadView={handleLoadView}
-          onImportSpreadsheet={handleImportSpreadsheet}
-          newButtonText="Novo Membro"
-          onNewClick={handleNewMember}
-          data={teamMembers}
-          exportFilename="equipe"
-          isLoading={loading}
-        />
+        <div className="flex items-center gap-2">
+          <ActionButtons
+            columns={columns}
+            savedViews={savedViews}
+            onColumnVisibilityChange={handleColumnVisibilityChange}
+            onSaveView={handleSaveView}
+            onLoadView={handleLoadView}
+            data={teamMembers}
+            exportFilename="equipe"
+            isLoading={loading}
+            showAddButton={false}
+          />
+          <TaskImporter 
+            onSuccess={fetchTeamMembers} 
+            buttonLabel="Importar CSV" 
+          />
+          <Button 
+            className="flex items-center gap-2"
+            onClick={handleNewMember}
+          >
+            <Plus className="h-4 w-4" />
+            Novo Membro
+          </Button>
+        </div>
       </div>
 
       {loading ? (

@@ -19,7 +19,7 @@ interface ActionButtonsProps {
   onColumnVisibilityChange: (columnId: string) => void;
   onSaveView: () => void;
   onLoadView: (view: View) => void;
-  onImportSpreadsheet: () => void;
+  onImportSpreadsheet?: () => void;
   newButtonText?: string;
   data?: any[];
   exportFilename?: string;
@@ -116,10 +116,12 @@ export function ActionButtons({
               <Plus className="mr-2 h-4 w-4" />
               {getActionText(newButtonText)}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onImportSpreadsheet} className="cursor-pointer">
-              <FilePlus className="mr-2 h-4 w-4" />
-              Importar Planilha
-            </DropdownMenuItem>
+            {onImportSpreadsheet && (
+              <DropdownMenuItem onClick={onImportSpreadsheet} className="cursor-pointer">
+                <FilePlus className="mr-2 h-4 w-4" />
+                Importar Planilha
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )}
