@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Task, Attribute, Project } from "@/types/project";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function NewProject() {
   const navigate = useNavigate();
@@ -228,7 +230,17 @@ export default function NewProject() {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">Novo Projeto</h1>
+      <div className="flex items-center gap-4 mb-6">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={() => navigate("/projects")}
+          className="hover:bg-slate-100"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-2xl font-bold">Novo Projeto</h1>
+      </div>
       
       <ProjectForm 
         availableEpics={availableEpics}
