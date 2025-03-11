@@ -5,7 +5,7 @@ import { TaskList } from "@/components/TaskManagement/TaskList";
 import { CostsHeader } from "./CostsHeader";
 import { EmptyTasks } from "./EmptyTasks";
 import { processTasks, separateTasks } from "../utils/taskCalculations";
-import { addBusinessDays, format, setHours, setMinutes } from "date-fns";
+import { addBusinessDays, format, setHours, setMinutes, addHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface ImplementationTasksTabProps {
@@ -79,19 +79,63 @@ export function ImplementationTasksTab({
     
     const tasksWithDates = processedTasks.map((task) => {
       const taskHours = task.calculated_hours || task.fixed_hours || 0;
-      const durationDays = Math.ceil(taskHours / 7); // 7 horas por dia
       
+      // Determinar em quantos dias a tarefa será completada
+      const hoursPerDay = 7; // Horas úteis por dia (9 às 17h com 1h almoço)
+      const durationDays = Math.ceil(taskHours / hoursPerDay);
+      
+      // Data de início
       const startDate = addBusinessDays(currentDate, accumulatedDays);
-      const endDate = addBusinessDays(startDate, durationDays - 1);
-      // Configurar o horário de término para 17h
-      const endDateWithTime = setHours(endDate, 17);
+      
+      // Calcular horário de término no mesmo dia
+      let endDate;
+      let endHour = 9 + Math.floor(taskHours); // Hora base (9h + horas da tarefa)
+      let endMinutes = Math.round((taskHours % 1) * 60); // Converter parte fracionária para minutos
+      
+      // Ajustar para o horário de almoço (12h às 13h)
+      if (taskHours <= 3) {
+        // Se a tarefa tem menos de 3h, termina antes do almoço
+        endDate = new Date(startDate);
+        endDate = setHours(setMinutes(endDate, endMinutes), 9 + Math.floor(taskHours));
+      } else if (taskHours <= 7) {
+        // Se a tarefa tem entre 3h e 7h, considerar 1h de almoço
+        endDate = new Date(startDate);
+        endDate = setHours(setMinutes(endDate, endMinutes), 10 + Math.floor(taskHours)); // +1h pelo almoço
+      } else {
+        // Se a tarefa durar mais de um dia
+        const lastDayHours = taskHours % hoursPerDay;
+        
+        if (lastDayHours === 0) {
+          // Se terminar exatamente no fim do dia
+          endDate = addBusinessDays(startDate, durationDays - 1);
+          endDate = setHours(setMinutes(endDate, 0), 17); // 17h
+        } else if (lastDayHours <= 3) {
+          // Último dia antes do almoço
+          endDate = addBusinessDays(startDate, durationDays - 1);
+          endDate = setHours(setMinutes(endDate, Math.round((lastDayHours % 1) * 60)), 9 + Math.floor(lastDayHours));
+        } else {
+          // Último dia após o almoço
+          endDate = addBusinessDays(startDate, durationDays - 1);
+          endDate = setHours(
+            setMinutes(endDate, Math.round((lastDayHours % 1) * 60)), 
+            10 + Math.floor(lastDayHours)
+          ); // +1h pelo almoço
+        }
+      }
+      
+      // Garantir que não passe das 17h
+      if (endDate.getHours() > 17 || (endDate.getHours() === 17 && endDate.getMinutes() > 0)) {
+        endDate = addBusinessDays(endDate, 1);
+        const remainingHours = (endDate.getHours() - 17) + (endDate.getMinutes() > 0 ? 1 : 0);
+        endDate = setHours(setMinutes(endDate, endMinutes), 9 + remainingHours - 1);
+      }
       
       accumulatedDays += durationDays;
       
       return {
         ...task,
         start_date: format(startDate, "yyyy-MM-dd'T'09:00:00"),
-        end_date: format(endDateWithTime, "yyyy-MM-dd'T'17:00:00")
+        end_date: format(endDate, "yyyy-MM-dd'T'HH:mm:00")
       };
     });
     
