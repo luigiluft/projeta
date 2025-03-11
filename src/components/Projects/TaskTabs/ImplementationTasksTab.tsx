@@ -5,7 +5,7 @@ import { TaskList } from "@/components/TaskManagement/TaskList";
 import { CostsHeader } from "./CostsHeader";
 import { EmptyTasks } from "./EmptyTasks";
 import { processTasks, separateTasks } from "../utils/taskCalculations";
-import { addBusinessDays, format, setHours, setMinutes, addHours } from "date-fns";
+import { addBusinessDays, format, setHours, setMinutes, addHours, isAfter, max } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface ImplementationTasksTabProps {
@@ -72,35 +72,76 @@ export function ImplementationTasksTab({
     const { implementation } = separateTasks(tasks);
     const processedTasks = processTasks(implementation, attributeValues);
     
-    // Calcular datas das tarefas
+    // Calcular datas das tarefas considerando dependências e um responsável por vez
     let currentDate = new Date();
     currentDate = setHours(setMinutes(currentDate, 0), 9); // Começa às 9h
-    let accumulatedDays = 0;
     
-    const tasksWithDates = processedTasks.map((task) => {
+    // Estrutura para rastrear a última data de disponibilidade de cada responsável
+    const ownerAvailability: Record<string, Date> = {};
+    
+    // Estrutura para rastrear a data de término de cada tarefa (para dependências)
+    const taskEndDates: Record<string, Date> = {};
+    
+    // Ordenar tarefas por ordem e dependências
+    const orderedTasks = [...processedTasks].sort((a, b) => {
+      // Priorizar por dependência primeiro
+      if (a.depends_on === b.id) return 1;
+      if (b.depends_on === a.id) return -1;
+      
+      // Depois por ordem se existir
+      return (a.order || 0) - (b.order || 0);
+    });
+    
+    const tasksWithDates = orderedTasks.map((task) => {
       const taskHours = task.calculated_hours || task.fixed_hours || 0;
+      const hoursPerDay = 7; // Horas úteis por dia (9 às 17h com 1h almoço)
+      
+      // Determinar a data de início com base em:
+      // 1. Data atual
+      // 2. Disponibilidade do responsável
+      // 3. Conclusão de tarefas dependentes
+      let startDate = new Date(currentDate);
+      
+      // Verificar disponibilidade do responsável
+      if (task.owner && ownerAvailability[task.owner]) {
+        startDate = new Date(ownerAvailability[task.owner]);
+      }
+      
+      // Verificar dependência
+      if (task.depends_on && taskEndDates[task.depends_on]) {
+        const dependencyEndDate = new Date(taskEndDates[task.depends_on]);
+        
+        // Usar a data maior entre a disponibilidade do responsável e o término da dependência
+        if (isAfter(dependencyEndDate, startDate)) {
+          startDate = dependencyEndDate;
+        }
+      }
+      
+      // Ajustar para começar em um horário de trabalho (9h)
+      if (startDate.getHours() >= 17) {
+        // Se for após o horário de trabalho, começar no próximo dia útil
+        startDate = addBusinessDays(startDate, 1);
+        startDate = setHours(setMinutes(startDate, 0), 9);
+      } else if (startDate.getHours() !== 9 || startDate.getMinutes() !== 0) {
+        // Ajustar para 9h do mesmo dia se estiver em horário de trabalho mas não às 9h
+        startDate = setHours(setMinutes(startDate, 0), 9);
+      }
       
       // Determinar em quantos dias a tarefa será completada
-      const hoursPerDay = 7; // Horas úteis por dia (9 às 17h com 1h almoço)
       const durationDays = Math.ceil(taskHours / hoursPerDay);
       
-      // Data de início
-      const startDate = addBusinessDays(currentDate, accumulatedDays);
-      
-      // Calcular horário de término no mesmo dia
+      // Calcular horário de término
       let endDate;
-      let endHour = 9 + Math.floor(taskHours); // Hora base (9h + horas da tarefa)
-      let endMinutes = Math.round((taskHours % 1) * 60); // Converter parte fracionária para minutos
       
       // Ajustar para o horário de almoço (12h às 13h)
       if (taskHours <= 3) {
         // Se a tarefa tem menos de 3h, termina antes do almoço
         endDate = new Date(startDate);
-        endDate = setHours(setMinutes(endDate, endMinutes), 9 + Math.floor(taskHours));
+        endDate = setHours(setMinutes(endDate, Math.round((taskHours % 1) * 60)), 9 + Math.floor(taskHours));
       } else if (taskHours <= 7) {
         // Se a tarefa tem entre 3h e 7h, considerar 1h de almoço
         endDate = new Date(startDate);
-        endDate = setHours(setMinutes(endDate, endMinutes), 10 + Math.floor(taskHours)); // +1h pelo almoço
+        endDate = setHours(setMinutes(endDate, Math.round((taskHours % 1) * 60)), 10 + Math.floor(taskHours)); // +1h pelo almoço
       } else {
         // Se a tarefa durar mais de um dia
         const lastDayHours = taskHours % hoursPerDay;
@@ -127,14 +168,20 @@ export function ImplementationTasksTab({
       if (endDate.getHours() > 17 || (endDate.getHours() === 17 && endDate.getMinutes() > 0)) {
         endDate = addBusinessDays(endDate, 1);
         const remainingHours = (endDate.getHours() - 17) + (endDate.getMinutes() > 0 ? 1 : 0);
-        endDate = setHours(setMinutes(endDate, endMinutes), 9 + remainingHours - 1);
+        endDate = setHours(setMinutes(endDate, Math.round((remainingHours % 1) * 60)), 9 + Math.floor(remainingHours) - 1);
       }
       
-      accumulatedDays += durationDays;
+      // Atualizar disponibilidade do responsável
+      if (task.owner) {
+        ownerAvailability[task.owner] = endDate;
+      }
+      
+      // Registrar data de término desta tarefa para dependências futuras
+      taskEndDates[task.id] = endDate;
       
       return {
         ...task,
-        start_date: format(startDate, "yyyy-MM-dd'T'09:00:00"),
+        start_date: format(startDate, "yyyy-MM-dd'T'HH:mm:00"),
         end_date: format(endDate, "yyyy-MM-dd'T'HH:mm:00")
       };
     });
