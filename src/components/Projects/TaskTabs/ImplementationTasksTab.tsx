@@ -5,6 +5,8 @@ import { TaskList } from "@/components/TaskManagement/TaskList";
 import { CostsHeader } from "./CostsHeader";
 import { EmptyTasks } from "./EmptyTasks";
 import { processTasks, separateTasks } from "../utils/taskCalculations";
+import { addBusinessDays, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface ImplementationTasksTabProps {
   tasks: Task[];
@@ -28,7 +30,27 @@ export function ImplementationTasksTab({
     const { implementation } = separateTasks(tasks);
     const processedTasks = processTasks(implementation, attributeValues);
     
-    setCalculatedTasks(processedTasks);
+    // Calcular datas das tarefas
+    let currentDate = new Date();
+    let accumulatedDays = 0;
+    
+    const tasksWithDates = processedTasks.map((task) => {
+      const taskHours = task.calculated_hours || task.fixed_hours || 0;
+      const durationDays = Math.ceil(taskHours / 7); // 7 horas por dia
+      
+      const startDate = addBusinessDays(currentDate, accumulatedDays);
+      const endDate = addBusinessDays(startDate, durationDays - 1);
+      
+      accumulatedDays += durationDays;
+      
+      return {
+        ...task,
+        start_date: format(startDate, 'yyyy-MM-dd'),
+        end_date: format(endDate, 'yyyy-MM-dd')
+      };
+    });
+    
+    setCalculatedTasks(tasksWithDates);
   }, [tasks, attributeValues]);
 
   return (
