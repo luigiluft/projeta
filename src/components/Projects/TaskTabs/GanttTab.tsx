@@ -30,13 +30,19 @@ export function GanttTab({ tasks }: GanttTabProps) {
   });
 
   // Preparar dados para o gráfico
-  const chartData = sortedTasks.map(task => ({
-    name: task.task_name,
-    owner: task.owner,
-    start: task.start_date ? new Date(task.start_date).getTime() : 0,
-    end: task.end_date ? new Date(task.end_date).getTime() : 0,
-    duration: task.calculated_hours || task.fixed_hours || 0,
-  }));
+  const chartData = sortedTasks.map(task => {
+    const startDate = task.start_date ? new Date(task.start_date).getTime() : 0;
+    const endDate = task.end_date ? new Date(task.end_date).getTime() : 0;
+    
+    return {
+      name: task.task_name,
+      owner: task.owner,
+      start: startDate,
+      end: endDate,
+      // Certifique-se de exibir a diferença entre start e end, não apenas a duração
+      duration: task.calculated_hours || task.fixed_hours || 0,
+    };
+  });
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {

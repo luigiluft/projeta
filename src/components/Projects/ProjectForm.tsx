@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -113,6 +114,7 @@ export function ProjectForm({
       
       const taskEndDates: Record<string, Date> = {};
       
+      // Começamos com a data de início do projeto
       let lastEndDate = startDate;
 
       Object.entries(tasksByOwner).forEach(([owner, tasks]) => {
@@ -130,6 +132,7 @@ export function ProjectForm({
             }
           }
           
+          // Ajusta para o início do dia de trabalho se necessário
           if (currentDate.getHours() >= 17) {
             currentDate = addBusinessDays(currentDate, 1);
             currentDate.setHours(9, 0, 0, 0);
@@ -140,12 +143,14 @@ export function ProjectForm({
           const taskHours = task.calculated_hours || task.fixed_hours || 0;
           let endDate = new Date(currentDate);
           
+          // Adiciona uma hora para almoço se o trabalho cruzar o meio-dia
           if (currentDate.getHours() < 12 && (currentDate.getHours() + taskHours) >= 12) {
             endDate.setHours(currentDate.getHours() + taskHours + 1);
           } else {
             endDate.setHours(currentDate.getHours() + taskHours);
           }
           
+          // Se terminar depois do horário de trabalho, continua no próximo dia
           if (endDate.getHours() >= 17) {
             const remainingHours = endDate.getHours() - 17;
             endDate = addBusinessDays(currentDate, 1);
@@ -158,12 +163,14 @@ export function ProjectForm({
           ownerAvailability[owner] = endDate;
           taskEndDates[task.id] = endDate;
           
+          // Atualiza a data de término mais tardia
           if (endDate > lastEndDate) {
             lastEndDate = new Date(endDate);
           }
         });
       });
       
+      // Aqui usamos a data de término mais tardia para definir a data estimada de término do projeto
       const mostFutureDateFormatted = format(lastEndDate, 'dd/MM/yyyy');
       console.log("Data estimada de término calculada:", mostFutureDateFormatted);
       setEstimatedEndDate(mostFutureDateFormatted);
