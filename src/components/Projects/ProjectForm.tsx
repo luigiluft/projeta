@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,8 @@ import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PricingTab } from "./PricingTab";
-import { ImplementationTasksTab, SustainmentTasksTab } from "./ScopeTab";
+import { ImplementationTasksTab } from "./TaskTabs/ImplementationTasksTab";
+import { SustainmentTasksTab } from "./TaskTabs/SustainmentTasksTab";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
 import { Attribute, Project, Task } from "@/types/project";
 import { ProjectBasicInfo } from "./ProjectBasicInfo";
