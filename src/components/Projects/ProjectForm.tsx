@@ -89,21 +89,74 @@ export function ProjectForm({
 
   // Adicionar valores específicos que podem vir do attribute_values ou attributes
   if (initialValues) {
-    // Primeiro, adicionar todos os valores dos atributos
+    // Primeiro verificar attribute_values já que é onde os valores mais recentes geralmente estão
     if (initialValues.attribute_values) {
       Object.entries(initialValues.attribute_values).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          defaultValues[key] = value;
-          console.log(`Definindo ${key} de attribute_values:`, value);
+          // Para campos numéricos, garantir que são números válidos
+          if (typeof value === 'number' && !isNaN(value)) {
+            defaultValues[key] = value;
+            console.log(`Definindo ${key} de attribute_values:`, value);
+          } else if (typeof value === 'string' && !isNaN(Number(value))) {
+            defaultValues[key] = Number(value);
+            console.log(`Definindo ${key} de attribute_values como número:`, Number(value));
+          } else if (typeof value !== 'number') {
+            defaultValues[key] = value;
+            console.log(`Definindo ${key} de attribute_values como não-número:`, value);
+          }
         }
       });
     }
 
-    // Em seguida, adicionar valores dos attributes se não existirem em attribute_values
-    if (initialValues.attributes) {
+    // Verificar se há valores específicos no attributes que precisam ser tratados com prioridade
+    specialFields.forEach(field => {
+      // Verificar em attribute_values primeiro (prioridade)
+      if (initialValues.attribute_values && field in initialValues.attribute_values) {
+        const value = initialValues.attribute_values[field];
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'number' && !isNaN(value)) {
+            defaultValues[field] = value;
+          } else if (typeof value === 'string' && !isNaN(Number(value))) {
+            defaultValues[field] = Number(value);
+          } else {
+            defaultValues[field] = value;
+          }
+          console.log(`Definido ${field} de attribute_values (prioridade):`, defaultValues[field]);
+        }
+      }
+      // Se não estiver em attribute_values, verificar em attributes
+      else if (initialValues.attributes && 
+               typeof initialValues.attributes === 'object' && 
+               !Array.isArray(initialValues.attributes) && 
+               field in initialValues.attributes) {
+        const value = initialValues.attributes[field];
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'number' && !isNaN(value)) {
+            defaultValues[field] = value;
+          } else if (typeof value === 'string' && !isNaN(Number(value))) {
+            defaultValues[field] = Number(value);
+          } else {
+            defaultValues[field] = value;
+          }
+          console.log(`Definido ${field} de attributes (prioridade):`, defaultValues[field]);
+        }
+      }
+    });
+
+    // Em seguida, adicionar valores dos attributes se não existirem ainda
+    if (initialValues.attributes && 
+        typeof initialValues.attributes === 'object' && 
+        !Array.isArray(initialValues.attributes)) {
       Object.entries(initialValues.attributes).forEach(([key, value]) => {
         if (defaultValues[key] === undefined && value !== undefined && value !== null) {
-          defaultValues[key] = value;
+          // Para campos numéricos, garantir que são números válidos
+          if (typeof value === 'number' && !isNaN(value)) {
+            defaultValues[key] = value;
+          } else if (typeof value === 'string' && !isNaN(Number(value))) {
+            defaultValues[key] = Number(value);
+          } else {
+            defaultValues[key] = value;
+          }
           console.log(`Definindo ${key} de attributes:`, value);
         }
       });
@@ -118,23 +171,6 @@ export function ProjectForm({
         : attr.defaultValue;
       defaultValues[attr.id] = value;
       console.log(`Definindo ${attr.id} do valor padrão:`, value);
-    }
-  });
-
-  // Verificar e corrigir valores especiais (fazer isso por último para priorizar)
-  specialFields.forEach(field => {
-    console.log(`Verificando campo especial ${field}:`, defaultValues[field]);
-    
-    // Verificar em attribute_values
-    if (initialValues?.attribute_values && field in initialValues.attribute_values) {
-      defaultValues[field] = initialValues.attribute_values[field];
-      console.log(`Definido ${field} de attribute_values:`, defaultValues[field]);
-    }
-    // Verificar em attributes
-    else if (initialValues?.attributes && typeof initialValues.attributes === 'object' && 
-             !Array.isArray(initialValues.attributes) && field in initialValues.attributes) {
-      defaultValues[field] = initialValues.attributes[field];
-      console.log(`Definido ${field} de attributes:`, defaultValues[field]);
     }
   });
 

@@ -66,6 +66,14 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
               
               // Se for NaN, retornar string vazia
               if (typeof field.value === 'number' && isNaN(field.value)) return "";
+
+              // Se for um objeto de outro tipo, tente convertê-lo para string ou número
+              if (field.value && typeof field.value === 'object') {
+                if ('value' in field.value) {
+                  return field.value.value === "NaN" ? "" : field.value.value;
+                }
+                return "";
+              }
               
               return field.value;
             })();
