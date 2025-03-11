@@ -5,7 +5,7 @@ import { Task } from "@/types/project";
 
 export function useProjectTasks(projectId?: string) {
   return useQuery({
-    queryKey: ['projectTasks', projectId],
+    queryKey: ['resourceAllocationTasks', projectId],
     queryFn: async () => {
       if (!projectId) return [];
 
@@ -14,7 +14,9 @@ export function useProjectTasks(projectId?: string) {
         .select(`
           id,
           task_id,
-          tasks:task_id(*)
+          tasks:task_id(*),
+          start_date,
+          end_date
         `)
         .eq('project_id', projectId);
 
@@ -23,7 +25,15 @@ export function useProjectTasks(projectId?: string) {
         throw error;
       }
 
-      return data.map(pt => pt.tasks) as Task[];
+      return data.map(pt => {
+        const task = pt.tasks as Task;
+        return {
+          ...task,
+          start_date: pt.start_date,
+          end_date: pt.end_date,
+          project_task_id: pt.id
+        };
+      }) as Task[];
     },
     enabled: !!projectId
   });

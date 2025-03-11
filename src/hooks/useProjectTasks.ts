@@ -4,11 +4,28 @@ import { Task, Column } from "@/types/project";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export const useProjectTasks = (projectId?: string) => {
-  return useQuery({
-    queryKey: ['projectTasks', projectId],
+export const useProjectTasks = (projectIdOrTasks: string | Task[] = []) => {
+  const [taskColumns, setTaskColumns] = useState<Column[]>([
+    { id: "id", label: "ID", visible: true },
+    { id: "task_name", label: "Tarefa", visible: true },
+    { id: "phase", label: "Fase", visible: true },
+    { id: "epic", label: "Epic", visible: true },
+    { id: "story", label: "Story", visible: true },
+    { id: "hours_formula", label: "Fórmula de Horas", visible: true },
+    { id: "fixed_hours", label: "Horas Fixas", visible: true },
+    { id: "owner", label: "Responsável", visible: true },
+    { id: "is_active", label: "Ativo", visible: true },
+    { id: "status", label: "Status", visible: true },
+  ]);
+
+  const handleColumnsChange = (columns: Column[]) => {
+    setTaskColumns(columns);
+  };
+
+  const query = useQuery({
+    queryKey: ['projectTasks', typeof projectIdOrTasks === 'string' ? projectIdOrTasks : null],
     queryFn: async () => {
-      if (!projectId) return [];
+      if (typeof projectIdOrTasks !== 'string') return [];
 
       const { data, error } = await supabase
         .from('project_tasks')
@@ -24,7 +41,7 @@ export const useProjectTasks = (projectId?: string) => {
           owner_id,
           tasks:task_id(*)
         `)
-        .eq('project_id', projectId);
+        .eq('project_id', projectIdOrTasks);
 
       if (error) {
         console.error("Erro ao carregar tarefas do projeto:", error);
@@ -45,12 +62,20 @@ export const useProjectTasks = (projectId?: string) => {
           owner: task.owner || ptask.owner_id || '',
           calculated_hours: ptask.calculated_hours,
           status: ptask.status as "pending" | "in_progress" | "completed",
-          project_task_id: ptask.id
+          project_task_id: ptask.id,
+          start_date: ptask.start_date,
+          end_date: ptask.end_date
         } as Task;
       });
 
       return formattedTasks;
     },
-    enabled: !!projectId
+    enabled: typeof projectIdOrTasks === 'string'
   });
+
+  return {
+    ...query,
+    taskColumns,
+    handleColumnsChange
+  };
 };
