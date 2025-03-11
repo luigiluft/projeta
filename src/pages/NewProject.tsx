@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,6 +102,7 @@ export default function NewProject() {
 
         if (tasksData && tasksData.length > 0) {
           const formattedTasks: Task[] = tasksData.map((task, index) => {
+            // Identificar consistently quais epics são de sustentação
             const isSustainment = 
               task.epic.toLowerCase().includes('sustentação') || 
               task.epic.toLowerCase().includes('sustentacao') ||
@@ -143,13 +145,24 @@ export default function NewProject() {
       setIsLoading(true);
       console.log("Projeto enviado para criação:", project);
       
+      // Usar a mesma lógica consistente para filtrar tarefas de implementação e sustentação
       const implementationTasks = project.tasks.filter(task => 
         !task.epic.toLowerCase().includes('sustentação') && 
-        !task.epic.toLowerCase().includes('sustentacao'));
+        !task.epic.toLowerCase().includes('sustentacao') &&
+        !task.epic.toLowerCase().includes('atendimento ao consumidor') &&
+        !task.epic.toLowerCase().includes('sac 4.0') &&
+        !task.epic.toLowerCase().includes('faturamento de gestão operacional') &&
+        !task.epic.toLowerCase().includes('faturamento de gestao operacional')
+      );
       
       const sustainmentTasks = project.tasks.filter(task => 
         task.epic.toLowerCase().includes('sustentação') || 
-        task.epic.toLowerCase().includes('sustentacao'));
+        task.epic.toLowerCase().includes('sustentacao') ||
+        task.epic.toLowerCase().includes('atendimento ao consumidor') ||
+        task.epic.toLowerCase().includes('sac 4.0') ||
+        task.epic.toLowerCase().includes('faturamento de gestão operacional') ||
+        task.epic.toLowerCase().includes('faturamento de gestao operacional')
+      );
       
       console.log(`Tarefas de implementação: ${implementationTasks.length}, Tarefas de sustentação: ${sustainmentTasks.length}`);
       

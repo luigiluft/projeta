@@ -17,6 +17,7 @@ interface GanttTabProps {
 }
 
 export function GanttTab({ tasks }: GanttTabProps) {
+  // Filtrar tarefas de implementação excluindo específicamente todas as que são de sustentação
   const implementationTasks = tasks.filter(task => 
     !task.epic.toLowerCase().includes('sustentação') && 
     !task.epic.toLowerCase().includes('sustentacao') &&

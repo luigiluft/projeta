@@ -24,7 +24,7 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     }
   };
 
-  // Classificar os epics como implementação ou sustentação corretamente
+  // Classificar os epics com maior precisão
   const sustainmentEpics = availableEpics.filter(epic => 
     epic.toLowerCase().includes('sustentação') ||
     epic.toLowerCase().includes('sustentacao') ||
@@ -34,13 +34,19 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     epic.toLowerCase().includes('faturamento de gestao operacional')
   );
   
-  // Todos os outros epics que não estão em sustainmentEpics são de implementação
-  const implementationEpics = availableEpics.filter(epic => 
+  // Epics de integração
+  const integrationEpics = availableEpics.filter(epic => 
     !sustainmentEpics.includes(epic) &&
-    (epic.toLowerCase().includes('implementação') ||
-    epic.toLowerCase().includes('implementacao') ||
     epic.toLowerCase().includes('integração') ||
-    epic.toLowerCase().includes('integracao'))
+    epic.toLowerCase().includes('integracao')
+  );
+
+  // Todos os outros epics que não são de sustentação nem integração são de implementação
+  const implementationEpics = availableEpics.filter(epic => 
+    !sustainmentEpics.includes(epic) && 
+    !integrationEpics.includes(epic) &&
+    epic.toLowerCase().includes('implementação') ||
+    epic.toLowerCase().includes('implementacao')
   );
 
   return (
@@ -81,6 +87,43 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
                   ))
                 ) : (
                   <p className="text-muted-foreground col-span-full">Nenhum epic de implementação disponível</p>
+                )}
+              </div>
+            </div>
+            
+            <Separator />
+            
+            {/* Seção de Epics de Integração */}
+            <div>
+              <h4 className="text-sm font-semibold mb-3">Integração</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {integrationEpics.length > 0 ? (
+                  integrationEpics.map((epic) => (
+                    <div key={epic} className="flex items-center space-x-2">
+                      {readOnly ? (
+                        <Badge 
+                          variant={selectedEpics.includes(epic) ? "default" : "outline"}
+                          className={selectedEpics.includes(epic) ? "bg-primary" : "text-muted-foreground"}
+                        >
+                          {epic}
+                        </Badge>
+                      ) : (
+                        <>
+                          <Checkbox 
+                            id={`epic-${epic}`} 
+                            checked={selectedEpics.includes(epic)}
+                            onCheckedChange={(checked) => handleEpicChange(epic, checked === true)}
+                            disabled={readOnly}
+                          />
+                          <Label htmlFor={`epic-${epic}`} className={`cursor-${readOnly ? 'default' : 'pointer'}`}>
+                            {epic}
+                          </Label>
+                        </>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground col-span-full">Nenhum epic de integração disponível</p>
                 )}
               </div>
             </div>
