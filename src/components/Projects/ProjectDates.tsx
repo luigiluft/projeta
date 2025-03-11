@@ -26,7 +26,6 @@ export function ProjectDates({
   estimatedEndDate,
   readOnly = false
 }: ProjectDatesProps) {
-  const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
   const [loading, setLoading] = useState(false);
   const [openCalendar, setOpenCalendar] = useState(false);
@@ -54,9 +53,8 @@ export function ProjectDates({
   };
 
   const checkTeamAvailability = async () => {
-    setLoading(true);
-
     try {
+      setLoading(true);
       const today = new Date();
       const nextThreeMonths = addDays(today, 90);
       
@@ -68,7 +66,6 @@ export function ProjectDates({
         return;
       }
 
-      const allDisabledDates: Date[] = [];
       const dateChecks: Promise<any>[] = [];
       
       for (const [role, tasks] of Object.entries(tasksByRole)) {
@@ -82,14 +79,28 @@ export function ProjectDates({
       
       const results = await Promise.all(dateChecks);
       
+      // Apenas considerar uma data como bloqueada se TODOS os papéis estiverem indisponíveis
+      const allDisabledDates = new Set<string>();
+      const dateMap = new Map<string, number>();
+      
       results.forEach(roleDisabledDates => {
-        allDisabledDates.push(...roleDisabledDates);
+        roleDisabledDates.forEach((date: Date) => {
+          const dateStr = date.toISOString();
+          dateMap.set(dateStr, (dateMap.get(dateStr) || 0) + 1);
+        });
       });
       
-      const uniqueDisabledDates = [...new Set(allDisabledDates.map(date => date.toISOString()))]
-        .map(dateStr => new Date(dateStr));
+      // Só bloqueia a data se todos os papéis estiverem indisponíveis
+      const roleCount = Object.keys(tasksByRole).length;
+      dateMap.forEach((count, dateStr) => {
+        if (count >= roleCount) {
+          allDisabledDates.add(dateStr);
+        }
+      });
       
+      const uniqueDisabledDates = [...allDisabledDates].map(dateStr => new Date(dateStr));
       setDisabledDates(uniqueDisabledDates);
+      
     } catch (error) {
       console.error("Erro ao verificar disponibilidade:", error);
       toast.error("Erro ao verificar disponibilidade da equipe");
@@ -108,28 +119,29 @@ export function ProjectDates({
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
       
+      console.log(`Verificando disponibilidade para ${role} de ${startDateStr} até ${endDateStr}`);
+      console.log(`Horas necessárias: ${requiredHours}`);
+      
       const availability = await getAvailability(startDateStr, endDateStr, requiredHours);
+      console.log("Disponibilidade recebida:", availability);
       
       const roleMembers = availability.filter(member => {
         const teamMember = teamMembers.find(tm => tm.id === member.member_id);
         return teamMember?.position === role;
       });
       
+      console.log(`Membros encontrados para ${role}:`, roleMembers.length);
+      
+      // Se não houver membros para o papel, não bloqueia as datas
       if (roleMembers.length === 0) {
-        const allDates: Date[] = [];
-        let currentDate = new Date(startDate);
-        
-        while (currentDate <= endDate) {
-          allDates.push(new Date(currentDate));
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-        
-        return allDates;
+        console.log(`Nenhum membro encontrado para ${role}`);
+        return [];
       }
       
       const disabledDates: Date[] = [];
       let currentDate = new Date(startDate);
       
+      // Uma data só é bloqueada se NENHUM membro estiver disponível
       while (currentDate <= endDate) {
         const dateStr = format(currentDate, 'yyyy-MM-dd');
         let hasAvailability = false;
@@ -137,7 +149,8 @@ export function ProjectDates({
         for (const member of roleMembers) {
           const dateAvailability = member.available_dates.find(d => d.date === dateStr);
           
-          if (dateAvailability && dateAvailability.available_hours >= requiredHours / 20) {
+          // Considera disponível se tiver pelo menos 4 horas disponíveis por dia
+          if (dateAvailability && dateAvailability.available_hours >= 4) {
             hasAvailability = true;
             break;
           }
