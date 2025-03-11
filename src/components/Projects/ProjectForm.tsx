@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PricingTab } from "./PricingTab";
 import { ImplementationTasksTab } from "./TaskTabs/ImplementationTasksTab";
 import { SustainmentTasksTab } from "./TaskTabs/SustainmentTasksTab";
+import { GanttTab } from "./TaskTabs/GanttTab";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
 import { Attribute, Project, Task } from "@/types/project";
 import { ProjectBasicInfo } from "./ProjectBasicInfo";
@@ -407,6 +408,7 @@ export function ProjectForm({
             <TabsTrigger value="pricing" className="flex-1">Precificação</TabsTrigger>
             <TabsTrigger value="implementation" className="flex-1">Implementação</TabsTrigger>
             <TabsTrigger value="sustainment" className="flex-1">Sustentação</TabsTrigger>
+            <TabsTrigger value="gantt" className="flex-1">Gantt</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pricing">
@@ -429,6 +431,10 @@ export function ProjectForm({
               onColumnsChange={handleColumnsChange}
               attributeValues={attributeValues}
             />
+          </TabsContent>
+
+          <TabsContent value="gantt">
+            <GanttTab tasks={selectedTasks} />
           </TabsContent>
         </Tabs>
 
