@@ -4,7 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, AlertCircle, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, isBefore, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -12,23 +12,35 @@ import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAll
 import { toast } from "sonner";
 import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
+import { Badge } from "@/components/ui/badge";
+import { EndDateCalculator } from "./EndDateCalculator";
 
 interface ProjectDatesProps {
   form: UseFormReturn<ProjectFormValues>;
   selectedTasks: any[];
   estimatedEndDate?: string | null;
   readOnly?: boolean;
+  onEndDateCalculated?: (date: string | null) => void;
+}
+
+// Interface para representar o status de disponibilidade de uma data
+interface DateAvailability {
+  date: Date;
+  status: 'available' | 'partial' | 'unavailable';
 }
 
 export function ProjectDates({ 
   form, 
   selectedTasks = [],
   estimatedEndDate,
-  readOnly = false
+  readOnly = false,
+  onEndDateCalculated
 }: ProjectDatesProps) {
+  const [dateAvailability, setDateAvailability] = useState<Map<string, DateAvailability>>(new Map());
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
   const [loading, setLoading] = useState(false);
   const [openCalendar, setOpenCalendar] = useState(false);
+  const [calculatedEndDate, setCalculatedEndDate] = useState<string | null>(null);
   const { teamMembers, getAvailability, checkingAvailability } = useResourceAllocation();
 
   useEffect(() => {
@@ -36,6 +48,13 @@ export function ProjectDates({
       checkTeamAvailability();
     }
   }, [selectedTasks, openCalendar]);
+
+  // Passar a data calculada para o componente pai
+  useEffect(() => {
+    if (onEndDateCalculated && calculatedEndDate) {
+      onEndDateCalculated(calculatedEndDate);
+    }
+  }, [calculatedEndDate, onEndDateCalculated]);
 
   const groupTasksByRole = (tasks: any[]) => {
     const tasksByRole: Record<string, any[]> = {};
@@ -62,6 +81,7 @@ export function ProjectDates({
       
       if (Object.keys(tasksByRole).length === 0) {
         setDisabledDates([]);
+        setDateAvailability(new Map());
         setLoading(false);
         return;
       }
@@ -79,27 +99,66 @@ export function ProjectDates({
       
       const results = await Promise.all(dateChecks);
       
-      // Apenas considerar uma data como bloqueada se TODOS os papéis estiverem indisponíveis
-      const allDisabledDates = new Set<string>();
-      const dateMap = new Map<string, number>();
+      // Mapear disponibilidade por data
+      const availabilityMap = new Map<string, {total: number, unavailable: number}>();
+      const roleCount = Object.keys(tasksByRole).length;
       
-      results.forEach(roleDisabledDates => {
-        roleDisabledDates.forEach((date: Date) => {
-          const dateStr = date.toISOString();
-          dateMap.set(dateStr, (dateMap.get(dateStr) || 0) + 1);
+      // Inicializar o mapa para todas as datas no intervalo
+      let tempDate = new Date(today);
+      while (tempDate <= nextThreeMonths) {
+        const dateStr = format(tempDate, 'yyyy-MM-dd');
+        availabilityMap.set(dateStr, {total: roleCount, unavailable: 0});
+        tempDate = addDays(tempDate, 1);
+      }
+      
+      // Contar papéis indisponíveis para cada data
+      results.forEach(roleUnavailableDates => {
+        roleUnavailableDates.forEach((date: Date) => {
+          const dateStr = format(date, 'yyyy-MM-dd');
+          const current = availabilityMap.get(dateStr);
+          if (current) {
+            availabilityMap.set(dateStr, {
+              ...current,
+              unavailable: current.unavailable + 1
+            });
+          }
         });
       });
       
-      // Só bloqueia a data se todos os papéis estiverem indisponíveis
-      const roleCount = Object.keys(tasksByRole).length;
-      dateMap.forEach((count, dateStr) => {
-        if (count >= roleCount) {
-          allDisabledDates.add(dateStr);
+      // Converter para estrutura DateAvailability e identificar datas completamente bloqueadas
+      const dateStatusMap = new Map<string, DateAvailability>();
+      const completelyUnavailableDates: Date[] = [];
+      
+      availabilityMap.forEach((status, dateStr) => {
+        const date = new Date(dateStr);
+        
+        if (status.unavailable === 0) {
+          // Todos disponíveis
+          dateStatusMap.set(dateStr, {
+            date,
+            status: 'available'
+          });
+        } else if (status.unavailable === status.total) {
+          // Todos indisponíveis
+          dateStatusMap.set(dateStr, {
+            date,
+            status: 'unavailable'
+          });
+          completelyUnavailableDates.push(date);
+        } else {
+          // Parcialmente disponível
+          dateStatusMap.set(dateStr, {
+            date,
+            status: 'partial'
+          });
         }
       });
       
-      const uniqueDisabledDates = [...allDisabledDates].map(dateStr => new Date(dateStr));
-      setDisabledDates(uniqueDisabledDates);
+      console.log("Mapa de disponibilidade:", Array.from(dateStatusMap.entries()));
+      console.log("Datas completamente indisponíveis:", completelyUnavailableDates.length);
+      
+      setDateAvailability(dateStatusMap);
+      setDisabledDates(completelyUnavailableDates);
       
     } catch (error) {
       console.error("Erro ao verificar disponibilidade:", error);
@@ -138,7 +197,7 @@ export function ProjectDates({
         return [];
       }
       
-      const disabledDates: Date[] = [];
+      const unavailableDates: Date[] = [];
       let currentDate = new Date(startDate);
       
       // Uma data só é bloqueada se NENHUM membro estiver disponível
@@ -157,13 +216,13 @@ export function ProjectDates({
         }
         
         if (!hasAvailability) {
-          disabledDates.push(new Date(currentDate));
+          unavailableDates.push(new Date(currentDate));
         }
         
         currentDate.setDate(currentDate.getDate() + 1);
       }
       
-      return disabledDates;
+      return unavailableDates;
     } catch (error) {
       console.error(`Erro ao verificar disponibilidade para ${role}:`, error);
       return [];
@@ -171,15 +230,48 @@ export function ProjectDates({
   };
 
   const isDateDisabled = (date: Date) => {
+    // Datas no passado são sempre desabilitadas
     if (isBefore(date, new Date())) {
       return true;
     }
     
+    // Verificar se a data está completamente bloqueada
     return disabledDates.some(disabledDate => 
       disabledDate.getDate() === date.getDate() &&
       disabledDate.getMonth() === date.getMonth() &&
       disabledDate.getFullYear() === date.getFullYear()
     );
+  };
+
+  // Função para determinar a classe CSS baseada no status de disponibilidade
+  const getDateClassName = (date: Date): string => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const availability = dateAvailability.get(dateStr);
+    
+    if (!availability) return "";
+    
+    switch (availability.status) {
+      case 'partial':
+        return "bg-amber-100 text-amber-800 hover:bg-amber-200";
+      case 'unavailable':
+        return "bg-red-100 text-red-800";
+      default:
+        return "";
+    }
+  };
+
+  // Handler para atualização da data de início
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      form.setValue('start_date', formattedDate);
+      
+      // Recalcular a data de término se temos tarefas selecionadas
+      if (selectedTasks.length > 0) {
+        const startDateForCalculation = new Date(formattedDate);
+        startDateForCalculation.setHours(9, 0, 0, 0); // Começa às 9h
+      }
+    }
   };
 
   return (
@@ -236,15 +328,61 @@ export function ProjectDates({
                           Selecione Epics e tarefas primeiro para verificar disponibilidade
                         </div>
                       )}
+                      <div className="mb-2 p-3 border-b">
+                        <div className="flex items-center space-x-2 text-sm mb-1">
+                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                          <span>Totalmente disponível</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm mb-1">
+                          <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                          <span>Parcialmente disponível</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm">
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                          <span>Indisponível</span>
+                        </div>
+                      </div>
                       <Calendar
                         mode="single"
                         selected={field.value ? new Date(field.value) : undefined}
                         onSelect={(date) => {
                           if (date) {
+                            handleDateChange(date);
                             field.onChange(format(date, 'yyyy-MM-dd'));
                           }
                         }}
                         disabled={isDateDisabled}
+                        modifiers={{
+                          partial: (date) => {
+                            const dateStr = format(date, 'yyyy-MM-dd');
+                            return dateAvailability.get(dateStr)?.status === 'partial' || false;
+                          }
+                        }}
+                        modifiersClassNames={{
+                          partial: "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                        }}
+                        components={{
+                          DayContent: (props) => {
+                            const dateStr = format(props.date, 'yyyy-MM-dd');
+                            const availability = dateAvailability.get(dateStr);
+                            
+                            return (
+                              <div className="relative w-full h-full flex items-center justify-center">
+                                {props.children}
+                                {availability?.status === 'partial' && (
+                                  <div className="absolute -top-0.5 -right-0.5">
+                                    <AlertCircle className="h-2 w-2 text-amber-500" />
+                                  </div>
+                                )}
+                                {availability?.status === 'available' && (
+                                  <div className="absolute -top-0.5 -right-0.5">
+                                    <Check className="h-2 w-2 text-green-500" />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                        }}
                         initialFocus
                         className="pointer-events-auto"
                       />
@@ -253,9 +391,11 @@ export function ProjectDates({
                 </PopoverContent>
               </Popover>
               {disabledDates.length > 0 && (
-                <p className="text-xs text-orange-600 mt-1">
-                  Algumas datas estão bloqueadas devido a indisponibilidade da equipe.
-                </p>
+                <div className="mt-2">
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                    Algumas datas estão bloqueadas devido a indisponibilidade da equipe
+                  </Badge>
+                </div>
               )}
               <FormMessage />
             </FormItem>
@@ -283,6 +423,20 @@ export function ProjectDates({
           </FormItem>
         </div>
       </div>
+      
+      {/* Componente invisível que calcula a data estimada de término */}
+      {form.watch('start_date') && selectedTasks.length > 0 && (
+        <EndDateCalculator
+          tasks={selectedTasks}
+          startDate={form.watch('start_date')}
+          onEndDateCalculated={(date) => {
+            setCalculatedEndDate(date);
+            if (date) {
+              form.setValue('expected_end_date', date);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

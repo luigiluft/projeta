@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { format, addDays } from "date-fns";
+import { format, addDays, isWeekend } from "date-fns";
 import { ResourceAvailability } from "./types";
 import { toast } from "sonner";
 
@@ -52,7 +52,8 @@ export async function getAvailability(
       let currentDate = new Date(start);
       
       while (currentDate <= end) {
-        if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+        // Pular finais de semana
+        if (isWeekend(currentDate)) {
           currentDate = addDays(currentDate, 1);
           continue;
         }
@@ -67,16 +68,27 @@ export async function getAvailability(
           const allocEnd = new Date(alloc.end_date);
           
           if (currentDate >= allocStart && currentDate <= allocEnd) {
-            const allocDays = Math.ceil(
+            // Calcular horas alocadas por dia de trabalho (excluindo fins de semana)
+            const totalDays = Math.ceil(
               (allocEnd.getTime() - allocStart.getTime()) / (1000 * 60 * 60 * 24)
-            ) * 5/7;
-            allocatedHours += alloc.allocated_hours / Math.max(1, allocDays);
+            );
+            
+            // Contar apenas dias úteis (aproximadamente 5/7 dos dias totais)
+            const workDays = Math.max(1, Math.round(totalDays * 5/7));
+            
+            allocatedHours += alloc.allocated_hours / workDays;
           }
         });
         
+        // Calcular horas disponíveis
+        const availableHours = Math.max(0, dailyCapacity - allocatedHours);
+        
         availableDates.push({
           date: dateStr,
-          available_hours: Math.max(0, dailyCapacity - allocatedHours)
+          available_hours: availableHours,
+          // Adicionar informação de alocações existentes
+          allocated_hours: allocatedHours,
+          total_capacity: dailyCapacity
         });
         
         currentDate = addDays(currentDate, 1);
@@ -90,6 +102,7 @@ export async function getAvailability(
       });
     }
     
+    // Ordenar por maior disponibilidade
     return availability.sort((a, b) => {
       const totalAvailableA = a.available_dates.reduce((sum, date) => sum + date.available_hours, 0);
       const totalAvailableB = b.available_dates.reduce((sum, date) => sum + date.available_hours, 0);
