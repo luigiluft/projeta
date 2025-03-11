@@ -20,7 +20,7 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
       const currentValue = form.getValues(attr.id);
       
       // Se não tiver valor e tiver um valor padrão, definir
-      if ((currentValue === undefined || currentValue === "") && attr.defaultValue) {
+      if ((currentValue === undefined || currentValue === "" || Number.isNaN(currentValue)) && attr.defaultValue) {
         const value = attr.type === "number" ? Number(attr.defaultValue) : attr.defaultValue;
         form.setValue(attr.id, value);
       }
@@ -35,6 +35,21 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
           control={form.control}
           name={attribute.id}
           render={({ field }) => {
+            // Tratar valores inválidos (NaN, undefined) para exibição
+            const displayValue = (() => {
+              if (field.value === undefined || field.value === "") return "";
+              
+              // Se for um objeto com _type definido (casos especiais)
+              if (field.value && typeof field.value === 'object' && field.value._type === 'Number') {
+                return field.value.value === "NaN" ? "" : field.value.value;
+              }
+              
+              // Se for NaN, retornar string vazia
+              if (typeof field.value === 'number' && isNaN(field.value)) return "";
+              
+              return field.value;
+            })();
+
             return (
               <FormItem>
                 <FormLabel>{attribute.name}</FormLabel>
@@ -43,6 +58,7 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
                     type={attribute.type === "number" ? "number" : "text"}
                     placeholder={`Digite ${attribute.name.toLowerCase()}`}
                     {...field}
+                    value={displayValue}
                     onChange={(e) => {
                       if (!readOnly) {
                         const value = attribute.type === "number"

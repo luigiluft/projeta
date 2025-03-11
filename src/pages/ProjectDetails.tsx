@@ -118,6 +118,16 @@ export default function ProjectDetails() {
           }
         }
 
+        // Verificar se existem atributos na tabela projects diretamente
+        if (projectData.attributes && typeof projectData.attributes === 'object') {
+          const attributes = projectData.attributes as Record<string, any>;
+          Object.keys(attributes).forEach(key => {
+            if (!attributeValues[key]) {
+              attributeValues[key] = attributes[key];
+            }
+          });
+        }
+
         const fullProject = {
           ...projectData,
           tasks: allTasks,
@@ -146,6 +156,9 @@ export default function ProjectDetails() {
           setSelectedEpics(projectEpics);
         }
 
+        // Log para depuração dos valores dos atributos
+        console.log("Projeto carregado com atributos:", attributeValues);
+        
         setProject(fullProject);
         setLoading(false);
       } catch (err: any) {
