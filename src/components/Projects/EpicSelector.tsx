@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Task } from "@/types/project";
 
 interface EpicSelectorProps {
   availableEpics: string[];
@@ -23,14 +24,20 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     }
   };
 
-  // Separar epics entre implementação e sustentação
+  // Separar epics baseado na fase (implementação/sustentação) das tarefas
   const implementationEpics = availableEpics.filter(epic => 
-    !epic.toLowerCase().includes('sustentação') && 
-    !epic.toLowerCase().includes('sustentacao'));
+    epic.toLowerCase().includes('implementação') ||
+    epic.toLowerCase().includes('implementacao') ||
+    epic.toLowerCase().includes('integração') ||
+    epic.toLowerCase().includes('integracao') ||
+    epic.toLowerCase().includes('faturamento') ||
+    epic.toLowerCase().includes('atendimento')
+  );
   
   const sustainmentEpics = availableEpics.filter(epic => 
-    epic.toLowerCase().includes('sustentação') || 
-    epic.toLowerCase().includes('sustentacao'));
+    epic.toLowerCase().includes('sustentação') ||
+    epic.toLowerCase().includes('sustentacao')
+  );
 
   return (
     <Card>
