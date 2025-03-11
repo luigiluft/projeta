@@ -3,16 +3,28 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { AttributeForm } from "@/components/ProjectAttributes/AttributeForm";
 import { AttributeList } from "@/components/ProjectAttributes/AttributeList";
-import { ActionButtons } from "@/components/ProjectAttributes/ActionButtons";
 import { Column, View } from "@/types/project";
 import { ProjectAttribute } from "@/types/database";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Download, Plus, Upload } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ColumnManager } from "@/components/ProjectAttributes/ColumnManager";
+import { ViewManager } from "@/components/ProjectAttributes/ViewManager";
+import { exportToCSV } from "@/utils/csvExport";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function ProjectAttributes() {
   const [attributes, setAttributes] = useState<ProjectAttribute[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const navigate = useNavigate();
   const [columns, setColumns] = useState<Column[]>([
     { id: "name", label: "Nome", visible: true },
     { id: "code", label: "Código", visible: true },
@@ -139,26 +151,37 @@ export default function ProjectAttributes() {
     setColumns(newColumns);
   };
 
-  const handleImportSpreadsheet = () => {
-    // Implement spreadsheet import logic here
-    console.log("Import spreadsheet clicked");
+  const handleExportCSV = () => {
+    exportToCSV(attributes, "atributos-projeto");
   };
 
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Atributos do Projeto</h1>
-        <ActionButtons
-          columns={columns}
-          savedViews={savedViews}
-          onColumnVisibilityChange={handleColumnVisibilityChange}
-          onSaveView={handleSaveView}
-          onLoadView={handleLoadView}
-          onImportSpreadsheet={handleImportSpreadsheet}
-          newButtonText="Novo Atributo"
-          data={attributes}
-          exportFilename="atributos-projeto"
-        />
+        <div className="flex items-center gap-2">
+          <ColumnManager
+            columns={columns}
+            onColumnVisibilityChange={handleColumnVisibilityChange}
+          />
+          <ViewManager
+            onSaveView={handleSaveView}
+            onLoadView={handleLoadView}
+            savedViews={savedViews}
+          />
+          <Button variant="outline" size="sm" onClick={handleExportCSV} className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)} className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Importar CSV
+          </Button>
+          <Button onClick={() => navigate('/project-attributes/new')} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Atributo
+          </Button>
+        </div>
       </div>
 
       {showForm && (
@@ -176,6 +199,34 @@ export default function ProjectAttributes() {
         onDelete={handleDelete}
         onColumnsChange={handleColumnsChange}
       />
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Importar Atributos</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="file">Arquivo CSV ou Excel</Label>
+              <Input id="file" type="file" accept=".csv,.xlsx,.xls" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Observações</Label>
+              <Textarea id="notes" placeholder="Adicione informações sobre os dados importados" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="headers" />
+              <Label htmlFor="headers">A primeira linha contém cabeçalhos</Label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">Importar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
