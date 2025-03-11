@@ -24,6 +24,8 @@ interface ProjectFormProps {
   epicTasks: { [key: string]: Task[] };
   onEpicsChange?: (epics: string[]) => void;
   isLoading?: boolean;
+  readOnly?: boolean;
+  selectedEpics?: string[];
 }
 
 export function ProjectForm({ 
@@ -34,9 +36,11 @@ export function ProjectForm({
   availableEpics,
   epicTasks,
   onEpicsChange = () => {},
-  isLoading = false
+  isLoading = false,
+  readOnly = false,
+  selectedEpics: initialSelectedEpics = []
 }: ProjectFormProps) {
-  const [selectedEpics, setSelectedEpics] = useState<string[]>([]);
+  const [selectedEpics, setSelectedEpics] = useState<string[]>(initialSelectedEpics);
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
   const { taskColumns, handleColumnsChange } = useProjectTasks([]);
   const [attributeValues, setAttributeValues] = useState<Record<string, number>>({});
@@ -51,6 +55,16 @@ export function ProjectForm({
     });
     setSelectedTasks(tasks);
   }, [selectedEpics, epicTasks]);
+
+  // Initialize selected epics if provided in initialValues
+  useEffect(() => {
+    if (initialValues?.epic && initialSelectedEpics.length === 0) {
+      const epics = initialValues.epic.split(',').map(e => e.trim());
+      setSelectedEpics(epics);
+    } else if (initialSelectedEpics.length > 0) {
+      setSelectedEpics(initialSelectedEpics);
+    }
+  }, [initialValues, initialSelectedEpics]);
 
   const formSchema = createProjectFormSchema(attributes);
 
@@ -174,7 +188,7 @@ export function ProjectForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
-        <ProjectBasicInfo form={form} />
+        <ProjectBasicInfo form={form} readOnly={readOnly} />
         
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Epics do Projeto</h3>
@@ -182,6 +196,7 @@ export function ProjectForm({
             availableEpics={availableEpics} 
             selectedEpics={selectedEpics}
             onChange={handleEpicSelectionChange}
+            readOnly={readOnly}
           />
         </div>
 
@@ -192,7 +207,7 @@ export function ProjectForm({
           </TabsList>
 
           <TabsContent value="pricing">
-            <PricingTab form={form} attributes={attributes} />
+            <PricingTab form={form} attributes={attributes} readOnly={readOnly} />
           </TabsContent>
 
           <TabsContent value="scope">
@@ -205,11 +220,13 @@ export function ProjectForm({
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Salvando..." : (editingId ? "Atualizar" : "Criar")} Projeto
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Salvando..." : (editingId ? "Atualizar" : "Criar")} Projeto
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );

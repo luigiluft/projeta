@@ -8,9 +8,10 @@ import { useEffect } from "react";
 interface PricingTabProps {
   form: UseFormReturn<any>;
   attributes: Attribute[];
+  readOnly?: boolean;
 }
 
-export function PricingTab({ form, attributes }: PricingTabProps) {
+export function PricingTab({ form, attributes, readOnly = false }: PricingTabProps) {
   // Garantir que os valores padrão sejam carregados quando os atributos mudarem
   useEffect(() => {
     // Para cada atributo, se não tiver um valor já definido no formulário,
@@ -43,11 +44,15 @@ export function PricingTab({ form, attributes }: PricingTabProps) {
                     placeholder={`Digite ${attribute.name.toLowerCase()}`}
                     {...field}
                     onChange={(e) => {
-                      const value = attribute.type === "number"
-                        ? e.target.value === "" ? "" : Number(e.target.value)
-                        : e.target.value;
-                      field.onChange(value);
+                      if (!readOnly) {
+                        const value = attribute.type === "number"
+                          ? e.target.value === "" ? "" : Number(e.target.value)
+                          : e.target.value;
+                        field.onChange(value);
+                      }
                     }}
+                    readOnly={readOnly}
+                    className={readOnly ? "bg-gray-50" : ""}
                   />
                 </FormControl>
                 <FormMessage />

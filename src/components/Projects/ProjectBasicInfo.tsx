@@ -7,9 +7,10 @@ import { ProjectFormValues } from "@/utils/projectFormSchema";
 
 interface ProjectBasicInfoProps {
   form: UseFormReturn<ProjectFormValues>;
+  readOnly?: boolean;
 }
 
-export function ProjectBasicInfo({ form }: ProjectBasicInfoProps) {
+export function ProjectBasicInfo({ form, readOnly = false }: ProjectBasicInfoProps) {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -20,7 +21,12 @@ export function ProjectBasicInfo({ form }: ProjectBasicInfoProps) {
             <FormItem>
               <FormLabel>Nome do Projeto</FormLabel>
               <FormControl>
-                <Input placeholder="Digite o nome do projeto" {...field} />
+                <Input 
+                  placeholder="Digite o nome do projeto" 
+                  {...field} 
+                  readOnly={readOnly}
+                  className={readOnly ? "bg-gray-50" : ""}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -34,7 +40,12 @@ export function ProjectBasicInfo({ form }: ProjectBasicInfoProps) {
             <FormItem>
               <FormLabel>Cliente</FormLabel>
               <FormControl>
-                <Input placeholder="Nome do cliente" {...field} />
+                <Input 
+                  placeholder="Nome do cliente" 
+                  {...field} 
+                  readOnly={readOnly}
+                  className={readOnly ? "bg-gray-50" : ""}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -48,7 +59,12 @@ export function ProjectBasicInfo({ form }: ProjectBasicInfoProps) {
             <FormItem>
               <FormLabel>Data de Início</FormLabel>
               <FormControl>
-                <Input type="date" {...field} />
+                <Input 
+                  type="date" 
+                  {...field} 
+                  readOnly={readOnly}
+                  className={readOnly ? "bg-gray-50" : ""}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -65,8 +81,9 @@ export function ProjectBasicInfo({ form }: ProjectBasicInfoProps) {
             <FormControl>
               <Textarea 
                 placeholder="Descreva o projeto" 
-                className="min-h-[100px]" 
+                className={`min-h-[100px] ${readOnly ? "bg-gray-50" : ""}`}
                 {...field} 
+                readOnly={readOnly}
               />
             </FormControl>
             <FormMessage />

@@ -9,7 +9,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 
-export default function EditProject() {
+export default function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [project, setProject] = useState<Project | null>(null);
@@ -110,6 +110,12 @@ export default function EditProject() {
         });
         setEpicTasks(tasksByEpic);
 
+        // Pré-selecionar todos os epics do projeto
+        if (fullProject.epic) {
+          const projectEpics = fullProject.epic.split(',').map(e => e.trim());
+          setSelectedEpics(projectEpics);
+        }
+
         setProject(fullProject);
         setLoading(false);
       } catch (err: any) {
@@ -123,6 +129,8 @@ export default function EditProject() {
       fetchProject();
     }
   }, [id]);
+
+  const [selectedEpics, setSelectedEpics] = useState<string[]>([]);
 
   const handleBack = () => {
     navigate('/projects');
@@ -192,36 +200,6 @@ export default function EditProject() {
     );
   }
 
-  const handleSubmit = async (updatedProject: Project) => {
-    try {
-      // Extrair os valores de atributos para salvar no metadata
-      const { attribute_values, ...projectData } = updatedProject;
-      
-      // Atualizar o metadata com os novos valores de atributos
-      const metadata = {
-        ...(project.metadata || {}),
-        attribute_values: attribute_values || {}
-      };
-
-      // Salvar as alterações do projeto
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          ...projectData,
-          metadata
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast.success('Projeto atualizado com sucesso');
-      navigate('/projects');
-    } catch (error: any) {
-      console.error('Erro ao atualizar projeto:', error);
-      toast.error(`Erro ao atualizar projeto: ${error.message}`);
-    }
-  };
-
   return (
     <div className="container mx-auto py-6">
       <div className="flex items-center mb-6">
@@ -229,15 +207,16 @@ export default function EditProject() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
         </Button>
-        <h1 className="text-2xl font-bold">Editar Projeto</h1>
+        <h1 className="text-2xl font-bold">Detalhes do Projeto</h1>
       </div>
       
       <ProjectForm 
         initialValues={project} 
-        onSubmit={handleSubmit} 
         availableEpics={availableEpics}
         epicTasks={epicTasks}
         editingId={id}
+        readOnly={true}
+        selectedEpics={selectedEpics}
       />
     </div>
   );
