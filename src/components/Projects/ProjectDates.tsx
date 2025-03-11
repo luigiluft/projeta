@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -259,6 +258,23 @@ export function ProjectDates({
     }
   };
 
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      // Formatar a data para ISO string (yyyy-MM-dd)
+      const isoDate = format(date, 'yyyy-MM-dd');
+      
+      // Atualizar o valor no formulário
+      form.setValue('start_date', isoDate, { 
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
+      
+      // Fechar o calendário após a seleção
+      setOpenCalendar(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Datas do Projeto</h3>
@@ -334,9 +350,8 @@ export function ProjectDates({
                           if (date) {
                             const isoDate = format(date, 'yyyy-MM-dd');
                             field.onChange(isoDate);
-                            form.setValue('start_date', isoDate);
+                            handleDateSelect(date);
                           }
-                          setOpenCalendar(false);
                         }}
                         disabled={isDateDisabled}
                         modifiers={{
