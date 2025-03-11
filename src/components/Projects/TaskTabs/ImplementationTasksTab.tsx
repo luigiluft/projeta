@@ -24,15 +24,16 @@ export function ImplementationTasksTab({
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
   const [implementationColumns, setImplementationColumns] = useState<Column[]>([]);
 
-  // Adicionar colunas de data à lista de colunas
+  // Adicionar colunas de data e ordem à lista de colunas
   useEffect(() => {
     const updatedColumns = [...columns];
     
-    // Verificar se as colunas de data já existem
+    // Verificar se as colunas necessárias já existem
     const hasStartDateColumn = updatedColumns.some(col => col.id === 'start_date');
     const hasEndDateColumn = updatedColumns.some(col => col.id === 'end_date');
+    const hasOrderColumn = updatedColumns.some(col => col.id === 'order');
     
-    // Adicionar colunas de data se não existirem
+    // Adicionar colunas se não existirem
     if (!hasStartDateColumn) {
       updatedColumns.push({
         id: 'start_date',
@@ -49,9 +50,17 @@ export function ImplementationTasksTab({
       });
     }
     
-    // Garantir que as colunas de data estejam visíveis
+    if (!hasOrderColumn) {
+      updatedColumns.push({
+        id: 'order',
+        label: 'Ordem',
+        visible: true
+      });
+    }
+    
+    // Garantir que as colunas estejam visíveis
     const finalColumns = updatedColumns.map(col => {
-      if (col.id === 'start_date' || col.id === 'end_date') {
+      if (col.id === 'start_date' || col.id === 'end_date' || col.id === 'order') {
         return { ...col, visible: true };
       }
       return col;
@@ -60,7 +69,7 @@ export function ImplementationTasksTab({
     setImplementationColumns(finalColumns);
     
     // Se houver mudanças, atualizar as colunas no componente pai
-    if (!hasStartDateColumn || !hasEndDateColumn) {
+    if (!hasStartDateColumn || !hasEndDateColumn || !hasOrderColumn) {
       onColumnsChange(finalColumns);
     }
   }, [columns, onColumnsChange]);
@@ -76,28 +85,30 @@ export function ImplementationTasksTab({
     let currentDate = new Date();
     currentDate = setHours(setMinutes(currentDate, 0), 9); // Começa às 9h
     
+    // Ordenar tarefas por ordem e dependências
+    const orderedTasks = [...processedTasks].sort((a, b) => {
+      // Priorizar por dependência primeiro
+      if (a.depends_on && a.depends_on === b.id) return 1;
+      if (b.depends_on && b.depends_on === a.id) return -1;
+      
+      // Depois por ordem se existir
+      const orderA = a.order || 0;
+      const orderB = b.order || 0;
+      return orderA - orderB;
+    });
+    
     // Estrutura para rastrear a última data de disponibilidade de cada responsável
     const ownerAvailability: Record<string, Date> = {};
     
     // Estrutura para rastrear a data de término de cada tarefa (para dependências)
     const taskEndDates: Record<string, Date> = {};
     
-    // Ordenar tarefas por ordem e dependências
-    const orderedTasks = [...processedTasks].sort((a, b) => {
-      // Priorizar por dependência primeiro
-      if (a.depends_on === b.id) return 1;
-      if (b.depends_on === a.id) return -1;
-      
-      // Depois por ordem se existir
-      return (a.order || 0) - (b.order || 0);
-    });
-    
     const tasksWithDates = orderedTasks.map((task) => {
       const taskHours = task.calculated_hours || task.fixed_hours || 0;
       const hoursPerDay = 7; // Horas úteis por dia (9 às 17h com 1h almoço)
       
       // Determinar a data de início com base em:
-      // 1. Data atual
+      // 1. Data atual (se for a primeira tarefa)
       // 2. Disponibilidade do responsável
       // 3. Conclusão de tarefas dependentes
       let startDate = new Date(currentDate);
@@ -122,56 +133,54 @@ export function ImplementationTasksTab({
         // Se for após o horário de trabalho, começar no próximo dia útil
         startDate = addBusinessDays(startDate, 1);
         startDate = setHours(setMinutes(startDate, 0), 9);
-      } else if (startDate.getHours() !== 9 || startDate.getMinutes() !== 0) {
-        // Ajustar para 9h do mesmo dia se estiver em horário de trabalho mas não às 9h
+      } else if (startDate.getHours() < 9) {
+        // Se for antes do início do expediente, começar às 9h do mesmo dia
         startDate = setHours(setMinutes(startDate, 0), 9);
       }
       
-      // Determinar em quantos dias a tarefa será completada
-      const durationDays = Math.ceil(taskHours / hoursPerDay);
+      // Calcular data de término baseado nas horas da tarefa
+      let endDate = new Date(startDate);
+      const startHour = startDate.getHours();
+      const startMinute = startDate.getMinutes();
       
-      // Calcular horário de término
-      let endDate;
-      
-      // Ajustar para o horário de almoço (12h às 13h)
-      if (taskHours <= 3) {
-        // Se a tarefa tem menos de 3h, termina antes do almoço
-        endDate = new Date(startDate);
-        endDate = setHours(setMinutes(endDate, Math.round((taskHours % 1) * 60)), 9 + Math.floor(taskHours));
-      } else if (taskHours <= 7) {
-        // Se a tarefa tem entre 3h e 7h, considerar 1h de almoço
-        endDate = new Date(startDate);
-        endDate = setHours(setMinutes(endDate, Math.round((taskHours % 1) * 60)), 10 + Math.floor(taskHours)); // +1h pelo almoço
+      // Verificar se a tarefa atravessa o horário de almoço (12h às 13h)
+      if (startHour < 12 && (startHour + taskHours) >= 12) {
+        // Adicionar 1 hora ao tempo total para considerar o almoço
+        endDate = addHours(endDate, taskHours + 1);
       } else {
-        // Se a tarefa durar mais de um dia
-        const lastDayHours = taskHours % hoursPerDay;
+        endDate = addHours(endDate, taskHours);
+      }
+      
+      // Se o horário final ultrapassar 17h, ajustar para o próximo dia útil
+      if (endDate.getHours() >= 17) {
+        const hoursLeft = endDate.getHours() - 17 + (endDate.getMinutes() > 0 ? 1 : 0);
         
-        if (lastDayHours === 0) {
-          // Se terminar exatamente no fim do dia
-          endDate = addBusinessDays(startDate, durationDays - 1);
-          endDate = setHours(setMinutes(endDate, 0), 17); // 17h
-        } else if (lastDayHours <= 3) {
-          // Último dia antes do almoço
-          endDate = addBusinessDays(startDate, durationDays - 1);
-          endDate = setHours(setMinutes(endDate, Math.round((lastDayHours % 1) * 60)), 9 + Math.floor(lastDayHours));
-        } else {
-          // Último dia após o almoço
-          endDate = addBusinessDays(startDate, durationDays - 1);
-          endDate = setHours(
-            setMinutes(endDate, Math.round((lastDayHours % 1) * 60)), 
-            10 + Math.floor(lastDayHours)
-          ); // +1h pelo almoço
+        if (hoursLeft > 0) {
+          // Reajustar para 9h + horas restantes no próximo dia útil
+          endDate = addBusinessDays(setHours(setMinutes(endDate, 0), 17), 1);
+          endDate = setHours(endDate, 9);
+          
+          // Se as horas restantes atravessarem o almoço
+          if (hoursLeft > 3) {
+            endDate = addHours(endDate, hoursLeft + 1);
+          } else {
+            endDate = addHours(endDate, hoursLeft);
+          }
+          
+          // Verificar novamente se não passou das 17h
+          if (endDate.getHours() >= 17) {
+            const newHoursLeft = endDate.getHours() - 17 + (endDate.getMinutes() > 0 ? 1 : 0);
+            if (newHoursLeft > 0) {
+              // Reajustar para 9h do próximo dia útil
+              endDate = addBusinessDays(setHours(setMinutes(endDate, 0), 17), 1);
+              endDate = setHours(endDate, 9);
+              endDate = addHours(endDate, newHoursLeft);
+            }
+          }
         }
       }
       
-      // Garantir que não passe das 17h
-      if (endDate.getHours() > 17 || (endDate.getHours() === 17 && endDate.getMinutes() > 0)) {
-        endDate = addBusinessDays(endDate, 1);
-        const remainingHours = (endDate.getHours() - 17) + (endDate.getMinutes() > 0 ? 1 : 0);
-        endDate = setHours(setMinutes(endDate, Math.round((remainingHours % 1) * 60)), 9 + Math.floor(remainingHours) - 1);
-      }
-      
-      // Atualizar disponibilidade do responsável
+      // Atualizar disponibilidade do responsável para esta tarefa
       if (task.owner) {
         ownerAvailability[task.owner] = endDate;
       }
@@ -186,6 +195,7 @@ export function ImplementationTasksTab({
       };
     });
     
+    console.log("Tarefas com datas calculadas:", tasksWithDates);
     setCalculatedTasks(tasksWithDates);
   }, [tasks, attributeValues]);
 
