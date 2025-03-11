@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Task, Column } from "@/types/project";
 import { useNavigate } from 'react-router-dom';
@@ -42,7 +43,7 @@ export function TaskList({
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '-';
     try {
-      return format(parseISO(dateString), 'dd/MM/yyyy', { locale: ptBR });
+      return format(parseISO(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
     } catch (error) {
       console.error('Error formatting date:', error);
       return dateString;

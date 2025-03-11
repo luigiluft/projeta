@@ -5,7 +5,7 @@ import { TaskList } from "@/components/TaskManagement/TaskList";
 import { CostsHeader } from "./CostsHeader";
 import { EmptyTasks } from "./EmptyTasks";
 import { processTasks, separateTasks } from "../utils/taskCalculations";
-import { addBusinessDays, format } from "date-fns";
+import { addBusinessDays, format, setHours, setMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface ImplementationTasksTabProps {
@@ -74,6 +74,7 @@ export function ImplementationTasksTab({
     
     // Calcular datas das tarefas
     let currentDate = new Date();
+    currentDate = setHours(setMinutes(currentDate, 0), 9); // Começa às 9h
     let accumulatedDays = 0;
     
     const tasksWithDates = processedTasks.map((task) => {
@@ -82,13 +83,15 @@ export function ImplementationTasksTab({
       
       const startDate = addBusinessDays(currentDate, accumulatedDays);
       const endDate = addBusinessDays(startDate, durationDays - 1);
+      // Configurar o horário de término para 17h
+      const endDateWithTime = setHours(endDate, 17);
       
       accumulatedDays += durationDays;
       
       return {
         ...task,
-        start_date: format(startDate, 'yyyy-MM-dd'),
-        end_date: format(endDate, 'yyyy-MM-dd')
+        start_date: format(startDate, "yyyy-MM-dd'T'09:00:00"),
+        end_date: format(endDateWithTime, "yyyy-MM-dd'T'17:00:00")
       };
     });
     
