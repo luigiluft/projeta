@@ -1,25 +1,15 @@
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PricingTab } from "./PricingTab";
-import { ImplementationTasksTab } from "./TaskTabs/ImplementationTasksTab";
-import { SustainmentTasksTab } from "./TaskTabs/SustainmentTasksTab";
-import { GanttTab } from "./TaskTabs/GanttTab";
-import { AllocationTab } from "./TaskTabs/AllocationTab";
-import { useProjectTasks } from "@/hooks/useProjectTasks";
-import { Attribute, Project, Task } from "@/types/project";
-import { ProjectBasicInfo } from "./ProjectBasicInfo";
-import { createProjectFormSchema, ProjectFormValues } from "@/utils/projectFormSchema";
-import { DEFAULT_PROFIT_MARGIN, teamRates } from "@/constants/projectConstants";
-import { EpicSelector } from "./EpicSelector";
+import { Project, Task, Attribute } from "@/types/project";
 import { useState, useEffect } from "react";
-import { format, addDays, addBusinessDays, parseISO } from "date-fns";
+import { useProjectTasks } from "@/hooks/useProjectTasks";
+import { toast } from "sonner";
+import { ProjectBasicInfo } from "./ProjectBasicInfo";
+import { EpicSelector } from "./EpicSelector";
+import { ProjectFormProvider } from "./ProjectFormProvider";
+import { ProjectContent } from "./ProjectContent";
+import { ProjectActions } from "./ProjectActions";
 import { useProjectCalculations } from "@/hooks/projects/useProjectCalculations";
 import { ptBR } from "date-fns/locale";
+import { format } from "date-fns";
 
 interface ProjectFormProps {
   editingId?: string | null;
@@ -139,134 +129,12 @@ export function ProjectForm({
     }
   };
 
-  const formSchema = createProjectFormSchema(attributes);
-
-  const defaultValues: any = {
-    name: initialValues?.name || "",
-    description: initialValues?.description || "",
-    client_name: initialValues?.client_name || "",
-    start_date: initialValues?.start_date || "",
-  };
-
-  console.log("Valores iniciais recebidos:", initialValues);
-  
-  const specialFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
-  specialFields.forEach(field => {
-    console.log(`Verificando campo especial ${field} no initialValues:`, 
-      initialValues?.attribute_values?.[field], 
-      initialValues?.attributes?.[field]);
-  });
-
-  if (initialValues) {
-    if (initialValues.attribute_values) {
-      Object.entries(initialValues.attribute_values).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (typeof value === 'number' && !isNaN(value)) {
-            defaultValues[key] = value;
-            console.log(`Definindo ${key} de attribute_values:`, value);
-          } else if (typeof value === 'string' && !isNaN(Number(value))) {
-            defaultValues[key] = Number(value);
-            console.log(`Definindo ${key} de attribute_values como número:`, Number(value));
-          } else if (typeof value !== 'number') {
-            defaultValues[key] = value;
-            console.log(`Definindo ${key} de attribute_values como não-número:`, value);
-          }
-        }
-      });
-    }
-
-    specialFields.forEach(field => {
-      if (initialValues.attribute_values && field in initialValues.attribute_values) {
-        const value = initialValues.attribute_values[field];
-        if (value !== undefined && value !== null) {
-          if (typeof value === 'number' && !isNaN(value)) {
-            defaultValues[field] = value;
-          } else if (typeof value === 'string' && !isNaN(Number(value))) {
-            defaultValues[field] = Number(value);
-          } else {
-            defaultValues[field] = value;
-          }
-          console.log(`Definido ${field} de attribute_values (prioridade):`, defaultValues[field]);
-        }
-      } else if (initialValues.attributes && 
-               typeof initialValues.attributes === 'object' && 
-               !Array.isArray(initialValues.attributes) && 
-               field in initialValues.attributes) {
-        const value = initialValues.attributes[field];
-        if (value !== undefined && value !== null) {
-          if (typeof value === 'number' && !isNaN(value)) {
-            defaultValues[field] = value;
-          } else if (typeof value === 'string' && !isNaN(Number(value))) {
-            defaultValues[field] = Number(value);
-          } else {
-            defaultValues[field] = value;
-          }
-          console.log(`Definido ${field} de attributes (prioridade):`, defaultValues[field]);
-        }
-      }
-    });
-
-    if (initialValues.attributes && 
-        typeof initialValues.attributes === 'object' && 
-        !Array.isArray(initialValues.attributes)) {
-      Object.entries(initialValues.attributes).forEach(([key, value]) => {
-        if (defaultValues[key] === undefined && value !== undefined && value !== null) {
-          if (typeof value === 'number' && !isNaN(value)) {
-            defaultValues[key] = value;
-          } else if (typeof value === 'string' && !isNaN(Number(value))) {
-            defaultValues[key] = Number(value);
-          } else {
-            defaultValues[key] = value;
-          }
-          console.log(`Definindo ${key} de attributes:`, value);
-        }
-      });
-    }
-  }
-
-  attributes.forEach(attr => {
-    if (defaultValues[attr.id] === undefined && attr.defaultValue !== undefined) {
-      const value = attr.type === "number" && attr.defaultValue !== "" 
-        ? Number(attr.defaultValue) 
-        : attr.defaultValue;
-      defaultValues[attr.id] = value;
-      console.log(`Definindo ${attr.id} do valor padrão:`, value);
-    }
-  });
-
-  console.log("Valores iniciais do formulário após processamento:", defaultValues);
-
-  const form = useForm<ProjectFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues,
-  });
-
-  useEffect(() => {
-    const subscription = form.watch((values) => {
-      if (values.start_date && values.start_date !== defaultValues.start_date) {
-        calculateEstimatedEndDate(selectedTasks);
-      }
-      
-      const newAttributeValues: Record<string, number> = {};
-      
-      attributes.forEach(attr => {
-        if (attr.type === 'number' && values[attr.id]) {
-          newAttributeValues[attr.id] = Number(values[attr.id]) || 0;
-        }
-      });
-      
-      setAttributeValues(newAttributeValues);
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [form, attributes, selectedTasks]);
-
   const handleEpicSelectionChange = (epics: string[]) => {
     setSelectedEpics(epics);
     onEpicsChange(epics);
   };
 
-  const handleSubmit = (values: ProjectFormValues) => {
+  const handleSubmit = (values: any) => {
     if (selectedEpics.length === 0) {
       toast.error("Selecione pelo menos um Epic para o projeto");
       return;
@@ -299,7 +167,8 @@ export function ProjectForm({
 
     const totalCost = taskCosts * (1 + DEFAULT_PROFIT_MARGIN / 100);
 
-    const projectData: Project = {
+    onSubmit({
+      ...values,
       id: editingId || crypto.randomUUID(),
       name: values.name,
       project_name: values.name,
@@ -350,81 +219,47 @@ export function ProjectForm({
         implementation_cost: implTaskCosts
       },
       settings: {},
-    };
-    
-    onSubmit(projectData);
+    } as Project);
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow mb-6">
-        <ProjectBasicInfo 
-          form={form} 
-          readOnly={readOnly} 
-          estimatedEndDate={estimatedEndDate}
+    <ProjectFormProvider 
+      initialValues={initialValues}
+      attributes={attributes}
+      onSubmit={handleSubmit}
+    >
+      <ProjectBasicInfo 
+        form={form} 
+        readOnly={readOnly} 
+        estimatedEndDate={estimatedEndDate}
+      />
+      
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Epics do Projeto</h3>
+        <EpicSelector 
+          availableEpics={availableEpics} 
+          selectedEpics={selectedEpics}
+          onChange={handleEpicSelectionChange}
+          readOnly={readOnly}
         />
-        
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Epics do Projeto</h3>
-          <EpicSelector 
-            availableEpics={availableEpics} 
-            selectedEpics={selectedEpics}
-            onChange={handleEpicSelectionChange}
-            readOnly={readOnly}
-          />
-        </div>
+      </div>
 
-        <Tabs defaultValue="pricing" className="w-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="pricing" className="flex-1">Precificação</TabsTrigger>
-            <TabsTrigger value="implementation" className="flex-1">Implementação</TabsTrigger>
-            <TabsTrigger value="sustainment" className="flex-1">Sustentação</TabsTrigger>
-            <TabsTrigger value="allocations" className="flex-1">Alocações</TabsTrigger>
-            <TabsTrigger value="gantt" className="flex-1">Gantt</TabsTrigger>
-          </TabsList>
+      <ProjectContent 
+        form={form}
+        selectedTasks={selectedTasks}
+        taskColumns={taskColumns}
+        handleColumnsChange={handleColumnsChange}
+        attributeValues={attributeValues}
+        attributes={attributes}
+        editingId={editingId}
+        readOnly={readOnly}
+      />
 
-          <TabsContent value="pricing">
-            <PricingTab form={form} attributes={attributes} readOnly={readOnly} />
-          </TabsContent>
-
-          <TabsContent value="implementation">
-            <ImplementationTasksTab 
-              tasks={selectedTasks} 
-              columns={taskColumns}
-              onColumnsChange={handleColumnsChange}
-              attributeValues={attributeValues}
-            />
-          </TabsContent>
-
-          <TabsContent value="sustainment">
-            <SustainmentTasksTab 
-              tasks={selectedTasks} 
-              columns={taskColumns}
-              onColumnsChange={handleColumnsChange}
-              attributeValues={attributeValues}
-            />
-          </TabsContent>
-
-          <TabsContent value="allocations">
-            <AllocationTab 
-              tasks={selectedTasks}
-              projectId={editingId || undefined}
-            />
-          </TabsContent>
-
-          <TabsContent value="gantt">
-            <GanttTab tasks={selectedTasks} />
-          </TabsContent>
-        </Tabs>
-
-        {!readOnly && (
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Salvando..." : (editingId ? "Atualizar" : "Criar")} Projeto
-            </Button>
-          </div>
-        )}
-      </form>
-    </Form>
+      <ProjectActions 
+        isLoading={isLoading}
+        editingId={editingId}
+        readOnly={readOnly}
+      />
+    </ProjectFormProvider>
   );
 }
