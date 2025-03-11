@@ -1,236 +1,201 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
+import { useProjectTasks } from "@/hooks/resourceAllocation/useProjectTasks";
+import { useTeamMembers } from "@/hooks/resourceAllocation/useTeamMembers";
+import { useAllocationMutations } from "@/hooks/resourceAllocation/useAllocationMutations";
+import { FormLabel } from "@/components/ui/form";
+import { DatePicker } from "@/components/ui/datepicker";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/datepicker";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { toast } from "sonner";
 import { Allocation } from "@/hooks/resourceAllocation/types";
 
 interface AllocationFormProps {
   projectId: string;
-  teamMembers: any[];
-  tasks: any[];
-  onSubmit: (data: Allocation) => void;
-  onCancel: () => void;
   onSuccess?: () => void;
-  isLoading?: boolean;
 }
 
-const allocationFormSchema = z.object({
-  member_id: z.string().min(1, "Selecione um membro da equipe"),
-  task_id: z.string().optional(),
-  start_date: z.string().min(1, "Selecione a data de início"),
-  end_date: z.string().min(1, "Selecione a data de término"),
-  allocated_hours: z.coerce.number().min(1, "Informe a quantidade de horas"),
-  status: z.enum(["scheduled", "in_progress", "completed", "cancelled"])
-});
-
-type AllocationFormValues = z.infer<typeof allocationFormSchema>;
-
-export function AllocationForm({
-  projectId,
-  teamMembers,
-  tasks,
-  onSubmit,
-  onCancel,
-  onSuccess,
-  isLoading = false
-}: AllocationFormProps) {
-  const [memberSelected, setMemberSelected] = useState<string>("");
+export function AllocationForm({ projectId, onSuccess }: AllocationFormProps) {
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [allocatedHours, setAllocatedHours] = useState<number>(0);
+  const [selectedMemberId, setSelectedMemberId] = useState<string>("");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [status, setStatus] = useState<"scheduled" | "in_progress" | "completed" | "cancelled">("scheduled");
   
-  const form = useForm<AllocationFormValues>({
-    resolver: zodResolver(allocationFormSchema),
-    defaultValues: {
-      member_id: "",
-      task_id: "",
-      start_date: "",
-      end_date: "",
-      allocated_hours: 0,
-      status: "scheduled" as const
+  const { teamMembers, isLoading: loadingTeam } = useTeamMembers();
+  const { tasks, isLoading: loadingTasks } = useProjectTasks(projectId);
+  const { checkingAvailability } = useResourceAllocation();
+  const { createAllocation, isCreating } = useAllocationMutations();
+  
+  // Reset formulário quando a tarefa mudar
+  useEffect(() => {
+    if (selectedTaskId) {
+      const task = tasks.find(t => t.id === selectedTaskId);
+      if (task) {
+        // Usar datas da tarefa se estiverem disponíveis
+        if (task.start_date) setStartDate(task.start_date);
+        if (task.end_date) setEndDate(task.end_date);
+        
+        // Definir horas alocadas com base nas horas calculadas da tarefa
+        const taskHours = task.calculated_hours || 0;
+        setAllocatedHours(taskHours);
+      }
     }
-  });
-
-  const handleSubmit = (values: AllocationFormValues) => {
-    onSubmit({
-      project_id: projectId,
-      member_id: values.member_id,
-      task_id: values.task_id || null,
-      start_date: values.start_date,
-      end_date: values.end_date,
-      allocated_hours: values.allocated_hours,
-      status: values.status
-    });
+  }, [selectedTaskId, tasks]);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    if (onSuccess) {
-      onSuccess();
+    if (!startDate || !endDate || allocatedHours <= 0 || !selectedMemberId) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+    
+    // Verificar se a data final é posterior à data inicial
+    if (new Date(endDate) < new Date(startDate)) {
+      toast.error("A data final deve ser posterior à data inicial");
+      return;
+    }
+    
+    const allocationData: Allocation = {
+      project_id: projectId,
+      member_id: selectedMemberId,
+      task_id: selectedTaskId,
+      start_date: startDate,
+      end_date: endDate,
+      allocated_hours: allocatedHours,
+      status: status,
+    };
+    
+    try {
+      await createAllocation(allocationData);
+      toast.success("Alocação criada com sucesso");
+      
+      // Limpar formulário
+      setStartDate("");
+      setEndDate("");
+      setAllocatedHours(0);
+      setSelectedMemberId("");
+      setSelectedTaskId(null);
+      setStatus("scheduled");
+      
+      // Notificar componente pai
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Erro ao criar alocação:", error);
+      toast.error("Erro ao criar alocação");
     }
   };
-
+  
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="member_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Membro da Equipe</FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    setMemberSelected(value);
-                  }}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um membro" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {teamMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name} ({member.position})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="task_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tarefa (opcional)</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma tarefa" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="">Sem tarefa específica</SelectItem>
-                    {tasks.map((task) => (
-                      <SelectItem key={task.id} value={task.id}>
-                        {task.task_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-md">
+      <h3 className="text-lg font-medium mb-4">Nova Alocação</h3>
+      
+      <div className="space-y-4">
+        <div>
+          <FormLabel>Membro da Equipe</FormLabel>
+          <Select
+            value={selectedMemberId}
+            onValueChange={setSelectedMemberId}
+            disabled={loadingTeam}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione um membro" />
+            </SelectTrigger>
+            <SelectContent>
+              {teamMembers.map((member) => (
+                <SelectItem key={member.id} value={member.id}>
+                  {member.first_name} {member.last_name} ({member.position})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div>
+          <FormLabel>Tarefa (opcional)</FormLabel>
+          <Select
+            value={selectedTaskId || ""}
+            onValueChange={value => setSelectedTaskId(value || null)}
+            disabled={loadingTasks}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione uma tarefa (opcional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Sem tarefa específica</SelectItem>
+              {tasks.map((task) => (
+                <SelectItem key={task.id} value={task.id}>
+                  {task.name || task.epic || task.story || `Tarefa ${task.id}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="start_date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data de Início</FormLabel>
-                <FormControl>
-                  <DatePicker
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Selecione a data"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div>
+            <FormLabel>Data Inicial</FormLabel>
+            <DatePicker
+              value={startDate}
+              onChange={setStartDate}
+              placeholder="Data inicial"
+            />
+          </div>
           
-          <FormField
-            control={form.control}
-            name="end_date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data de Término</FormLabel>
-                <FormControl>
-                  <DatePicker
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Selecione a data"
-                    disableBefore={form.watch("start_date")}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+          <div>
+            <FormLabel>Data Final</FormLabel>
+            <DatePicker
+              value={endDate}
+              onChange={setEndDate}
+              placeholder="Data final"
+              disableBefore={startDate}
+            />
+          </div>
+        </div>
+        
+        <div>
+          <FormLabel>Horas Alocadas</FormLabel>
+          <Input
+            type="number"
+            min="1"
+            step="1"
+            value={allocatedHours}
+            onChange={(e) => setAllocatedHours(parseInt(e.target.value) || 0)}
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="allocated_hours"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Horas Alocadas</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min="1"
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.value)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="scheduled">Agendado</SelectItem>
-                    <SelectItem value="in_progress">Em Andamento</SelectItem>
-                    <SelectItem value="completed">Concluído</SelectItem>
-                    <SelectItem value="cancelled">Cancelado</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div>
+          <FormLabel>Status</FormLabel>
+          <Select
+            value={status}
+            onValueChange={(value) => setStatus(value as "scheduled" | "in_progress" | "completed" | "cancelled")}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="scheduled">Agendada</SelectItem>
+              <SelectItem value="in_progress">Em Andamento</SelectItem>
+              <SelectItem value="completed">Concluída</SelectItem>
+              <SelectItem value="cancelled">Cancelada</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        
-        <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={onCancel} type="button">
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Salvando..." : "Salvar Alocação"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+      </div>
+      
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isCreating || checkingAvailability}
+      >
+        {isCreating ? "Salvando..." : "Salvar Alocação"}
+      </Button>
+    </form>
   );
 }

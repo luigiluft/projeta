@@ -365,8 +365,8 @@ export function ProjectDates({
                             const dateAvail = dateAvailability.get(dateStr);
                             
                             return (
-                              <div className="relative w-full h-full flex items-center justify-center">
-                                {props.day}
+                              <div className="relative w-full h-full flex items-center justify-center text-foreground">
+                                {props.date.getDate()}
                                 {dateAvail?.status === 'partial' && (
                                   <div className="absolute -top-0.5 -right-0.5">
                                     <AlertCircle className="h-2 w-2 text-amber-500" />
