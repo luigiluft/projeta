@@ -1,15 +1,19 @@
-
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
+import { ProjectAllocation } from "@/hooks/resourceAllocation/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useResourceAllocation } from "@/hooks/useResourceAllocation";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "sonner";
-import {
+import { AlertCircle, Trash2 } from "lucide-react";
+import { 
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -22,107 +26,102 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface AllocationListProps {
-  projectId?: string;
-  onAllocationDeleted?: () => void;
+  projectId: string;
+  taskId?: string;
+  onAllocationDeleted: () => void;
 }
 
-export function AllocationList({ projectId, onAllocationDeleted }: AllocationListProps) {
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const { projectAllocations, deleteAllocation, allocationsLoading } = useResourceAllocation(projectId);
+export function AllocationList({ projectId, taskId, onAllocationDeleted }: AllocationListProps) {
+  const { projectAllocations, deleteAllocation } = useResourceAllocation();
+  const [allocations, setAllocations] = useState<ProjectAllocation[]>([]);
+  const [allocationToDelete, setAllocationToDelete] = useState<string | null>(null);
+  const [openAlert, setOpenAlert] = useState(false);
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteAllocation(id);
-      toast.success("Alocação removida com sucesso");
-      if (onAllocationDeleted) onAllocationDeleted();
-    } catch (error) {
-      console.error("Erro ao remover alocação:", error);
-      toast.error("Erro ao remover alocação");
+  useEffect(() => {
+    // Filter allocations based on projectId and taskId
+    let filteredAllocations = projectAllocations.filter(allocation => allocation.project_id === projectId);
+    if (taskId) {
+      filteredAllocations = filteredAllocations.filter(allocation => allocation.task_id === taskId);
     }
+    setAllocations(filteredAllocations);
+  }, [projectAllocations, projectId, taskId]);
+
+  const handleDeleteClick = (allocationId: string) => {
+    setAllocationToDelete(allocationId);
+    setOpenAlert(true);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "scheduled":
-        return <Badge variant="outline">Agendada</Badge>;
-      case "in_progress":
-        return <Badge variant="secondary">Em Andamento</Badge>;
-      case "completed":
-        return <Badge variant="default">Concluída</Badge>;
-      case "cancelled":
-        return <Badge variant="destructive">Cancelada</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const confirmDelete = async () => {
+    if (allocationToDelete) {
+      await deleteAllocation(allocationToDelete);
+      onAllocationDeleted();
+      setAllocationToDelete(null);
+      setOpenAlert(false);
     }
   };
-
-  if (allocationsLoading) {
-    return <div>Carregando alocações...</div>;
-  }
-
-  if (!projectAllocations || projectAllocations.length === 0) {
-    return <div className="text-center py-8 text-muted-foreground">Nenhuma alocação encontrada para este projeto</div>;
-  }
 
   return (
-    <ScrollArea className="h-[400px]">
-      <div className="space-y-4 p-1">
-        {projectAllocations.map((allocation) => (
-          <Card key={allocation.id} className="overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <h4 className="font-semibold">
-                    {allocation.member_first_name} {allocation.member_last_name}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">{allocation.member_position}</p>
-                  
-                  <div className="flex gap-2">
-                    {getStatusBadge(allocation.status)}
-                    <Badge variant="outline">{allocation.allocated_hours}h</Badge>
-                  </div>
-                  
-                  <p className="text-sm">
-                    {format(new Date(allocation.start_date), "dd/MM/yyyy", { locale: ptBR })} até{" "}
-                    {format(new Date(allocation.end_date), "dd/MM/yyyy", { locale: ptBR })}
-                  </p>
-                  
-                  {allocation.task_name && (
-                    <p className="text-sm mt-2">
-                      <span className="font-medium">Tarefa:</span> {allocation.task_name}
-                    </p>
-                  )}
-                </div>
-                
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Remover alocação</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja remover esta alocação? Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={() => handleDelete(allocation.id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Remover
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </ScrollArea>
+    <div>
+      {allocations.length === 0 ? (
+        <div className="rounded-md border p-4">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-4 w-4" />
+            <h4 className="text-sm font-semibold">Nenhuma alocação encontrada</h4>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Não há alocações para este projeto e tarefa.
+          </div>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Membro</TableHead>
+              <TableHead>Cargo</TableHead>
+              <TableHead>Início</TableHead>
+              <TableHead>Fim</TableHead>
+              <TableHead>Horas</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {allocations.map(allocation => (
+              <TableRow key={allocation.id}>
+                <TableCell>{allocation.member_first_name} {allocation.member_last_name}</TableCell>
+                <TableCell>{allocation.member_position}</TableCell>
+                <TableCell>{format(new Date(allocation.start_date), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
+                <TableCell>{format(new Date(allocation.end_date), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
+                <TableCell>{allocation.allocated_hours}</TableCell>
+                <TableCell className="text-right">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(allocation.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação irá deletar a alocação permanentemente.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setOpenAlert(false)}>
+                          Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete}>
+                          Deletar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
   );
 }

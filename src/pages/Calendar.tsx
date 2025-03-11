@@ -1,14 +1,22 @@
-import { useState, useEffect } from "react";
-import { Calendar } from "@/components/ui/calendar";
-import { Card } from "@/components/ui/card";
-import { ProjectTimeline } from "@/components/Calendar/ProjectTimeline";
-import { format, parseISO, addDays, getDaysInMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 import { useProjects } from "@/hooks/useProjects";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Select, 
+  SelectContent, 
+  SelectGroup, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useResourceAllocation } from "@/hooks/useResourceAllocation";
+import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
+import { ProjectTimeline } from "@/components/Calendar/ProjectTimeline";
+import { format, addMonths, subMonths, isWithinInterval, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface Project {
@@ -292,4 +300,3 @@ export default function CalendarPage() {
     </div>
   );
 }
-

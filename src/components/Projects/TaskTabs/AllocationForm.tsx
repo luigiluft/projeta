@@ -1,34 +1,19 @@
-
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { format, addDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
-import { Task } from "@/types/project";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { FormLabel } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
+import { Button } from "@/components/ui/button";
+import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useResourceAllocation } from "@/hooks/useResourceAllocation";
 import { toast } from "sonner";
+import { format, addDays, isAfter, isBefore } from "date-fns";
+import { Allocation } from "@/hooks/resourceAllocation/types";
+import { Task } from "@/types/project";
+import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
 
 const allocationFormSchema = z.object({
   task_id: z.string().optional(),
