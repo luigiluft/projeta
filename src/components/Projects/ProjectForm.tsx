@@ -68,30 +68,53 @@ export function ProjectForm({
 
   const formSchema = createProjectFormSchema(attributes);
 
-  // Preparar valores iniciais com os valores padrão dos atributos
-  const defaultValues = {
+  // Preparar valores iniciais com os valores corretos do projeto
+  const defaultValues: any = {
     name: initialValues?.name || "",
     description: initialValues?.description || "",
     client_name: initialValues?.client_name || "",
     start_date: initialValues?.start_date || "",
   };
 
-  // Adicionar valores padrão para cada atributo
+  // Adicionar valores específicos que podem vir do attribute_values ou attributes
+  if (initialValues) {
+    // Primeiro, adicionar todos os valores dos atributos
+    Object.entries(initialValues.attribute_values || {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        defaultValues[key] = value;
+      }
+    });
+
+    // Em seguida, adicionar valores dos attributes se não existirem em attribute_values
+    Object.entries(initialValues.attributes || {}).forEach(([key, value]) => {
+      if (defaultValues[key] === undefined && value !== undefined && value !== null) {
+        defaultValues[key] = value;
+      }
+    });
+  }
+
+  // Adicionar valores padrão para cada atributo que ainda não tenha valor
   attributes.forEach(attr => {
-    const defaultValue = attr.defaultValue !== undefined ? attr.defaultValue : "";
-    if (attr.type === "number" && defaultValue !== "") {
-      defaultValues[attr.id] = Number(defaultValue);
-    } else {
-      defaultValues[attr.id] = defaultValue;
-    }
-    
-    // Se existir um valor inicial, usar ele ao invés do valor padrão
-    if (initialValues?.attributes && initialValues.attributes[attr.id] !== undefined) {
-      defaultValues[attr.id] = initialValues.attributes[attr.id];
+    if (defaultValues[attr.id] === undefined && attr.defaultValue !== undefined) {
+      const value = attr.type === "number" && attr.defaultValue !== "" 
+        ? Number(attr.defaultValue) 
+        : attr.defaultValue;
+      defaultValues[attr.id] = value;
     }
   });
 
   console.log("Valores iniciais do formulário:", defaultValues);
+
+  // Verificar e corrigir valores especiais como tempo_de_atendimento_por_cliente, pedidos_mes e ticket_medio
+  const specialFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
+  specialFields.forEach(field => {
+    if (initialValues?.attribute_values?.[field] !== undefined) {
+      defaultValues[field] = initialValues.attribute_values[field];
+    }
+    else if (initialValues?.attributes?.[field] !== undefined) {
+      defaultValues[field] = initialValues.attributes[field];
+    }
+  });
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(formSchema),

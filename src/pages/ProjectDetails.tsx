@@ -122,11 +122,22 @@ export default function ProjectDetails() {
         if (projectData.attributes && typeof projectData.attributes === 'object') {
           const attributes = projectData.attributes as Record<string, any>;
           Object.keys(attributes).forEach(key => {
-            if (!attributeValues[key]) {
-              attributeValues[key] = attributes[key];
-            }
+            attributeValues[key] = attributes[key];
           });
         }
+
+        // Garantir que campos específicos sejam tratados corretamente
+        const specificFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
+        specificFields.forEach(field => {
+          // Se o atributo existe em metadata.attribute_values
+          if (projectData.metadata?.attribute_values?.[field] !== undefined) {
+            attributeValues[field] = projectData.metadata.attribute_values[field];
+          }
+          // Se o atributo existe em attributes
+          else if (projectData.attributes?.[field] !== undefined) {
+            attributeValues[field] = projectData.attributes[field];
+          }
+        });
 
         const fullProject = {
           ...projectData,

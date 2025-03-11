@@ -50,6 +50,9 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
               return field.value;
             })();
 
+            // Verificar se é um dos campos específicos que precisamos tratar
+            const isSpecialField = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'].includes(attribute.id);
+
             return (
               <FormItem>
                 <FormLabel>{attribute.name}</FormLabel>
@@ -68,7 +71,7 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
                       }
                     }}
                     readOnly={readOnly}
-                    className={readOnly ? "bg-gray-50" : ""}
+                    className={`${readOnly ? "bg-gray-50" : ""} ${isSpecialField ? "focus:ring-2 focus:ring-primary" : ""}`}
                   />
                 </FormControl>
                 <FormMessage />
