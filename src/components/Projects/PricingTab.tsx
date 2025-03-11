@@ -30,6 +30,12 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
   // Log para debug
   console.log("Valores atuais no formulário:", form.getValues());
   console.log("Atributos recebidos:", attributes);
+  
+  // Campos especiais para verificar com mais detalhes
+  const specialFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
+  specialFields.forEach(field => {
+    console.log(`Verificando campo especial ${field}:`, form.getValues(field));
+  });
 
   return (
     <div className="space-y-4 mt-4">
@@ -45,7 +51,7 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
             // Tratar valores inválidos (NaN, undefined) para exibição
             const displayValue = (() => {
               // Verificar se é um dos campos específicos
-              const isSpecialField = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'].includes(attribute.id);
+              const isSpecialField = specialFields.includes(attribute.id);
               
               if (isSpecialField) {
                 console.log(`Campo especial ${attribute.id}:`, field.value);
@@ -54,7 +60,7 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
               if (field.value === undefined || field.value === "") return "";
               
               // Se for um objeto com _type definido (casos especiais)
-              if (field.value && typeof field.value === 'object' && field.value._type === 'Number') {
+              if (field.value && typeof field.value === 'object' && '_type' in field.value && field.value._type === 'Number') {
                 return field.value.value === "NaN" ? "" : field.value.value;
               }
               
@@ -65,7 +71,7 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
             })();
 
             // Verificar se é um dos campos específicos que precisamos tratar com destaque
-            const isSpecialField = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'].includes(attribute.id);
+            const isSpecialField = specialFields.includes(attribute.id);
 
             return (
               <FormItem>

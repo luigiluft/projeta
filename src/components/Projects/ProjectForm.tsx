@@ -78,25 +78,36 @@ export function ProjectForm({
 
   // Log para debug dos valores iniciais recebidos
   console.log("Valores iniciais recebidos:", initialValues);
-  console.log("Atributos especiais no initialValues:", 
-    initialValues?.attribute_values?.ticket_medio, 
-    initialValues?.attributes?.ticket_medio);
+  
+  // Campos especiais para verificar
+  const specialFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
+  specialFields.forEach(field => {
+    console.log(`Verificando campo especial ${field} no initialValues:`, 
+      initialValues?.attribute_values?.[field], 
+      initialValues?.attributes?.[field]);
+  });
 
   // Adicionar valores específicos que podem vir do attribute_values ou attributes
   if (initialValues) {
     // Primeiro, adicionar todos os valores dos atributos
-    Object.entries(initialValues.attribute_values || {}).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        defaultValues[key] = value;
-      }
-    });
+    if (initialValues.attribute_values) {
+      Object.entries(initialValues.attribute_values).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          defaultValues[key] = value;
+          console.log(`Definindo ${key} de attribute_values:`, value);
+        }
+      });
+    }
 
     // Em seguida, adicionar valores dos attributes se não existirem em attribute_values
-    Object.entries(initialValues.attributes || {}).forEach(([key, value]) => {
-      if (defaultValues[key] === undefined && value !== undefined && value !== null) {
-        defaultValues[key] = value;
-      }
-    });
+    if (initialValues.attributes) {
+      Object.entries(initialValues.attributes).forEach(([key, value]) => {
+        if (defaultValues[key] === undefined && value !== undefined && value !== null) {
+          defaultValues[key] = value;
+          console.log(`Definindo ${key} de attributes:`, value);
+        }
+      });
+    }
   }
 
   // Adicionar valores padrão para cada atributo que ainda não tenha valor
@@ -106,21 +117,22 @@ export function ProjectForm({
         ? Number(attr.defaultValue) 
         : attr.defaultValue;
       defaultValues[attr.id] = value;
+      console.log(`Definindo ${attr.id} do valor padrão:`, value);
     }
   });
 
-  // Verificar e corrigir valores especiais como tempo_de_atendimento_por_cliente, pedidos_mes e ticket_medio
-  const specialFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
+  // Verificar e corrigir valores especiais (fazer isso por último para priorizar)
   specialFields.forEach(field => {
     console.log(`Verificando campo especial ${field}:`, defaultValues[field]);
     
     // Verificar em attribute_values
-    if (initialValues?.attribute_values && initialValues.attribute_values[field] !== undefined) {
+    if (initialValues?.attribute_values && field in initialValues.attribute_values) {
       defaultValues[field] = initialValues.attribute_values[field];
       console.log(`Definido ${field} de attribute_values:`, defaultValues[field]);
     }
     // Verificar em attributes
-    else if (initialValues?.attributes && initialValues.attributes[field] !== undefined) {
+    else if (initialValues?.attributes && typeof initialValues.attributes === 'object' && 
+             !Array.isArray(initialValues.attributes) && field in initialValues.attributes) {
       defaultValues[field] = initialValues.attributes[field];
       console.log(`Definido ${field} de attributes:`, defaultValues[field]);
     }

@@ -112,15 +112,19 @@ export default function ProjectDetails() {
         let attributeValues: Record<string, any> = {};
         
         // Verificar se existe metadata e se é um objeto
-        if (projectData.metadata && typeof projectData.metadata === 'object') {
+        if (projectData.metadata && typeof projectData.metadata === 'object' && !Array.isArray(projectData.metadata)) {
           // Verificar se existe attribute_values no metadata
-          if (projectData.metadata.attribute_values && typeof projectData.metadata.attribute_values === 'object') {
+          if (
+            'attribute_values' in projectData.metadata && 
+            projectData.metadata.attribute_values && 
+            typeof projectData.metadata.attribute_values === 'object'
+          ) {
             attributeValues = { ...projectData.metadata.attribute_values };
           }
         }
 
         // Verificar se existem atributos na tabela projects diretamente
-        if (projectData.attributes && typeof projectData.attributes === 'object') {
+        if (projectData.attributes && typeof projectData.attributes === 'object' && !Array.isArray(projectData.attributes)) {
           Object.entries(projectData.attributes).forEach(([key, value]) => {
             attributeValues[key] = value;
           });
@@ -130,17 +134,24 @@ export default function ProjectDetails() {
         const specificFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
         specificFields.forEach(field => {
           // Se o atributo existe em metadata.attribute_values
-          if (projectData.metadata && 
-              typeof projectData.metadata === 'object' && 
-              projectData.metadata.attribute_values && 
-              typeof projectData.metadata.attribute_values === 'object' && 
-              projectData.metadata.attribute_values[field] !== undefined) {
+          if (
+            projectData.metadata && 
+            typeof projectData.metadata === 'object' && 
+            !Array.isArray(projectData.metadata) && 
+            'attribute_values' in projectData.metadata && 
+            projectData.metadata.attribute_values && 
+            typeof projectData.metadata.attribute_values === 'object' && 
+            field in projectData.metadata.attribute_values
+          ) {
             attributeValues[field] = projectData.metadata.attribute_values[field];
           }
           // Se o atributo existe em attributes
-          else if (projectData.attributes && 
-                  typeof projectData.attributes === 'object' && 
-                  projectData.attributes[field] !== undefined) {
+          else if (
+            projectData.attributes && 
+            typeof projectData.attributes === 'object' && 
+            !Array.isArray(projectData.attributes) && 
+            field in projectData.attributes
+          ) {
             attributeValues[field] = projectData.attributes[field];
           }
         });
