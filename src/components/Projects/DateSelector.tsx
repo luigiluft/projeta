@@ -32,7 +32,6 @@ export function DateSelector({
     loading,
     checkTeamAvailability,
     isDateDisabled,
-    getDateClassName,
   } = useCalendarAvailability(selectedTasks);
 
   useEffect(() => {
@@ -40,6 +39,23 @@ export function DateSelector({
       checkTeamAvailability();
     }
   }, [selectedTasks, openCalendar, checkTeamAvailability]);
+
+  const handleSelectDate = (date: Date | undefined) => {
+    if (!date) return;
+
+    // Formatar a data para ISO string (yyyy-MM-dd)
+    const isoDate = format(date, 'yyyy-MM-dd');
+    
+    // Atualizar o form usando setValue para garantir que o valor seja atualizado corretamente
+    form.setValue('start_date', isoDate, { 
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+    
+    // Fechar o calendário
+    setOpenCalendar(false);
+  };
 
   return (
     <FormField
@@ -50,9 +66,7 @@ export function DateSelector({
           <FormLabel>Data de Início</FormLabel>
           <Popover
             open={openCalendar}
-            onOpenChange={(open) => {
-              setOpenCalendar(open);
-            }}
+            onOpenChange={setOpenCalendar}
           >
             <PopoverTrigger asChild>
               <FormControl>
@@ -77,15 +91,43 @@ export function DateSelector({
               className="w-auto p-0" 
               align="start"
             >
-              <DatePickerContent 
-                field={field}
-                loading={loading}
-                selectedTasks={selectedTasks}
-                dateAvailability={dateAvailability}
-                isDateDisabled={isDateDisabled}
-                setOpenCalendar={setOpenCalendar}
-                form={form}
-              />
+              {loading ? (
+                <div className="p-4 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  <span className="ml-2">Verificando disponibilidade...</span>
+                </div>
+              ) : (
+                <>
+                  {selectedTasks.length === 0 && (
+                    <div className="p-3 text-sm text-amber-600 bg-amber-50">
+                      Selecione Epics e tarefas primeiro para verificar disponibilidade
+                    </div>
+                  )}
+                  <div className="mb-2 p-3 border-b">
+                    <DateAvailabilityLegend />
+                  </div>
+                  <Calendar
+                    mode="single"
+                    selected={field.value ? parseISO(field.value) : undefined}
+                    onSelect={handleSelectDate}
+                    disabled={isDateDisabled}
+                    modifiers={{
+                      partial: (date) => {
+                        const dateStr = format(date, 'yyyy-MM-dd');
+                        return dateAvailability.get(dateStr)?.status === 'partial' || false;
+                      }
+                    }}
+                    modifiersClassNames={{
+                      partial: "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                    }}
+                    components={{
+                      DayContent: (props) => <DateContent {...props} dateAvailability={dateAvailability} />
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </>
+              )}
             </PopoverContent>
           </Popover>
           {disabledDates.length > 0 && (
@@ -99,88 +141,6 @@ export function DateSelector({
         </FormItem>
       )}
     />
-  );
-}
-
-interface DatePickerContentProps {
-  field: any;
-  loading: boolean;
-  selectedTasks: any[];
-  dateAvailability: Map<string, any>;
-  isDateDisabled: (date: Date) => boolean;
-  setOpenCalendar: (open: boolean) => void;
-  form: UseFormReturn<ProjectFormValues>;
-}
-
-function DatePickerContent({
-  field,
-  loading,
-  selectedTasks,
-  dateAvailability,
-  isDateDisabled,
-  setOpenCalendar,
-  form
-}: DatePickerContentProps) {
-  if (loading) {
-    return (
-      <div className="p-4 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-        <span className="ml-2">Verificando disponibilidade...</span>
-      </div>
-    );
-  }
-
-  const handleDateSelect = (date: Date | undefined) => {
-    if (!date) return;
-    
-    // Formatar a data para ISO string (yyyy-MM-dd)
-    const isoDate = format(date, 'yyyy-MM-dd');
-    
-    // Usar tanto field.onChange quanto setValue para garantir que o valor seja atualizado
-    field.onChange(isoDate);
-    
-    // Forçar a atualização do valor no formulário
-    form.setValue('start_date', isoDate, { 
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true
-    });
-    
-    // Fechar o calendário após a seleção
-    setOpenCalendar(false);
-  };
-
-  return (
-    <>
-      {selectedTasks.length === 0 && (
-        <div className="p-3 text-sm text-amber-600 bg-amber-50">
-          Selecione Epics e tarefas primeiro para verificar disponibilidade
-        </div>
-      )}
-      <div className="mb-2 p-3 border-b">
-        <DateAvailabilityLegend />
-      </div>
-      <Calendar
-        mode="single"
-        selected={field.value ? parseISO(field.value) : undefined}
-        onSelect={handleDateSelect}
-        disabled={isDateDisabled}
-        modifiers={{
-          partial: (date) => {
-            const dateStr = format(date, 'yyyy-MM-dd');
-            return dateAvailability.get(dateStr)?.status === 'partial' || false;
-          }
-        }}
-        modifiersClassNames={{
-          partial: "bg-amber-100 text-amber-800 hover:bg-amber-200"
-        }}
-        components={{
-          DayContent: (props) => <DateContent {...props} dateAvailability={dateAvailability} />
-        }}
-        initialFocus
-        className="pointer-events-auto"
-      />
-    </>
   );
 }
 
