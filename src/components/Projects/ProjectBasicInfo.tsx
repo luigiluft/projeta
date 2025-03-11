@@ -61,15 +61,12 @@ export function ProjectBasicInfo({
     setLoading(true);
 
     try {
-      // Primeira data possível é hoje
       const today = new Date();
       const nextThreeMonths = addDays(today, 90);
       
-      // Agrupar tarefas por cargo/responsável
       const tasksByRole = groupTasksByRole(selectedTasks);
       
       if (Object.keys(tasksByRole).length === 0) {
-        // Se não há tarefas com responsáveis definidos
         setDisabledDates([]);
         setLoading(false);
         return;
@@ -78,26 +75,21 @@ export function ProjectBasicInfo({
       const allDisabledDates: Date[] = [];
       const dateChecks: Promise<any>[] = [];
       
-      // Para cada cargo, verificar disponibilidade nos próximos 90 dias
       for (const [role, tasks] of Object.entries(tasksByRole)) {
         const totalHours = tasks.reduce((sum, task) => {
           return sum + (task.calculated_hours || task.fixed_hours || 0);
         }, 0);
         
-        // Verificar disponibilidade para este cargo em cada dia do período
         const checkPromise = checkRoleAvailability(role, today, nextThreeMonths, totalHours);
         dateChecks.push(checkPromise);
       }
       
-      // Aguardar todas as verificações
       const results = await Promise.all(dateChecks);
       
-      // Combinar todas as datas indisponíveis
       results.forEach(roleDisabledDates => {
         allDisabledDates.push(...roleDisabledDates);
       });
       
-      // Remover duplicatas
       const uniqueDisabledDates = [...new Set(allDisabledDates.map(date => date.toISOString()))]
         .map(dateStr => new Date(dateStr));
       
@@ -117,21 +109,17 @@ export function ProjectBasicInfo({
     requiredHours: number
   ): Promise<Date[]> => {
     try {
-      // Formatar datas para a API
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
       
-      // Buscar disponibilidade para este cargo no período
       const availability = await getAvailability(startDateStr, endDateStr, requiredHours);
       
-      // Filtrar membros do cargo específico
       const roleMembers = availability.filter(member => {
         const teamMember = teamMembers.find(tm => tm.id === member.member_id);
         return teamMember?.position === role;
       });
       
       if (roleMembers.length === 0) {
-        // Se não há membros deste cargo, todas as datas estão indisponíveis
         const allDates: Date[] = [];
         let currentDate = new Date(startDate);
         
@@ -146,12 +134,10 @@ export function ProjectBasicInfo({
       const disabledDates: Date[] = [];
       let currentDate = new Date(startDate);
       
-      // Para cada dia no período, verificar se há capacidade suficiente
       while (currentDate <= endDate) {
         const dateStr = format(currentDate, 'yyyy-MM-dd');
         let hasAvailability = false;
         
-        // Verificar se algum membro tem disponibilidade nesta data
         for (const member of roleMembers) {
           const dateAvailability = member.available_dates.find(d => d.date === dateStr);
           
@@ -175,14 +161,11 @@ export function ProjectBasicInfo({
     }
   };
 
-  // Função para validar a seleção de datas
   const isDateDisabled = (date: Date) => {
-    // Impedir seleção de datas passadas
     if (isBefore(date, new Date())) {
       return true;
     }
     
-    // Verificar se a data está na lista de indisponíveis
     return disabledDates.some(disabledDate => 
       disabledDate.getDate() === date.getDate() &&
       disabledDate.getMonth() === date.getMonth() &&
@@ -237,7 +220,7 @@ export function ProjectBasicInfo({
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Data de Início</FormLabel>
-              <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
+              <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
@@ -249,7 +232,7 @@ export function ProjectBasicInfo({
                       disabled={readOnly || selectedTasks.length === 0}
                     >
                       {field.value ? (
-                        format(field.value, "dd/MM/yyyy", { locale: ptBR })
+                        format(new Date(field.value), "dd/MM/yyyy", { locale: ptBR })
                       ) : (
                         <span>Selecione uma data</span>
                       )}
@@ -257,7 +240,10 @@ export function ProjectBasicInfo({
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent 
+                  className="w-auto p-0" 
+                  align="start"
+                >
                   {loading || checkingAvailability ? (
                     <div className="p-4 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -274,8 +260,9 @@ export function ProjectBasicInfo({
                         mode="single"
                         selected={field.value ? new Date(field.value) : undefined}
                         onSelect={(date) => {
-                          field.onChange(date);
-                          setOpenCalendar(false);
+                          if (date) {
+                            field.onChange(format(date, 'yyyy-MM-dd'));
+                          }
                         }}
                         disabled={isDateDisabled}
                         initialFocus
