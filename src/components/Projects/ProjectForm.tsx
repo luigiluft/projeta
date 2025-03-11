@@ -1,4 +1,3 @@
-
 import { Project, Task, Attribute } from "@/types/project";
 import { useState, useEffect } from "react";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
@@ -18,7 +17,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createProjectFormSchema } from "@/utils/projectFormSchema";
 import { Form } from "@/components/ui/form";
 
-// Define constants
 const TEAM_RATES = {
   "BK": 78.75,
   "DS": 48.13,
@@ -65,7 +63,6 @@ export function ProjectForm({
   const [estimatedEndDate, setEstimatedEndDate] = useState<string | null>(null);
   const { estimateDeliveryDates } = useProjectCalculations();
   
-  // Define o formulário no componente principal
   const formSchema = createProjectFormSchema(attributes);
   const defaultValues: any = {
     name: initialValues?.name || "",
@@ -74,7 +71,6 @@ export function ProjectForm({
     start_date: initialValues?.start_date || "",
   };
   
-  // Populate default values for attributes from initialValues
   if (initialValues) {
     if (initialValues.attribute_values) {
       Object.entries(initialValues.attribute_values).forEach(([key, value]) => {
@@ -295,6 +291,8 @@ export function ProjectForm({
           form={form} 
           readOnly={readOnly} 
           estimatedEndDate={estimatedEndDate}
+          selectedEpics={selectedEpics}
+          selectedTasks={selectedTasks}
         />
         
         <div className="space-y-4">

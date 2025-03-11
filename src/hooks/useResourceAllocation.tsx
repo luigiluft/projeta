@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,11 +141,12 @@ export function useResourceAllocation(projectId?: string) {
   const getAvailability = async (
     startDate: string, 
     endDate: string, 
-    requiredHours: number,
+    requiredHours: number = 0,
     selectedMembers: string[] = []
   ): Promise<ResourceAvailability[]> => {
     try {
       setCheckingAvailability(true);
+      console.log(`Verificando disponibilidade de ${startDate} a ${endDate} para ${requiredHours} horas`);
       
       // Converter datas para objetos Date
       const start = new Date(startDate);
@@ -166,6 +168,8 @@ export function useResourceAllocation(projectId?: string) {
         throw allocationsError;
       }
       
+      console.log(`Encontradas ${existingAllocations.length} alocações no período`);
+      
       // Calcular disponibilidade para cada membro
       const availability: ResourceAvailability[] = [];
       
@@ -174,11 +178,19 @@ export function useResourceAllocation(projectId?: string) {
           alloc => alloc.member_id === member.id
         );
         
+        console.log(`Membro ${member.first_name} tem ${memberAllocations.length} alocações`);
+        
         const availableDates = [];
         let currentDate = new Date(start);
         
         // Calcular disponibilidade para cada dia no período
         while (currentDate <= end) {
+          if (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
+            // Pular fins de semana
+            currentDate = addDays(currentDate, 1);
+            continue;
+          }
+          
           const dateStr = format(currentDate, 'yyyy-MM-dd');
           const dailyCapacity = member.daily_capacity || 8; // Capacidade diária (horas)
           
@@ -195,7 +207,8 @@ export function useResourceAllocation(projectId?: string) {
             ) {
               // Distribuir horas alocadas uniformemente pelos dias
               const allocDays = differenceInDays(allocEnd, allocStart) + 1;
-              allocatedHours += alloc.allocated_hours / allocDays;
+              const workDays = Math.ceil(allocDays * 5/7); // Aproximação para dias úteis
+              allocatedHours += alloc.allocated_hours / Math.max(1, workDays);
             }
           });
           
