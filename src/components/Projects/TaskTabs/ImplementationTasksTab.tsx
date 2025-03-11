@@ -22,6 +22,48 @@ export function ImplementationTasksTab({
   attributeValues 
 }: ImplementationTasksTabProps) {
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
+  const [implementationColumns, setImplementationColumns] = useState<Column[]>([]);
+
+  // Adicionar colunas de data à lista de colunas
+  useEffect(() => {
+    const updatedColumns = [...columns];
+    
+    // Verificar se as colunas de data já existem
+    const hasStartDateColumn = updatedColumns.some(col => col.id === 'start_date');
+    const hasEndDateColumn = updatedColumns.some(col => col.id === 'end_date');
+    
+    // Adicionar colunas de data se não existirem
+    if (!hasStartDateColumn) {
+      updatedColumns.push({
+        id: 'start_date',
+        label: 'Data Início',
+        visible: true
+      });
+    }
+    
+    if (!hasEndDateColumn) {
+      updatedColumns.push({
+        id: 'end_date',
+        label: 'Data Término',
+        visible: true
+      });
+    }
+    
+    // Garantir que as colunas de data estejam visíveis
+    const finalColumns = updatedColumns.map(col => {
+      if (col.id === 'start_date' || col.id === 'end_date') {
+        return { ...col, visible: true };
+      }
+      return col;
+    });
+    
+    setImplementationColumns(finalColumns);
+    
+    // Se houver mudanças, atualizar as colunas no componente pai
+    if (!hasStartDateColumn || !hasEndDateColumn) {
+      onColumnsChange(finalColumns);
+    }
+  }, [columns, onColumnsChange]);
 
   // Filtrar e calcular apenas tarefas de implementação
   useEffect(() => {
@@ -61,7 +103,7 @@ export function ImplementationTasksTab({
         <div className="border rounded-md p-4 bg-white shadow-sm">
           <TaskList 
             tasks={calculatedTasks} 
-            columns={columns}
+            columns={implementationColumns}
             onColumnsChange={onColumnsChange}
             showHoursColumn={true}
           />

@@ -1,7 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { Task, Column } from "@/types/project";
 import { useNavigate } from 'react-router-dom';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface TaskListProps {
   tasks: Task[];
@@ -38,6 +39,16 @@ export function TaskList({
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
 
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return '-';
+    try {
+      return format(parseISO(dateString), 'dd/MM/yyyy', { locale: ptBR });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
+  };
+
   const handleEditClick = (taskId: string) => {
     console.log(`Navigating to task details: /task-management/${taskId}`);
     navigate(`/task-management/${taskId}`);
@@ -53,6 +64,10 @@ export function TaskList({
         return truncateText(task.epic, 15);
       case 'story':
         return truncateText(task.story, 15);
+      case 'start_date':
+        return formatDate(task.start_date);
+      case 'end_date':
+        return formatDate(task.end_date);
       case 'hours':
         if (showHoursColumn) {
           return (
@@ -186,6 +201,9 @@ function getColumnMinWidth(columnId: string): string {
     case 'epic':
     case 'story':
       return '120px';
+    case 'start_date':
+    case 'end_date':
+      return '100px';
     case 'hours':
     case 'fixed_hours':
     case 'hours_formula':
