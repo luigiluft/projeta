@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Project } from "@/types/project";
+import { Project, Attribute } from "@/types/project";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ export default function ProjectDetails() {
   const [availableEpics, setAvailableEpics] = useState<string[]>([]);
   const [epicTasks, setEpicTasks] = useState<{ [key: string]: any }>({});
   const [selectedEpics, setSelectedEpics] = useState<string[]>([]);
+  const [projectAttributes, setProjectAttributes] = useState<Attribute[]>([]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -85,6 +86,27 @@ export default function ProjectDetails() {
             };
           });
         }
+
+        // Buscar atributos de projeto do Supabase
+        const { data: attributesData, error: attributesError } = await supabase
+          .from('project_attributes')
+          .select('*');
+
+        if (attributesError) {
+          console.error('Erro ao buscar atributos do projeto:', attributesError);
+        }
+
+        // Preparar atributos para o formulário
+        const formattedAttributes = (attributesData || []).map(attr => ({
+          id: attr.code || attr.id,
+          name: attr.name,
+          type: attr.unit === 'hours' || attr.unit === 'currency' || attr.unit === 'percentage' ? 'number' : 'text',
+          unit: attr.unit || '',
+          defaultValue: attr.default_value || '',
+          description: attr.description || ''
+        })) as Attribute[];
+
+        setProjectAttributes(formattedAttributes);
 
         // Extrair valores dos atributos do campo metadata
         let attributeValues = {};
@@ -223,6 +245,7 @@ export default function ProjectDetails() {
         editingId={id}
         readOnly={true}
         selectedEpics={selectedEpics}
+        attributes={projectAttributes}
       />
     </div>
   );
