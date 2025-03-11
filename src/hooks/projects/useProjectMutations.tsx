@@ -1,4 +1,3 @@
-
 import { Project, Task } from "@/types/project";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -151,7 +150,7 @@ export const useProjectMutations = () => {
             
             if (allocationResult.notAllocatedCount > 0) {
               toast.warning(`${allocationResult.notAllocatedCount} tarefas não puderam ser alocadas automaticamente`);
-              console.log("Tarefas não alocadas:", allocationResult.notAllocatedTasks);
+              console.log("Cargos não alocados:", allocationResult.notAllocatedRoles);
             }
           } catch (allocError) {
             console.error("Erro na alocação automática:", allocError);
