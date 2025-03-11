@@ -18,6 +18,7 @@ import {
 import { AllocationForm } from "./AllocationForm";
 import { AllocationList } from "./AllocationList";
 import { AutoAllocation } from "./AutoAllocation";
+import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
 
 interface AllocationTabProps {
   tasks: Task[];
@@ -28,6 +29,7 @@ export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const queryClient = useQueryClient();
+  const { teamMembers, projectTasks, createAllocation, loading } = useResourceAllocation(projectId);
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['projectAllocations'] });
@@ -36,6 +38,15 @@ export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
 
   const handleSuccess = () => {
     handleRefresh();
+    setIsOpen(false);
+  };
+
+  const handleSubmitAllocation = (allocation: any) => {
+    createAllocation(allocation);
+    handleSuccess();
+  };
+
+  const handleCancel = () => {
     setIsOpen(false);
   };
 
@@ -64,10 +75,17 @@ export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
                 </DialogDescription>
               </DialogHeader>
               <ScrollArea className="max-h-[60vh]">
-                <AllocationForm 
-                  projectId={projectId} 
-                  onSuccess={handleSuccess} 
-                />
+                {projectId && (
+                  <AllocationForm 
+                    projectId={projectId}
+                    teamMembers={teamMembers}
+                    tasks={projectTasks}
+                    onSubmit={handleSubmitAllocation}
+                    onCancel={handleCancel}
+                    onSuccess={handleSuccess}
+                    isLoading={loading}
+                  />
+                )}
               </ScrollArea>
             </DialogContent>
           </Dialog>

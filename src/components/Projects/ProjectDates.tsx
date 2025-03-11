@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -360,15 +361,18 @@ export function ProjectDates({
                         }}
                         components={{
                           DayContent: (props) => {
+                            const dateStr = format(props.date, 'yyyy-MM-dd');
+                            const dateAvail = dateAvailability.get(dateStr);
+                            
                             return (
                               <div className="relative w-full h-full flex items-center justify-center">
-                                {props.children}
-                                {availability?.status === 'partial' && (
+                                {props.day}
+                                {dateAvail?.status === 'partial' && (
                                   <div className="absolute -top-0.5 -right-0.5">
                                     <AlertCircle className="h-2 w-2 text-amber-500" />
                                   </div>
                                 )}
-                                {availability?.status === 'available' && (
+                                {dateAvail?.status === 'available' && (
                                   <div className="absolute -top-0.5 -right-0.5">
                                     <Check className="h-2 w-2 text-green-500" />
                                   </div>
@@ -425,8 +429,6 @@ export function ProjectDates({
           startDate={form.watch('start_date')}
           onEndDateCalculated={(date) => {
             setCalculatedEndDate(date);
-            if (date) {
-            }
           }}
         />
       )}

@@ -16,6 +16,7 @@ interface AllocationFormProps {
   tasks: any[];
   onSubmit: (data: Allocation) => void;
   onCancel: () => void;
+  onSuccess?: () => void;
   isLoading?: boolean;
 }
 
@@ -36,6 +37,7 @@ export function AllocationForm({
   tasks,
   onSubmit,
   onCancel,
+  onSuccess,
   isLoading = false
 }: AllocationFormProps) {
   const [memberSelected, setMemberSelected] = useState<string>("");
@@ -62,6 +64,10 @@ export function AllocationForm({
       allocated_hours: values.allocated_hours,
       status: values.status
     });
+    
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
   return (
