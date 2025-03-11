@@ -20,6 +20,7 @@ export default function Team() {
     { id: "department", label: "Departamento", visible: true },
     { id: "status", label: "Status", visible: true },
     { id: "hourly_rate", label: "Valor/Hora", visible: true },
+    { id: "daily_capacity", label: "Capacidade Diária", visible: true },
     { id: "actions", label: "Ações", visible: true },
   ]);
 

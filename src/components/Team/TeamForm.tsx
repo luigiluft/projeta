@@ -23,6 +23,7 @@ const teamMemberSchema = z.object({
   last_name: z.string().min(2, "Sobrenome é obrigatório"),
   position: z.string().min(1, "Cargo é obrigatório"),
   hourly_rate: z.coerce.number().min(0, "Valor por hora deve ser maior que 0"),
+  daily_capacity: z.coerce.number().min(1, "Capacidade diária deve ser maior que 0"),
   email: z.string().email("Email inválido"),
   department: z.string().min(1, "Departamento é obrigatório"),
   status: z.enum(["active", "inactive"]),
@@ -47,6 +48,7 @@ export function TeamForm({ initialValues, onClose }: TeamFormProps) {
       last_name: initialValues?.last_name || "",
       position: initialValues?.position || "",
       hourly_rate: initialValues?.hourly_rate || 0,
+      daily_capacity: initialValues?.daily_capacity || 7,
       email: initialValues?.email || "",
       department: initialValues?.department || "",
       status: (initialValues?.status as "active" | "inactive") || "active",
@@ -67,6 +69,7 @@ export function TeamForm({ initialValues, onClose }: TeamFormProps) {
             last_name: formValues.last_name,
             position: formValues.position,
             hourly_rate: formValues.hourly_rate,
+            daily_capacity: formValues.daily_capacity,
             email: formValues.email,
             department: formValues.department,
             status: formValues.status,
@@ -85,6 +88,7 @@ export function TeamForm({ initialValues, onClose }: TeamFormProps) {
             last_name: formValues.last_name,
             position: formValues.position,
             hourly_rate: formValues.hourly_rate,
+            daily_capacity: formValues.daily_capacity,
             email: formValues.email,
             department: formValues.department,
             status: formValues.status,
@@ -226,6 +230,27 @@ export function TeamForm({ initialValues, onClose }: TeamFormProps) {
                     placeholder="0.00"
                     type="number"
                     step="0.01"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="daily_capacity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Capacidade diária (horas)</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="7"
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    max="24"
                     {...field}
                   />
                 </FormControl>

@@ -545,6 +545,7 @@ export type Database = {
       team_members: {
         Row: {
           created_at: string | null
+          daily_capacity: number
           department: string | null
           email: string | null
           first_name: string
@@ -557,6 +558,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          daily_capacity?: number
           department?: string | null
           email?: string | null
           first_name: string
@@ -569,6 +571,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          daily_capacity?: number
           department?: string | null
           email?: string | null
           first_name?: string
