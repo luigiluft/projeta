@@ -5,7 +5,7 @@ import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PricingTab } from "./PricingTab";
-import { ScopeTab } from "./ScopeTab";
+import { ImplementationTasksTab, SustainmentTasksTab } from "./ScopeTab";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
 import { Attribute, Project, Task } from "@/types/project";
 import { ProjectBasicInfo } from "./ProjectBasicInfo";
@@ -355,15 +355,25 @@ export function ProjectForm({
         <Tabs defaultValue="pricing" className="w-full">
           <TabsList className="w-full">
             <TabsTrigger value="pricing" className="flex-1">Precificação</TabsTrigger>
-            <TabsTrigger value="scope" className="flex-1">Escopo</TabsTrigger>
+            <TabsTrigger value="implementation" className="flex-1">Implementação</TabsTrigger>
+            <TabsTrigger value="sustainment" className="flex-1">Sustentação</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pricing">
             <PricingTab form={form} attributes={attributes} readOnly={readOnly} />
           </TabsContent>
 
-          <TabsContent value="scope">
-            <ScopeTab 
+          <TabsContent value="implementation">
+            <ImplementationTasksTab 
+              tasks={selectedTasks} 
+              columns={taskColumns}
+              onColumnsChange={handleColumnsChange}
+              attributeValues={attributeValues}
+            />
+          </TabsContent>
+
+          <TabsContent value="sustainment">
+            <SustainmentTasksTab 
               tasks={selectedTasks} 
               columns={taskColumns}
               onColumnsChange={handleColumnsChange}
