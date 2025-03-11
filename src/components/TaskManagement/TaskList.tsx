@@ -1,9 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { Task, Column } from "@/types/project";
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { formatCurrency } from '@/components/Projects/utils/taskCalculations';
 
 interface TaskListProps {
   tasks: Task[];
@@ -70,17 +70,6 @@ export function TaskList({
       case 'end_date':
         return formatDate(task.end_date);
       case 'hours':
-        if (task.is_third_party_cost) {
-          return (
-            <div className="flex items-center space-x-1">
-              <span className="text-green-600 font-medium">{formatCurrency(task.cost_amount || 0)}</span>
-              <span className="text-xs text-green-500" title="Custo com terceiros">
-                (R$)
-              </span>
-            </div>
-          );
-        }
-        
         if (showHoursColumn) {
           return (
             <div className="flex items-center space-x-1">
@@ -100,22 +89,9 @@ export function TaskList({
       case 'hours_formula':
         return task.hours_formula ? <span title={task.hours_formula}>{truncateText(task.hours_formula, 15)}</span> : '-';
       case 'fixed_hours':
-        if (task.is_third_party_cost) {
-          return <span className="text-green-600">{formatCurrency(task.cost_amount || 0)}</span>;
-        }
         return task.fixed_hours || '-';
       case 'hours_type':
-        if (task.is_third_party_cost) {
-          return <span className="text-green-600">Custo</span>;
-        }
         return truncateText(task.hours_type, 10);
-      case 'is_third_party_cost':
-        return task.is_third_party_cost ? 'Sim' : 'Não';
-      case 'cost_amount':
-        if (task.is_third_party_cost) {
-          return <span className="text-green-600">{formatCurrency(task.cost_amount || 0)}</span>;
-        }
-        return '-';
       case 'order':
         // Mostrar qualquer valor, incluindo zero
         return task.order !== null && task.order !== undefined ? task.order.toString() : '-';
@@ -188,10 +164,7 @@ export function TaskList({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {tasks.map((task) => (
-            <tr 
-              key={task.id} 
-              className={`hover:bg-gray-50 ${task.is_third_party_cost ? 'bg-green-50' : ''}`}
-            >
+            <tr key={task.id} className="hover:bg-gray-50">
               {onTaskSelect && (
                 <td className="w-10 px-4 py-4 whitespace-nowrap">
                   <input 
@@ -235,14 +208,12 @@ function getColumnMinWidth(columnId: string): string {
     case 'hours':
     case 'fixed_hours':
     case 'hours_formula':
-    case 'cost_amount':
       return '100px';
     case 'owner':
     case 'status':
     case 'hours_type':
       return '80px';
     case 'is_active':
-    case 'is_third_party_cost':
       return '60px';
     case 'order':
     case 'order_number':

@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Task } from "@/types/project";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -26,8 +26,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Variable, CircleDollarSign } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import { Variable } from "lucide-react";
 
 interface TaskFormProps {
   onSubmit: (values: Omit<Task, "id" | "created_at">) => void;
@@ -41,21 +40,7 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
   const [previewHours, setPreviewHours] = useState<number | null>(null);
   const [hoursType, setHoursType] = useState<string>('fixed');
   const [fixedHours, setFixedHours] = useState<number>(0);
-  const [isThirdPartyCost, setIsThirdPartyCost] = useState<boolean>(false);
-  const [costAmount, setCostAmount] = useState<number>(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Resetar estado quando o diálogo fecha
-  useEffect(() => {
-    if (!open) {
-      setIsThirdPartyCost(false);
-      setCostAmount(0);
-      setHoursType('fixed');
-      setFixedHours(0);
-      setPreviewHours(null);
-      reset();
-    }
-  }, [open, reset]);
 
   const calculateHours = (formula: string) => {
     if (!projectAttributes) {
@@ -241,8 +226,6 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
       fixed_hours: hoursType === 'fixed' ? fixedHours : undefined,
       order_number: 0,
       is_active: true,
-      is_third_party_cost: isThirdPartyCost,
-      cost_amount: isThirdPartyCost ? costAmount : undefined,
     };
     
     onSubmit(formValues);
@@ -250,8 +233,6 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
     setHoursType('fixed');
     setFixedHours(0);
     setPreviewHours(null);
-    setIsThirdPartyCost(false);
-    setCostAmount(0);
   };
 
   // Lista de funções disponíveis
@@ -292,139 +273,105 @@ export function TaskForm({ onSubmit, open, onOpenChange, projectAttributes }: Ta
             <Input id="story" {...register("story")} />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch 
-              id="is_third_party_cost" 
-              checked={isThirdPartyCost} 
-              onCheckedChange={setIsThirdPartyCost}
-            />
-            <Label htmlFor="is_third_party_cost" className="cursor-pointer">
-              Custo com Terceiros
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="hours_type">Tipo de Horas</Label>
+            <Select 
+              value={hoursType} 
+              onValueChange={(value) => setHoursType(value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo de horas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fixed">Horas Fixas</SelectItem>
+                <SelectItem value="formula">Fórmula de Horas</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {isThirdPartyCost ? (
+          {hoursType === 'fixed' ? (
             <div className="space-y-2">
-              <Label htmlFor="cost_amount">Valor do Custo (R$)</Label>
-              <div className="relative">
-                <CircleDollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <Input 
-                  id="cost_amount" 
-                  type="number" 
-                  step="0.01"
-                  value={costAmount}
-                  onChange={(e) => setCostAmount(parseFloat(e.target.value))}
-                  className="pl-10"
-                  min="0"
-                />
-              </div>
-              <p className="text-sm text-gray-500">
-                Este valor será adicionado diretamente ao custo do projeto, sem contabilizar horas.
-              </p>
+              <Label htmlFor="fixed_hours">Horas Fixas</Label>
+              <Input 
+                id="fixed_hours" 
+                type="number" 
+                step="0.01"
+                value={fixedHours}
+                onChange={(e) => setFixedHours(parseFloat(e.target.value))}
+                min="0"
+              />
             </div>
           ) : (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="hours_type">Tipo de Horas</Label>
-                <Select 
-                  value={hoursType} 
-                  onValueChange={(value) => setHoursType(value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o tipo de horas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fixed">Horas Fixas</SelectItem>
-                    <SelectItem value="formula">Fórmula de Horas</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center mb-2">
+                <Label htmlFor="hours_formula">Fórmula de Horas</Label>
+                <div className="flex space-x-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Variable className="h-4 w-4 mr-2" />
+                        Inserir Variável
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end" 
+                      className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
+                    >
+                      {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
+                        <DropdownMenuItem
+                          key={key}
+                          onClick={() => insertAttributeAtCursor(key)}
+                          className="flex justify-between hover:bg-blue-50"
+                        >
+                          <span className="font-medium">{key}</span>
+                          <span className="text-gray-600">{value}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        Inserir Função
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end" 
+                      className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
+                    >
+                      {availableFunctions.map((func) => (
+                        <DropdownMenuItem
+                          key={func.name}
+                          onClick={() => insertFunctionTemplate(func.name)}
+                          className="flex justify-between hover:bg-blue-50"
+                        >
+                          <span className="font-medium">{func.name}</span>
+                          <span className="text-gray-600">{func.description}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
-
-              {hoursType === 'fixed' ? (
-                <div className="space-y-2">
-                  <Label htmlFor="fixed_hours">Horas Fixas</Label>
-                  <Input 
-                    id="fixed_hours" 
-                    type="number" 
-                    step="0.01"
-                    value={fixedHours}
-                    onChange={(e) => setFixedHours(parseFloat(e.target.value))}
-                    min="0"
-                  />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center mb-2">
-                    <Label htmlFor="hours_formula">Fórmula de Horas</Label>
-                    <div className="flex space-x-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Variable className="h-4 w-4 mr-2" />
-                            Inserir Variável
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent 
-                          align="end" 
-                          className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
-                        >
-                          {projectAttributes && Object.entries(projectAttributes).map(([key, value]) => (
-                            <DropdownMenuItem
-                              key={key}
-                              onClick={() => insertAttributeAtCursor(key)}
-                              className="flex justify-between hover:bg-blue-50"
-                            >
-                              <span className="font-medium">{key}</span>
-                              <span className="text-gray-600">{value}</span>
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            Inserir Função
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent 
-                          align="end" 
-                          className="w-56 bg-white border border-gray-200 max-h-[300px] overflow-y-auto"
-                        >
-                          {availableFunctions.map((func) => (
-                            <DropdownMenuItem
-                              key={func.name}
-                              onClick={() => insertFunctionTemplate(func.name)}
-                              className="flex justify-between hover:bg-blue-50"
-                            >
-                              <span className="font-medium">{func.name}</span>
-                              <span className="text-gray-600">{func.description}</span>
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                  <Textarea 
-                    id="hours_formula" 
-                    ref={textareaRef}
-                    {...register("hours_formula")}
-                    onChange={(e) => handleFormulaChange(e.target.value)}
-                    placeholder="Ex: IF(SKU_COUNT > 1000, SKU_COUNT * 0.01, SKU_COUNT * 0.02)"
-                    className="font-mono text-sm"
-                    rows={3}
-                  />
-                  <div className="text-sm mt-1">
-                    <p className="text-gray-500">Funções disponíveis: IF, ROUNDUP, ROUNDDOWN, ROUND, SUM, MAX, MIN</p>
-                    {previewHours !== null && (
-                      <p className="text-blue-600 font-medium mt-1">
-                        Horas calculadas: {previewHours}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
+              <Textarea 
+                id="hours_formula" 
+                ref={textareaRef}
+                {...register("hours_formula")}
+                onChange={(e) => handleFormulaChange(e.target.value)}
+                placeholder="Ex: IF(SKU_COUNT > 1000, SKU_COUNT * 0.01, SKU_COUNT * 0.02)"
+                className="font-mono text-sm"
+                rows={3}
+              />
+              <div className="text-sm mt-1">
+                <p className="text-gray-500">Funções disponíveis: IF, ROUNDUP, ROUNDDOWN, ROUND, SUM, MAX, MIN</p>
+                {previewHours !== null && (
+                  <p className="text-blue-600 font-medium mt-1">
+                    Horas calculadas: {previewHours}
+                  </p>
+                )}
+              </div>
+            </div>
           )}
 
           <div className="space-y-2">
