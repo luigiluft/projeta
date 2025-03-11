@@ -24,19 +24,23 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     }
   };
 
-  // Separar epics baseado na fase (implementação/sustentação) das tarefas
-  const implementationEpics = availableEpics.filter(epic => 
-    epic.toLowerCase().includes('implementação') ||
-    epic.toLowerCase().includes('implementacao') ||
-    epic.toLowerCase().includes('integração') ||
-    epic.toLowerCase().includes('integracao') ||
-    epic.toLowerCase().includes('faturamento') ||
-    epic.toLowerCase().includes('atendimento')
-  );
-  
+  // Classificar os epics como implementação ou sustentação corretamente
   const sustainmentEpics = availableEpics.filter(epic => 
     epic.toLowerCase().includes('sustentação') ||
-    epic.toLowerCase().includes('sustentacao')
+    epic.toLowerCase().includes('sustentacao') ||
+    epic.toLowerCase().includes('atendimento ao consumidor') ||
+    epic.toLowerCase().includes('sac 4.0') ||
+    epic.toLowerCase().includes('faturamento de gestão operacional') ||
+    epic.toLowerCase().includes('faturamento de gestao operacional')
+  );
+  
+  // Todos os outros epics que não estão em sustainmentEpics são de implementação
+  const implementationEpics = availableEpics.filter(epic => 
+    !sustainmentEpics.includes(epic) &&
+    (epic.toLowerCase().includes('implementação') ||
+    epic.toLowerCase().includes('implementacao') ||
+    epic.toLowerCase().includes('integração') ||
+    epic.toLowerCase().includes('integracao'))
   );
 
   return (

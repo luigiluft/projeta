@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,8 +34,6 @@ export default function NewProject() {
         return;
       }
 
-      console.log("Atributos carregados:", data);
-
       const formattedAttributes: Attribute[] = data.map(attr => {
         let unit: "hours" | "quantity" | "percentage" = "hours";
         if (attr.unit === "quantity" || attr.unit === "percentage") {
@@ -50,7 +47,6 @@ export default function NewProject() {
           type = "text";
         }
 
-        // Tratar corretamente o caso do ticket_medio com unit = currency
         if (attr.code === "ticket_medio" || attr.unit === "currency") {
           type = "number";
         }
@@ -64,7 +60,6 @@ export default function NewProject() {
         };
       });
 
-      console.log("Atributos formatados:", formattedAttributes);
       setAttributes(formattedAttributes);
     } catch (e) {
       console.error("Erro não tratado ao carregar atributos:", e);
@@ -105,16 +100,26 @@ export default function NewProject() {
         }
 
         if (tasksData && tasksData.length > 0) {
-          const formattedTasks: Task[] = tasksData.map((task, index) => ({
-            ...task,
-            order_number: index + 1,
-            is_active: task.is_active || true,
-            phase: task.phase || '',
-            epic: task.epic || '',
-            story: task.story || '',
-            owner: task.owner || '',
-            status: (task.status as "pending" | "in_progress" | "completed") || "pending",
-          }));
+          const formattedTasks: Task[] = tasksData.map((task, index) => {
+            const isSustainment = 
+              task.epic.toLowerCase().includes('sustentação') || 
+              task.epic.toLowerCase().includes('sustentacao') ||
+              task.epic.toLowerCase().includes('atendimento ao consumidor') ||
+              task.epic.toLowerCase().includes('sac 4.0') ||
+              task.epic.toLowerCase().includes('faturamento de gestão operacional') ||
+              task.epic.toLowerCase().includes('faturamento de gestao operacional');
+            
+            return {
+              ...task,
+              order_number: index + 1,
+              is_active: task.is_active || true,
+              phase: isSustainment ? 'sustentação' : 'implementação',
+              epic: task.epic || '',
+              story: task.story || '',
+              owner: task.owner || '',
+              status: (task.status as "pending" | "in_progress" | "completed") || "pending",
+            };
+          });
           
           tasksMap[epic] = formattedTasks;
         }
@@ -138,7 +143,6 @@ export default function NewProject() {
       setIsLoading(true);
       console.log("Projeto enviado para criação:", project);
       
-      // Verificar se temos tarefas de implementação e sustentação
       const implementationTasks = project.tasks.filter(task => 
         !task.epic.toLowerCase().includes('sustentação') && 
         !task.epic.toLowerCase().includes('sustentacao'));
@@ -169,7 +173,7 @@ export default function NewProject() {
           implementation_tasks_count: implementationTasks.length,
           sustainment_tasks_count: sustainmentTasks.length
         },
-        attributes: project.attributes || {} // Adicionar attributes para compatibilidade
+        attributes: project.attributes || {}
       };
       
       console.log("Dados do projeto formatados para inserção:", projectData);
@@ -198,7 +202,7 @@ export default function NewProject() {
           status: 'pending',
           is_active: true,
           created_at: new Date().toISOString(),
-          owner_id: user?.email // Usando email como owner_id já que agora é TEXT
+          owner_id: user?.email
         }));
         
         console.log("Dados formatados das tarefas do projeto:", projectTasksData);
