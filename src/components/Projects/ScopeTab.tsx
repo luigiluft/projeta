@@ -24,8 +24,10 @@ const teamRates = {
 
 export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: ScopeTabProps) {
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>(tasks);
+  const [implementationTasks, setImplementationTasks] = useState<Task[]>([]);
+  const [sustainmentTasks, setSustainmentTasks] = useState<Task[]>([]);
 
-  // Recalcular horas das tarefas quando os atributos mudarem
+  // Recalcular horas das tarefas e separá-las em implementação e sustentação
   useEffect(() => {
     if (!tasks.length) return;
 
@@ -134,10 +136,23 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
     });
     
     setCalculatedTasks(updatedTasks);
+    
+    // Separar tarefas de implementação e sustentação
+    const implementation = updatedTasks.filter(task => 
+      !task.epic.toLowerCase().includes('sustentação') && 
+      !task.epic.toLowerCase().includes('sustentacao'));
+    
+    const sustainment = updatedTasks.filter(task => 
+      task.epic.toLowerCase().includes('sustentação') || 
+      task.epic.toLowerCase().includes('sustentacao'));
+    
+    setImplementationTasks(implementation);
+    setSustainmentTasks(sustainment);
+    
   }, [tasks, attributeValues]);
 
-  const calculateCosts = () => {
-    const costs = calculatedTasks.reduce((acc, task) => {
+  const calculateCosts = (taskList: Task[]) => {
+    const costs = taskList.reduce((acc, task) => {
       const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
       const hours = task.calculated_hours || 0;
       const taskCost = hourlyRate * hours;
@@ -161,33 +176,86 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
     });
   };
 
-  // Aqui está a correção: chamamos a função e armazenamos o resultado em uma variável
-  const costs = calculateCosts();
+  // Calculamos os custos para todos os tipos de tarefas
+  const implementationCosts = calculateCosts(implementationTasks);
+  const sustainmentCosts = calculateCosts(sustainmentTasks);
+  const totalCosts = calculateCosts(calculatedTasks);
 
   return (
-    <div className="space-y-4 mt-4">
+    <div className="space-y-8 mt-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Lista de Tarefas</h3>
         <div className="space-y-1 text-right">
           <div className="text-sm text-gray-600">
-            Total de Horas: {costs.totalHours.toFixed(2)}h
+            Total de Horas: {totalCosts.totalHours.toFixed(2)}h
           </div>
           <div className="text-sm font-medium text-primary">
-            Custo Total: {formatCurrency(costs.totalCost)}
+            Custo Total: {formatCurrency(totalCosts.totalCost)}
           </div>
           <div className="text-xs text-gray-500">
-            Média HH: {formatCurrency(costs.averageHourlyRate)}/h
+            Média HH: {formatCurrency(totalCosts.averageHourlyRate)}/h
           </div>
         </div>
       </div>
       
       {calculatedTasks.length > 0 ? (
-        <TaskList 
-          tasks={calculatedTasks} 
-          columns={columns}
-          onColumnsChange={onColumnsChange}
-          showHoursColumn={true}
-        />
+        <div className="space-y-6">
+          {/* Seção de tarefas de implementação */}
+          <div className="border rounded-md p-4 bg-white shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="font-medium text-base">Tarefas de Implementação</h4>
+              <div className="space-y-1 text-right text-sm">
+                <div className="text-gray-600">
+                  Horas: {implementationCosts.totalHours.toFixed(2)}h
+                </div>
+                <div className="font-medium text-primary">
+                  Custo: {formatCurrency(implementationCosts.totalCost)}
+                </div>
+              </div>
+            </div>
+            
+            {implementationTasks.length > 0 ? (
+              <TaskList 
+                tasks={implementationTasks} 
+                columns={columns}
+                onColumnsChange={onColumnsChange}
+                showHoursColumn={true}
+              />
+            ) : (
+              <div className="p-4 text-center bg-gray-50 rounded-md">
+                <p className="text-muted-foreground">Nenhuma tarefa de implementação selecionada</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Seção de tarefas de sustentação */}
+          <div className="border rounded-md p-4 bg-white shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="font-medium text-base">Tarefas de Sustentação</h4>
+              <div className="space-y-1 text-right text-sm">
+                <div className="text-gray-600">
+                  Horas: {sustainmentCosts.totalHours.toFixed(2)}h
+                </div>
+                <div className="font-medium text-primary">
+                  Custo: {formatCurrency(sustainmentCosts.totalCost)}
+                </div>
+              </div>
+            </div>
+            
+            {sustainmentTasks.length > 0 ? (
+              <TaskList 
+                tasks={sustainmentTasks} 
+                columns={columns}
+                onColumnsChange={onColumnsChange}
+                showHoursColumn={true}
+              />
+            ) : (
+              <div className="p-4 text-center bg-gray-50 rounded-md">
+                <p className="text-muted-foreground">Nenhuma tarefa de sustentação selecionada</p>
+              </div>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="p-8 text-center border rounded-md bg-gray-50">
           <p className="text-muted-foreground">Selecione pelo menos um epic para visualizar as tarefas</p>

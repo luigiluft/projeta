@@ -136,13 +136,16 @@ export default function NewProject() {
       setIsLoading(true);
       console.log("Projeto enviado para criação:", project);
       
-      // Log específico para verificar os valores do ticket_medio
-      if (project.attribute_values) {
-        console.log("Ticket médio nos attribute_values:", project.attribute_values.ticket_medio);
-      }
-      if (project.attributes && typeof project.attributes === 'object') {
-        console.log("Ticket médio nos attributes:", project.attributes.ticket_medio);
-      }
+      // Verificar se temos tarefas de implementação e sustentação
+      const implementationTasks = project.tasks.filter(task => 
+        !task.epic.toLowerCase().includes('sustentação') && 
+        !task.epic.toLowerCase().includes('sustentacao'));
+      
+      const sustainmentTasks = project.tasks.filter(task => 
+        task.epic.toLowerCase().includes('sustentação') || 
+        task.epic.toLowerCase().includes('sustentacao'));
+      
+      console.log(`Tarefas de implementação: ${implementationTasks.length}, Tarefas de sustentação: ${sustainmentTasks.length}`);
       
       const projectData = {
         name: project.name,
@@ -150,7 +153,7 @@ export default function NewProject() {
         description: project.description || "",
         client_name: project.client_name || "",
         start_date: project.start_date || null,
-        expected_end_date: project.expected_end_date || null,  // Adicionando a data estimada de término
+        expected_end_date: project.expected_end_date || null,
         epic: project.epic || "",
         total_hours: project.total_hours || 0,
         total_cost: project.total_cost || 0,
@@ -160,7 +163,9 @@ export default function NewProject() {
         currency: "BRL" as const, 
         type: "default",
         metadata: { 
-          attribute_values: project.attribute_values || {}
+          attribute_values: project.attribute_values || {},
+          implementation_tasks_count: implementationTasks.length,
+          sustainment_tasks_count: sustainmentTasks.length
         },
         attributes: project.attributes || {} // Adicionar attributes para compatibilidade
       };

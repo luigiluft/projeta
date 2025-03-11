@@ -48,7 +48,6 @@ export function ProjectForm({
   const [estimatedEndDate, setEstimatedEndDate] = useState<string | null>(null);
   const { estimateDeliveryDates } = useProjectCalculations();
 
-  // Update selected tasks when epics change
   useEffect(() => {
     const tasks: Task[] = [];
     selectedEpics.forEach(epic => {
@@ -60,7 +59,6 @@ export function ProjectForm({
     calculateEstimatedEndDate(tasks);
   }, [selectedEpics, epicTasks]);
 
-  // Initialize selected epics if provided in initialValues
   useEffect(() => {
     if (initialValues?.epic && initialSelectedEpics.length === 0) {
       const epics = initialValues.epic.split(',').map(e => e.trim());
@@ -70,7 +68,6 @@ export function ProjectForm({
     }
   }, [initialValues, initialSelectedEpics]);
 
-  // Calcular data estimada de término
   const calculateEstimatedEndDate = async (tasks: Task[]) => {
     const startDateValue = form.getValues("start_date");
     
@@ -82,10 +79,19 @@ export function ProjectForm({
     try {
       const startDate = new Date(startDateValue);
       
-      // Estimar datas de entrega com base nas tarefas e capacidades da equipe
-      const tasksWithDurations = await estimateDeliveryDates(tasks, startDate);
+      const implementationTasks = tasks.filter(task => 
+        !task.epic.toLowerCase().includes('sustentação') && 
+        !task.epic.toLowerCase().includes('sustentacao'));
       
-      // Encontrar a tarefa que vai terminar por último
+      if (implementationTasks.length === 0) {
+        setEstimatedEndDate(null);
+        return;
+      }
+      
+      console.log("Calculando data estimada com tarefas de implementação:", implementationTasks.length);
+      
+      const tasksWithDurations = await estimateDeliveryDates(implementationTasks, startDate);
+      
       let maxDurationDays = 0;
       tasksWithDurations.forEach(task => {
         if (task.estimated_duration_days && task.estimated_duration_days > maxDurationDays) {
@@ -93,20 +99,17 @@ export function ProjectForm({
         }
       });
       
-      // Adicionar dias úteis (considerando apenas dias de semana)
       let endDate = new Date(startDate);
       let daysAdded = 0;
       
       while (daysAdded < maxDurationDays) {
         endDate = addDays(endDate, 1);
         const dayOfWeek = endDate.getDay();
-        // Se não for fim de semana (0 = domingo, 6 = sábado)
         if (dayOfWeek !== 0 && dayOfWeek !== 6) {
           daysAdded++;
         }
       }
       
-      // Formatar data para exibição
       setEstimatedEndDate(format(endDate, 'dd/MM/yyyy'));
     } catch (error) {
       console.error("Erro ao calcular data estimada:", error);
@@ -116,7 +119,6 @@ export function ProjectForm({
 
   const formSchema = createProjectFormSchema(attributes);
 
-  // Preparar valores iniciais com os valores corretos do projeto
   const defaultValues: any = {
     name: initialValues?.name || "",
     description: initialValues?.description || "",
@@ -124,10 +126,8 @@ export function ProjectForm({
     start_date: initialValues?.start_date || "",
   };
 
-  // Log para debug dos valores iniciais recebidos
   console.log("Valores iniciais recebidos:", initialValues);
   
-  // Campos especiais para verificar
   const specialFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
   specialFields.forEach(field => {
     console.log(`Verificando campo especial ${field} no initialValues:`, 
@@ -135,13 +135,10 @@ export function ProjectForm({
       initialValues?.attributes?.[field]);
   });
 
-  // Adicionar valores específicos que podem vir do attribute_values ou attributes
   if (initialValues) {
-    // Primeiro verificar attribute_values já que é onde os valores mais recentes geralmente estão
     if (initialValues.attribute_values) {
       Object.entries(initialValues.attribute_values).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          // Para campos numéricos, garantir que são números válidos
           if (typeof value === 'number' && !isNaN(value)) {
             defaultValues[key] = value;
             console.log(`Definindo ${key} de attribute_values:`, value);
@@ -156,9 +153,7 @@ export function ProjectForm({
       });
     }
 
-    // Verificar se há valores específicos no attributes que precisam ser tratados com prioridade
     specialFields.forEach(field => {
-      // Verificar em attribute_values primeiro (prioridade)
       if (initialValues.attribute_values && field in initialValues.attribute_values) {
         const value = initialValues.attribute_values[field];
         if (value !== undefined && value !== null) {
@@ -171,9 +166,7 @@ export function ProjectForm({
           }
           console.log(`Definido ${field} de attribute_values (prioridade):`, defaultValues[field]);
         }
-      }
-      // Se não estiver em attribute_values, verificar em attributes
-      else if (initialValues.attributes && 
+      } else if (initialValues.attributes && 
                typeof initialValues.attributes === 'object' && 
                !Array.isArray(initialValues.attributes) && 
                field in initialValues.attributes) {
@@ -191,13 +184,11 @@ export function ProjectForm({
       }
     });
 
-    // Em seguida, adicionar valores dos attributes se não existirem ainda
     if (initialValues.attributes && 
         typeof initialValues.attributes === 'object' && 
         !Array.isArray(initialValues.attributes)) {
       Object.entries(initialValues.attributes).forEach(([key, value]) => {
         if (defaultValues[key] === undefined && value !== undefined && value !== null) {
-          // Para campos numéricos, garantir que são números válidos
           if (typeof value === 'number' && !isNaN(value)) {
             defaultValues[key] = value;
           } else if (typeof value === 'string' && !isNaN(Number(value))) {
@@ -211,7 +202,6 @@ export function ProjectForm({
     }
   }
 
-  // Adicionar valores padrão para cada atributo que ainda não tenha valor
   attributes.forEach(attr => {
     if (defaultValues[attr.id] === undefined && attr.defaultValue !== undefined) {
       const value = attr.type === "number" && attr.defaultValue !== "" 
@@ -229,7 +219,6 @@ export function ProjectForm({
     defaultValues,
   });
 
-  // Recalcular a data estimada quando a data de início mudar
   useEffect(() => {
     const subscription = form.watch((values) => {
       if (values.start_date && values.start_date !== defaultValues.start_date) {
@@ -261,6 +250,20 @@ export function ProjectForm({
       return;
     }
 
+    const implementationTasks = selectedTasks.filter(task => 
+      !task.epic.toLowerCase().includes('sustentação') && 
+      !task.epic.toLowerCase().includes('sustentacao'));
+    
+    const sustainmentTasks = selectedTasks.filter(task => 
+      task.epic.toLowerCase().includes('sustentação') || 
+      task.epic.toLowerCase().includes('sustentacao'));
+    
+    const implTaskCosts = implementationTasks.reduce((acc, task) => {
+      const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
+      const hours = task.calculated_hours || (task.hours_formula ? parseFloat(task.hours_formula) : 0);
+      return acc + (hourlyRate * hours);
+    }, 0);
+    
     const taskCosts = selectedTasks.reduce((acc, task) => {
       const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
       const hours = task.calculated_hours || (task.hours_formula ? parseFloat(task.hours_formula) : 0);
@@ -314,7 +317,16 @@ export function ProjectForm({
       archived: false,
       deleted: false,
       version: 1,
-      metadata: {},
+      metadata: {
+        attribute_values: Object.fromEntries(
+          attributes
+            .filter(attr => attr.type === 'number')
+            .map(attr => [attr.id, Number(values[attr.id]) || 0])
+        ),
+        implementation_tasks_count: implementationTasks.length,
+        sustainment_tasks_count: sustainmentTasks.length,
+        implementation_cost: implTaskCosts
+      },
       settings: {},
     };
     
