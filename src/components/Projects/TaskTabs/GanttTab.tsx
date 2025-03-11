@@ -1,4 +1,3 @@
-
 import { Task } from "@/types/project";
 import {
   BarChart,
@@ -7,11 +6,10 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
   CartesianGrid,
   Legend,
 } from "recharts";
-import { format, parseISO, isValid, addDays, differenceInDays } from "date-fns";
+import { format, parseISO, isValid, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
@@ -48,14 +46,26 @@ export function GanttTab({ tasks }: GanttTabProps) {
   );
 
   useEffect(() => {
-    if (tasks.length > 0) {
-      const projectId = tasks[0].project_task_id 
-        ? tasks.find(t => t.project_task_id)?.project_id 
-        : null;
-      
-      if (projectId) {
-        fetchAllocations(projectId);
-      }
+    if (tasks.length > 0 && tasks[0].project_task_id) {
+      // Primeiro, buscar o project_id usando o project_task_id
+      const fetchProjectId = async () => {
+        const { data: projectTaskData, error: projectTaskError } = await supabase
+          .from('project_tasks')
+          .select('project_id')
+          .eq('id', tasks[0].project_task_id)
+          .single();
+
+        if (projectTaskError) {
+          console.error("Erro ao buscar project_id:", projectTaskError);
+          return;
+        }
+
+        if (projectTaskData?.project_id) {
+          fetchAllocations(projectTaskData.project_id);
+        }
+      };
+
+      fetchProjectId();
     }
   }, [tasks]);
 
