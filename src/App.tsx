@@ -9,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import NewProject from './pages/NewProject';
+import EditProject from './pages/EditProject';
 import TaskManagement from './pages/TaskManagement';
 import TaskDetails from './pages/TaskDetails';
 import NewTask from './pages/NewTask';
@@ -40,6 +41,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/new" element={<NewProject />} />
+              <Route path="/projects/edit/:id" element={<EditProject />} />
               <Route path="/task-management" element={<TaskManagement />} />
               <Route path="/task-management/:id" element={<TaskDetails />} />
               <Route path="/task-management/new" element={<NewTask />} />
