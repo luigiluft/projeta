@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import { createProjectFormSchema, ProjectFormValues } from "@/utils/projectFormS
 import { DEFAULT_PROFIT_MARGIN, teamRates } from "@/constants/projectConstants";
 import { EpicSelector } from "./EpicSelector";
 import { useState, useEffect } from "react";
-import { format, addDays } from "date-fns";
+import { format, addDays, addBusinessDays } from "date-fns";
 import { useProjectCalculations } from "@/hooks/projects/useProjectCalculations";
 
 interface ProjectFormProps {
@@ -90,29 +89,78 @@ export function ProjectForm({
         return;
       }
       
-      console.log("Calculando data estimada com tarefas de implementação:", implementationTasks.length);
-      
-      const tasksWithDurations = await estimateDeliveryDates(implementationTasks, startDate);
-      
-      let maxDurationDays = 0;
-      tasksWithDurations.forEach(task => {
-        if (task.estimated_duration_days && task.estimated_duration_days > maxDurationDays) {
-          maxDurationDays = task.estimated_duration_days;
+      const tasksByOwner: { [key: string]: Task[] } = {};
+      implementationTasks.forEach(task => {
+        if (!tasksByOwner[task.owner || '']) {
+          tasksByOwner[task.owner || ''] = [];
         }
+        tasksByOwner[task.owner || ''].push(task);
+      });
+
+      Object.keys(tasksByOwner).forEach(owner => {
+        tasksByOwner[owner].sort((a, b) => {
+          if (a.depends_on && a.depends_on === b.id) return 1;
+          if (b.depends_on && b.depends_on === a.id) return -1;
+          
+          const orderA = a.order || 0;
+          const orderB = b.order || 0;
+          return orderA - orderB;
+        });
+      });
+
+      const ownerAvailability: Record<string, Date> = {};
+      
+      const taskEndDates: Record<string, Date> = {};
+      
+      let lastEndDate = startDate;
+
+      Object.entries(tasksByOwner).forEach(([owner, tasks]) => {
+        let currentDate = new Date(startDate);
+        
+        tasks.forEach(task => {
+          if (ownerAvailability[owner]) {
+            currentDate = new Date(ownerAvailability[owner]);
+          }
+          
+          if (task.depends_on && taskEndDates[task.depends_on]) {
+            const dependencyEndDate = new Date(taskEndDates[task.depends_on]);
+            if (dependencyEndDate > currentDate) {
+              currentDate = new Date(dependencyEndDate);
+            }
+          }
+          
+          if (currentDate.getHours() >= 17) {
+            currentDate = addBusinessDays(currentDate, 1);
+            currentDate.setHours(9, 0, 0, 0);
+          } else if (currentDate.getHours() < 9) {
+            currentDate.setHours(9, 0, 0, 0);
+          }
+
+          const taskHours = task.calculated_hours || task.fixed_hours || 0;
+          let endDate = new Date(currentDate);
+          
+          if (currentDate.getHours() < 12 && (currentDate.getHours() + taskHours) >= 12) {
+            endDate.setHours(currentDate.getHours() + taskHours + 1);
+          } else {
+            endDate.setHours(currentDate.getHours() + taskHours);
+          }
+          
+          if (endDate.getHours() >= 17) {
+            const remainingHours = endDate.getHours() - 17;
+            endDate = addBusinessDays(currentDate, 1);
+            endDate.setHours(9 + remainingHours, 0, 0, 0);
+          }
+          
+          ownerAvailability[owner] = endDate;
+          taskEndDates[task.id] = endDate;
+          
+          if (endDate > lastEndDate) {
+            lastEndDate = endDate;
+          }
+        });
       });
       
-      let endDate = new Date(startDate);
-      let daysAdded = 0;
-      
-      while (daysAdded < maxDurationDays) {
-        endDate = addDays(endDate, 1);
-        const dayOfWeek = endDate.getDay();
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-          daysAdded++;
-        }
-      }
-      
-      setEstimatedEndDate(format(endDate, 'dd/MM/yyyy'));
+      setEstimatedEndDate(format(lastEndDate, 'dd/MM/yyyy'));
     } catch (error) {
       console.error("Erro ao calcular data estimada:", error);
       setEstimatedEndDate(null);
