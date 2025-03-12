@@ -1,95 +1,122 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { PlusCircle, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Task } from "@/types/project";
-import { useQueryClient } from "@tanstack/react-query";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useResourceAllocation } from "@/hooks/useResourceAllocation";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { AllocationForm } from "./AllocationForm";
-import { AllocationList } from "./AllocationList";
-import { AutoAllocation } from "./AutoAllocation";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AllocationTabProps {
   tasks: Task[];
-  projectId?: string;
+  readOnly?: boolean;
 }
 
-export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const queryClient = useQueryClient();
+interface RoleAllocation {
+  role: string;
+  tasks: Task[];
+  totalHours: number;
+  assignedMember?: string;
+}
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['projectAllocations'] });
-    setRefreshKey(prev => prev + 1);
+export function AllocationTab({ tasks, readOnly }: AllocationTabProps) {
+  const [roleAllocations, setRoleAllocations] = useState<RoleAllocation[]>([]);
+  const { teamMembers, loading } = useResourceAllocation();
+
+  useEffect(() => {
+    // Group tasks by role (owner)
+    const roleGroups = tasks.reduce((groups: { [key: string]: Task[] }, task) => {
+      const role = task.owner || 'Não atribuído';
+      if (!groups[role]) {
+        groups[role] = [];
+      }
+      groups[role].push(task);
+      return groups;
+    }, {});
+
+    // Calculate total hours for each role
+    const allocations = Object.entries(roleGroups).map(([role, tasks]) => {
+      const totalHours = tasks.reduce((sum, task) => {
+        return sum + (task.calculated_hours || task.fixed_hours || 0);
+      }, 0);
+
+      return {
+        role,
+        tasks,
+        totalHours,
+        assignedMember: undefined
+      };
+    });
+
+    setRoleAllocations(allocations);
+  }, [tasks]);
+
+  const availableTeamMembers = (role: string) => {
+    return teamMembers?.filter(member => member.position === role) || [];
   };
 
-  const handleSuccess = () => {
-    handleRefresh();
-    setIsOpen(false);
-  };
+  if (loading) {
+    return <div>Carregando membros da equipe...</div>;
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">Alocações de Recursos</h2>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Atualizar
-          </Button>
-          
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Nova Alocação
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Adicionar Alocação</DialogTitle>
-                <DialogDescription>
-                  Aloque membros da equipe para trabalhar neste projeto.
-                </DialogDescription>
-              </DialogHeader>
-              <ScrollArea className="max-h-[60vh]">
-                <AllocationForm 
-                  projectId={projectId} 
-                  onSuccess={handleSuccess} 
-                />
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <Separator />
-      
-      <AutoAllocation 
-        tasks={tasks} 
-        projectId={projectId} 
-        onSuccess={handleRefresh}
-      />
-
-      <Card key={refreshKey}>
-        <CardContent className="p-6">
-          <AllocationList 
-            projectId={projectId} 
-            onAllocationDeleted={handleRefresh} 
-          />
-        </CardContent>
-      </Card>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Cargo</TableHead>
+            <TableHead>Total de Tarefas</TableHead>
+            <TableHead>Total de Horas</TableHead>
+            <TableHead>Membro Alocado</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {roleAllocations.map((allocation) => (
+            <TableRow key={allocation.role}>
+              <TableCell>{allocation.role}</TableCell>
+              <TableCell>{allocation.tasks.length}</TableCell>
+              <TableCell>{allocation.totalHours.toFixed(2)}h</TableCell>
+              <TableCell>
+                <Select
+                  disabled={readOnly}
+                  value={allocation.assignedMember}
+                  onValueChange={(value) => {
+                    setRoleAllocations(currentAllocations =>
+                      currentAllocations.map(current =>
+                        current.role === allocation.role
+                          ? { ...current, assignedMember: value }
+                          : current
+                      )
+                    );
+                  }}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Selecionar membro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTeamMembers(allocation.role).map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.first_name} {member.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
