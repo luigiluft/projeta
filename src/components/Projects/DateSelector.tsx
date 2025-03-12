@@ -1,14 +1,13 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, AlertTriangle } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge";
 import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
 import { toast } from "sonner";
@@ -25,8 +24,6 @@ export function DateSelector({
   readOnly = false,
 }: DateSelectorProps) {
   const [openCalendar, setOpenCalendar] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
   
   const handleSelectDate = (date: Date | undefined) => {
     if (!date) return;
@@ -34,15 +31,19 @@ export function DateSelector({
     // Formatar a data para ISO string (yyyy-MM-dd)
     const isoDate = format(date, 'yyyy-MM-dd');
     
-    // Atualizar o form usando setValue para garantir que o valor seja atualizado corretamente
+    console.log("Data selecionada:", isoDate);
+    
+    // Atualizar o formulário
     form.setValue('start_date', isoDate, { 
       shouldValidate: true,
       shouldDirty: true,
       shouldTouch: true
     });
     
-    // Fechar o calendário
+    // Fechar o calendário após selecionar a data
     setOpenCalendar(false);
+    
+    toast.success("Data de início definida com sucesso");
   };
 
   return (
@@ -79,18 +80,11 @@ export function DateSelector({
               className="w-auto p-0" 
               align="start"
             >
-              <div className="mb-2 p-3 border-b">
-                <div className="flex items-center space-x-2 text-sm mb-1">
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span>Disponível</span>
-                </div>
-              </div>
               <Calendar
                 mode="single"
                 selected={field.value ? parseISO(field.value) : undefined}
                 onSelect={handleSelectDate}
                 initialFocus
-                className="pointer-events-auto"
                 disabled={(date) => {
                   // Desabilitar datas passadas
                   const today = new Date();

@@ -5,6 +5,7 @@ import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
 import { EndDateCalculator } from "./EndDateCalculator";
 import { DateSelector } from "./DateSelector";
+import { format } from "date-fns";
 
 interface ProjectDatesProps {
   form: UseFormReturn<ProjectFormValues>;
@@ -29,6 +30,12 @@ export function ProjectDates({
       onEndDateCalculated(calculatedEndDate);
     }
   }, [calculatedEndDate, onEndDateCalculated]);
+
+  // Logging para debug
+  useEffect(() => {
+    console.log("Project start date:", form.watch('start_date'));
+    console.log("Estimated end date:", estimatedEndDate);
+  }, [form.watch('start_date'), estimatedEndDate]);
 
   return (
     <div className="space-y-4">
@@ -61,12 +68,13 @@ export function ProjectDates({
         </div>
       </div>
       
-      {/* Componente invisível que calcula a data estimada de término */}
+      {/* Componente que calcula a data estimada de término */}
       {form.watch('start_date') && selectedTasks.length > 0 && (
         <EndDateCalculator
           tasks={selectedTasks}
           startDate={form.watch('start_date')}
           onEndDateCalculated={(date) => {
+            console.log("End date calculated:", date);
             setCalculatedEndDate(date);
           }}
         />

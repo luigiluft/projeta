@@ -5,9 +5,8 @@ import { TaskList } from "@/components/TaskManagement/TaskList";
 import { CostsHeader } from "./CostsHeader";
 import { EmptyTasks } from "./EmptyTasks";
 import { processTasks, separateTasks } from "../utils/taskCalculations";
-import { addBusinessDays, format, setHours, setMinutes, addHours, isAfter, max, isWeekend, addDays } from "date-fns";
+import { addBusinessDays, format, addDays, isWeekend, isAfter } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
 
 interface ImplementationTasksTabProps {
   tasks: Task[];
@@ -26,7 +25,6 @@ export function ImplementationTasksTab({
 }: ImplementationTasksTabProps) {
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
   const [implementationColumns, setImplementationColumns] = useState<Column[]>([]);
-  const { getAvailability } = useResourceAllocation();
 
   // Adicionar colunas de data e ordem à lista de colunas
   useEffect(() => {
@@ -101,9 +99,6 @@ export function ImplementationTasksTab({
       const startDate = new Date(projectStartDate);
       startDate.setHours(9, 0, 0, 0); // Começa às 9h
       
-      // Calcular data final para verificação (3 meses à frente)
-      const endDateCheck = addDays(startDate, 90);
-      
       // Ordenar tarefas por dependências e ordem
       const orderedTasks = [...tasks].sort((a, b) => {
         // Priorizar por dependência primeiro
@@ -116,53 +111,16 @@ export function ImplementationTasksTab({
         return orderA - orderB;
       });
       
-      // Buscar disponibilidade dos membros da equipe
-      const startDateStr = format(startDate, 'yyyy-MM-dd');
-      const endDateStr = format(endDateCheck, 'yyyy-MM-dd');
-      const availability = await getAvailability(startDateStr, endDateStr);
-      
-      // Agrupar disponibilidade por papel
-      const availabilityByRole: Record<string, any[]> = {};
-      
-      availability.forEach(member => {
-        if (!availabilityByRole[member.position]) {
-          availabilityByRole[member.position] = [];
-        }
-        availabilityByRole[member.position].push(member);
-      });
-      
-      // Estrutura para rastrear a próxima data disponível por papel
-      const roleNextAvailableDates: Record<string, Date> = {};
-      
       // Estrutura para rastrear datas de término por tarefa (para dependências)
       const taskEndDates = new Map<string, Date>();
       
       // Calcular datas para cada tarefa
       const tasksWithDates = orderedTasks.map(task => {
-        const role = task.owner;
-        if (!role) {
-          return {
-            ...task,
-            start_date: format(startDate, "yyyy-MM-dd'T'HH:mm:00"),
-            end_date: format(addBusinessDays(startDate, 1), "yyyy-MM-dd'T'HH:mm:00")
-          };
-        }
-        
-        // Verificar membros disponíveis para este papel
-        const roleMembers = availabilityByRole[role] || [];
-        if (roleMembers.length === 0) {
-          return {
-            ...task,
-            start_date: format(startDate, "yyyy-MM-dd'T'HH:mm:00"),
-            end_date: format(addBusinessDays(startDate, 1), "yyyy-MM-dd'T'HH:mm:00")
-          };
-        }
-        
         // Horas necessárias para a tarefa
         const taskHours = task.calculated_hours || task.fixed_hours || 0;
         
         // Determinar data de início
-        let taskStartDate = roleNextAvailableDates[role] || new Date(startDate);
+        let taskStartDate = new Date(startDate);
         
         // Verificar dependências
         if (task.depends_on && taskEndDates.has(task.depends_on)) {
@@ -177,36 +135,22 @@ export function ImplementationTasksTab({
           taskStartDate = addDays(taskStartDate, 1);
         }
         
-        // Capacidade diária média dos membros do papel
-        const roleCapacity = roleMembers.reduce((sum, member) => {
-          // Verificar disponibilidade na data de início
-          const dateStr = format(taskStartDate, 'yyyy-MM-dd');
-          const dateAvailability = member.available_dates.find(d => d.date === dateStr);
-          const availableHours = dateAvailability?.available_hours || 0;
-          return sum + availableHours;
-        }, 0) / roleMembers.length;
-        
-        const effectiveCapacity = Math.max(4, roleCapacity); // Mínimo 4h/dia
-        
-        // Calcular dias necessários
-        const workDays = Math.ceil(taskHours / effectiveCapacity);
+        // Calcular dias necessários (estimativa simples: 6 horas por dia)
+        const workDays = Math.max(1, Math.ceil(taskHours / 6));
         
         // Calcular data de término
         let taskEndDate = taskStartDate;
-        for (let i = 0; i < workDays; i++) {
-          taskEndDate = addBusinessDays(taskEndDate, 1);
+        if (workDays > 0) {
+          taskEndDate = addBusinessDays(taskStartDate, workDays);
         }
         
         // Registrar data de término para dependências
         taskEndDates.set(task.id, taskEndDate);
         
-        // Atualizar próxima data disponível para o papel
-        roleNextAvailableDates[role] = new Date(taskEndDate);
-        
         return {
           ...task,
-          start_date: format(taskStartDate, "yyyy-MM-dd'T'HH:mm:00"),
-          end_date: format(taskEndDate, "yyyy-MM-dd'T'HH:mm:00")
+          start_date: format(taskStartDate, "yyyy-MM-dd'T'HH:mm:ss"),
+          end_date: format(taskEndDate, "yyyy-MM-dd'T'HH:mm:ss")
         };
       });
       
