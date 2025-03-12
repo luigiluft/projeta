@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { TaskList } from '@/components/TaskManagement/TaskList';
 import { TaskHeader } from '@/components/TaskManagement/TaskHeader';
+import { TaskImporter } from '@/components/TaskManagement/TaskImporter';
 import { type Task, type Column } from '@/types/project';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -68,10 +69,18 @@ export default function TaskManagement() {
     <div className="container mx-auto py-8">
       <Card className="bg-white shadow">
         <CardHeader className="pb-0 bg-gray-50">
-          <TaskHeader 
-            columns={columns}
-            onColumnVisibilityChange={handleColumnVisibilityChange}
-          />
+          <div className="flex justify-between items-center">
+            <TaskHeader 
+              columns={columns}
+              onColumnVisibilityChange={handleColumnVisibilityChange}
+            />
+            <div className="flex gap-2">
+              <TaskImporter
+                onSuccess={handleImportSuccess}
+                buttonLabel="Importar Tarefas"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="pt-6 bg-white">
           <div className="flex justify-between items-center mb-4">
@@ -88,7 +97,6 @@ export default function TaskManagement() {
                 </Button>
               )}
             </div>
-            {/* Removed the duplicate TaskImporter button from here */}
           </div>
           
           <TaskList 

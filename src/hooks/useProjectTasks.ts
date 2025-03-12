@@ -12,7 +12,9 @@ export const useProjectTasks = (initialTasks: Task[] = []) => {
     { id: "story", label: "Story", visible: true },
     { id: "hours", label: "Horas", visible: true },
     { id: "owner", label: "Responsável", visible: true },
-    { id: "dependency", label: "Dependência", visible: true },
+    { id: "depends_on", label: "Dependência", visible: true },
+    { id: "order", label: "Ordem", visible: true },
+    { id: "status", label: "Status", visible: true },
     { id: "created_at", label: "Criado em", visible: true },
   ];
 

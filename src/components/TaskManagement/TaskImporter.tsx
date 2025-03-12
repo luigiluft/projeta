@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -49,7 +50,54 @@ export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: T
       setLoading(true);
       setError(null);
       
-      const data = await importFromCSV(selectedFile);
+      // Importar dados do CSV ou texto colado
+      let data;
+      if (selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv')) {
+        data = await importFromCSV(selectedFile);
+      } else {
+        // Tratamento especial para texto colado como arquivo
+        const text = await selectedFile.text();
+        const lines = text.split('\n');
+        const headers = lines[0].split('\t');
+        
+        data = lines.slice(1).map(line => {
+          const values = line.split('\t');
+          const row: Record<string, any> = {};
+          
+          headers.forEach((header, index) => {
+            // Mapear cabeçalhos para nomes de campos adequados
+            let fieldName = header.trim();
+            
+            // Mapeamento de campos conforme os cabeçalhos da tabela
+            const fieldMap: Record<string, string> = {
+              'ID': 'id',
+              'Fase': 'phase',
+              'Epic': 'epic',
+              'Story': 'story',
+              'Nome da Tarefa': 'task_name',
+              'Dependência': 'depends_on',
+              'Responsável': 'owner',
+              'Fórmula de Horas': 'hours_formula',
+              'Contagem de horas': 'hours_type',
+              'Horas Fixas': 'fixed_hours',
+              'Status': 'status',
+              'Ativo': 'is_active',
+              'Criado em': 'created_at',
+              '': ''  // Para tratar colunas vazias
+            };
+            
+            if (fieldMap[fieldName]) {
+              fieldName = fieldMap[fieldName];
+            }
+            
+            if (fieldName && values[index]) {
+              row[fieldName] = values[index].trim();
+            }
+          });
+          
+          return row;
+        }).filter(row => Object.keys(row).length > 0 && row.task_name); // Filtrar linhas vazias
+      }
       
       if (data.length === 0) {
         throw new Error('Nenhuma tarefa encontrada no arquivo');
@@ -62,31 +110,48 @@ export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: T
           throw new Error('Campo "task_name" é obrigatório');
         }
 
-        const task = {
-          task_name: row['task_name'] || '',
-          phase: row['Fase'] || row['fase'] || row['phase'] || '',
-          epic: row['Epic'] || row['epic'] || '',
-          story: row['Story'] || row['story'] || '',
-          owner: row['Responsável'] || row['responsavel'] || row['owner'] || '',
-          is_active: row['Ativo'] === true || row['Ativo'] === 'Sim' || row['is_active'] === true || true,
-          status: convertStatus(row['Status'] || row['status'] || 'pending'),
-          hours_type: determineHoursType(row),
-          fixed_hours: null as number | null,
-          hours_formula: null as string | null
-        };
-
-        if (row['Horas Fixas'] || row['horas_fixas'] || row['fixed_hours']) {
-          const hoursValue = row['Horas Fixas'] || row['horas_fixas'] || row['fixed_hours'];
-          const hours = parseFloat(String(hoursValue));
-          if (!isNaN(hours)) {
-            task.fixed_hours = hours;
+        // Converter números com vírgula para ponto
+        let fixedHours = null;
+        if (row['fixed_hours']) {
+          const rawValue = String(row['fixed_hours']).replace(',', '.');
+          const parsedValue = parseFloat(rawValue);
+          if (!isNaN(parsedValue)) {
+            fixedHours = parsedValue;
           }
         }
 
-        if (row['Fórmula de Horas'] || row['formula_horas'] || row['hours_formula']) {
-          task.hours_formula = row['Fórmula de Horas'] || row['formula_horas'] || row['hours_formula'];
-          task.hours_type = 'formula';
+        // Definir valor de ordem se presente
+        let order = null;
+        if (row['order']) {
+          const orderValue = parseInt(String(row['order']));
+          if (!isNaN(orderValue)) {
+            order = orderValue;
+          }
         }
+
+        // Verificar o status da tarefa
+        let status = convertStatus(row['status'] || 'pending');
+
+        // Verificar se a tarefa está ativa
+        let isActive = true;
+        if (row['is_active'] !== undefined) {
+          isActive = row['is_active'] === 'Sim' || row['is_active'] === 'true' || row['is_active'] === true;
+        }
+
+        const task = {
+          task_name: row['task_name'] || '',
+          phase: row['phase'] || '',
+          epic: row['epic'] || '',
+          story: row['story'] || '',
+          owner: row['owner'] || '',
+          is_active: isActive,
+          status: status,
+          hours_type: determineHoursType(row),
+          fixed_hours: fixedHours,
+          hours_formula: row['hours_formula'] || null,
+          depends_on: row['depends_on'] || null,
+          order: order
+        };
 
         return task;
       });
@@ -124,6 +189,7 @@ export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: T
         const tasksToUpdate: (typeof tasks[0] & { id: string })[] = [];
 
         tasks.forEach(importedTask => {
+          // Verificar se já existe tarefa com mesmo nome e epic
           const existingTask = existingTasks?.find(
             et => et.task_name === importedTask.task_name && 
                  et.epic === importedTask.epic && 
@@ -140,6 +206,7 @@ export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: T
           }
         });
 
+        // Inserir novas tarefas
         if (tasksToInsert.length > 0) {
           const { error: insertError } = await supabase
             .from('tasks')
@@ -151,6 +218,7 @@ export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: T
           }
         }
 
+        // Atualizar tarefas existentes
         for (const task of tasksToUpdate) {
           const { id, ...updateData } = task;
           const { error: updateError } = await supabase
@@ -182,12 +250,12 @@ export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: T
   };
 
   const determineHoursType = (row: Record<string, any>): string => {
-    if (row['Fórmula de Horas'] || row['formula_horas'] || row['hours_formula']) {
+    if (row['hours_formula'] || row['Fórmula de Horas']) {
       return 'formula';
-    } else if (row['Horas Fixas'] || row['horas_fixas'] || row['fixed_hours']) {
+    } else if (row['fixed_hours'] || row['Horas Fixas']) {
       return 'fixed';
     }
-    return 'fixed';
+    return row['hours_type'] || 'fixed';
   };
 
   const convertStatus = (status: string): string => {
@@ -240,7 +308,7 @@ export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: T
           <DialogHeader>
             <DialogTitle>Importar Tarefas</DialogTitle>
             <DialogDescription>
-              Selecione um arquivo CSV para importar tarefas
+              Selecione um arquivo CSV ou cole os dados para importar tarefas
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -248,8 +316,8 @@ export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: T
               <Info className="h-4 w-4 text-blue-500" />
               <AlertTitle>Formato esperado</AlertTitle>
               <AlertDescription className="text-xs mt-1">
-                O arquivo deve conter uma coluna chamada <strong>"Tarefa"</strong> (obrigatória) e pode conter colunas como: 
-                Fase, Epic, Story, Responsável, Status, Horas Fixas, Fórmula de Horas.
+                O arquivo deve conter colunas como: "Tarefa" (obrigatória), Fase, Epic, Story, Responsável, 
+                Status, Horas Fixas, Fórmula de Horas, Ordem, Dependência.
               </AlertDescription>
             </Alert>
             
@@ -288,7 +356,7 @@ export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: T
                   id="file"
                   ref={fileInputRef}
                   className="hidden"
-                  accept=".csv"
+                  accept=".csv,text/plain"
                   onChange={handleFileChange}
                   disabled={loading}
                 />
@@ -297,8 +365,11 @@ export function TaskImporter({ onSuccess, buttonLabel = "Importar Planilha" }: T
                   disabled={loading}
                   className="w-full"
                 >
-                  {selectedFile ? selectedFile.name : 'Selecionar arquivo CSV'}
+                  {selectedFile ? selectedFile.name : 'Selecionar arquivo CSV ou texto'}
                 </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Você pode importar um arquivo CSV ou colar uma tabela diretamente (selecione como arquivo de texto).
+                </p>
               </div>
             </div>
           </div>
