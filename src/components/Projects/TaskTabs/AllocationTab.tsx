@@ -1,63 +1,95 @@
 
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { PlusCircle, RefreshCw } from "lucide-react";
+import { Task } from "@/types/project";
+import { useQueryClient } from "@tanstack/react-query";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { AllocationForm } from "./AllocationForm";
 import { AllocationList } from "./AllocationList";
 import { AutoAllocation } from "./AutoAllocation";
-import { AllocationGanttChart } from "./Gantt/AllocationGanttChart";
-import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
-import { Task } from "@/types/project";
 
 interface AllocationTabProps {
-  projectId: string;
-  projectName: string;
   tasks: Task[];
+  projectId?: string;
 }
 
-export function AllocationTab({ projectId, projectName, tasks }: AllocationTabProps) {
-  const [activeTab, setActiveTab] = useState("list");
+export function AllocationTab({ tasks, projectId }: AllocationTabProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const queryClient = useQueryClient();
 
   const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['projectAllocations'] });
     setRefreshKey(prev => prev + 1);
   };
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
+  const handleSuccess = () => {
+    handleRefresh();
+    setIsOpen(false);
   };
 
   return (
-    <div className="space-y-4" key={refreshKey}>
-      <h2 className="text-xl font-semibold">Gestão de Alocações</h2>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold tracking-tight">Alocações de Recursos</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
+          
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Nova Alocação
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Adicionar Alocação</DialogTitle>
+                <DialogDescription>
+                  Aloque membros da equipe para trabalhar neste projeto.
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="max-h-[60vh]">
+                <AllocationForm 
+                  projectId={projectId} 
+                  onSuccess={handleSuccess} 
+                />
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <Separator />
       
-      <Tabs defaultValue="list" onValueChange={handleTabChange}>
-        <TabsList>
-          <TabsTrigger value="list">Lista de Alocações</TabsTrigger>
-          <TabsTrigger value="auto">Alocação Automática</TabsTrigger>
-          <TabsTrigger value="gantt">Visualização Gantt</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="list" className="mt-6">
+      <AutoAllocation 
+        tasks={tasks} 
+        projectId={projectId} 
+        onSuccess={handleRefresh}
+      />
+
+      <Card key={refreshKey}>
+        <CardContent className="p-6">
           <AllocationList 
             projectId={projectId} 
-            onAllocationDeleted={handleRefresh}
+            onAllocationDeleted={handleRefresh} 
           />
-        </TabsContent>
-        
-        <TabsContent value="auto" className="mt-6">
-          <AutoAllocation
-            projectId={projectId}
-            tasks={tasks}
-            onSuccess={handleRefresh}
-          />
-        </TabsContent>
-        
-        <TabsContent value="gantt" className="mt-6">
-          <AllocationGanttChart
-            projectId={projectId}
-            projectName={projectName}
-          />
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

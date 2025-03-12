@@ -43,10 +43,10 @@ export function TaskList({
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '-';
     try {
-      return format(parseISO(dateString), 'dd/MM/yyyy', { locale: ptBR });
+      return format(parseISO(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
     } catch (error) {
-      console.error('Error formatting date:', error, dateString);
-      return '-';
+      console.error('Error formatting date:', error);
+      return dateString;
     }
   };
 
@@ -171,7 +171,7 @@ export function TaskList({
                     type="checkbox"
                     className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                     checked={selectedTasks.includes(task.id)}
-                    onChange={(e) => onTaskSelect?.(task.id, e.target.checked)}
+                    onChange={(e) => onTaskSelect(task.id, e.target.checked)}
                   />
                 </td>
               )}

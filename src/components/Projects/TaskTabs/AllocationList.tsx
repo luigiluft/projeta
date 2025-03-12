@@ -1,159 +1,128 @@
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Trash2, Calendar, Clock } from "lucide-react";
-import { format, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AllocationForm } from "./AllocationForm";
-import { useResourceAllocation } from "@/hooks/resourceAllocation/useResourceAllocation";
-import { Allocation } from "@/hooks/resourceAllocation/types";
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useResourceAllocation } from "@/hooks/useResourceAllocation";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-export interface AllocationListProps {
-  projectId: string;
+interface AllocationListProps {
+  projectId?: string;
   onAllocationDeleted?: () => void;
 }
 
 export function AllocationList({ projectId, onAllocationDeleted }: AllocationListProps) {
-  const { 
-    projectAllocations, 
-    teamMembers, 
-    projectTasks, 
-    deleteAllocation 
-  } = useResourceAllocation(projectId);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { projectAllocations, deleteAllocation, allocationsLoading } = useResourceAllocation(projectId);
 
-  const allocations = projectAllocations.data || [];
-  const members = teamMembers.data || [];
-  const tasks = projectTasks.data || [];
-
-  const isLoading = 
-    projectAllocations.isLoading || 
-    teamMembers.isLoading || 
-    projectTasks.isLoading;
-
-  const handleDelete = async (allocationId: string) => {
-    await deleteAllocation.mutateAsync(allocationId);
-    if (onAllocationDeleted) {
-      onAllocationDeleted();
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteAllocation(id);
+      toast.success("Alocação removida com sucesso");
+      if (onAllocationDeleted) onAllocationDeleted();
+    } catch (error) {
+      console.error("Erro ao remover alocação:", error);
+      toast.error("Erro ao remover alocação");
     }
   };
 
-  const getAllocationStatusClass = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'scheduled':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'in_progress':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'completed':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'cancelled':
-        return 'bg-red-50 text-red-700 border-red-200';
+      case "scheduled":
+        return <Badge variant="outline">Agendada</Badge>;
+      case "in_progress":
+        return <Badge variant="secondary">Em Andamento</Badge>;
+      case "completed":
+        return <Badge variant="default">Concluída</Badge>;
+      case "cancelled":
+        return <Badge variant="destructive">Cancelada</Badge>;
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const getMemberName = (memberId: string) => {
-    const member = members.find(m => m.id === memberId);
-    if (!member) return 'Membro não encontrado';
-    return `${member.first_name} ${member.last_name}`;
-  };
+  if (allocationsLoading) {
+    return <div>Carregando alocações...</div>;
+  }
 
-  const getTaskName = (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return 'Tarefa não encontrada';
-    return task.task_name;
-  };
+  if (!projectAllocations || projectAllocations.length === 0) {
+    return <div className="text-center py-8 text-muted-foreground">Nenhuma alocação encontrada para este projeto</div>;
+  }
 
   return (
-    <div className="space-y-4">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Membro</TableHead>
-            <TableHead>Tarefa</TableHead>
-            <TableHead>Período</TableHead>
-            <TableHead>Horas</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-[100px]">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center py-4">
-                <div className="flex justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+    <ScrollArea className="h-[400px]">
+      <div className="space-y-4 p-1">
+        {projectAllocations.map((allocation) => (
+          <Card key={allocation.id} className="overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <h4 className="font-semibold">
+                    {allocation.member_first_name} {allocation.member_last_name}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">{allocation.member_position}</p>
+                  
+                  <div className="flex gap-2">
+                    {getStatusBadge(allocation.status)}
+                    <Badge variant="outline">{allocation.allocated_hours}h</Badge>
+                  </div>
+                  
+                  <p className="text-sm">
+                    {format(new Date(allocation.start_date), "dd/MM/yyyy", { locale: ptBR })} até{" "}
+                    {format(new Date(allocation.end_date), "dd/MM/yyyy", { locale: ptBR })}
+                  </p>
+                  
+                  {allocation.task_name && (
+                    <p className="text-sm mt-2">
+                      <span className="font-medium">Tarefa:</span> {allocation.task_name}
+                    </p>
+                  )}
                 </div>
-              </TableCell>
-            </TableRow>
-          ) : allocations.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                Nenhuma alocação encontrada para este projeto.
-              </TableCell>
-            </TableRow>
-          ) : (
-            allocations.map((allocation) => (
-              <TableRow key={allocation.id}>
-                <TableCell>{getMemberName(allocation.member_id)}</TableCell>
-                <TableCell>{getTaskName(allocation.task_id)}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span>
-                      {allocation.start_date
-                        ? format(parseISO(allocation.start_date), "dd/MM/yyyy", { locale: ptBR })
-                        : "-"} até {allocation.end_date
-                        ? format(parseISO(allocation.end_date), "dd/MM/yyyy", { locale: ptBR })
-                        : "-"}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span>{allocation.allocated_hours}h</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge 
-                    variant="outline" 
-                    className={getAllocationStatusClass(allocation.status)}
-                  >
-                    {allocation.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => handleDelete(allocation.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-      
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button>Adicionar Alocação</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nova Alocação</DialogTitle>
-          </DialogHeader>
-          <AllocationForm 
-            projectId={projectId} 
-            onSuccess={onAllocationDeleted}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover alocação</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja remover esta alocação? Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => handleDelete(allocation.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Remover
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }
