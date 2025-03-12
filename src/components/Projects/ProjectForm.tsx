@@ -2,7 +2,6 @@ import { Project, Task, Attribute } from "@/types/project";
 import { useState, useEffect } from "react";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
 import { toast } from "sonner";
-import { ProjectBasicInfo } from "./ProjectBasicInfo";
 import { EpicSelector } from "./EpicSelector";
 import { ProjectFormProvider } from "./ProjectFormProvider";
 import { ProjectContent } from "./ProjectContent";
@@ -15,7 +14,25 @@ import { ProjectFormValues } from "@/utils/projectFormSchema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createProjectFormSchema } from "@/utils/projectFormSchema";
-import { Form } from "@/components/ui/form";
+import { 
+  Form, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormControl, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { CalendarIcon } from "lucide-react";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger 
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 const TEAM_RATES = {
   "BK": 78.75,
