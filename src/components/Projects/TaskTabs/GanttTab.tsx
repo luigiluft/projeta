@@ -1,3 +1,4 @@
+
 import { Task } from "@/types/project";
 import {
   BarChart,
@@ -9,7 +10,7 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { format, parseISO, isValid, addDays } from "date-fns";
+import { format, parseISO, isValid, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
@@ -181,6 +182,12 @@ export function GanttTab({ tasks }: GanttTabProps) {
     const startDate = task.start_date ? new Date(task.start_date) : new Date();
     const endDate = task.end_date ? new Date(task.end_date) : new Date(startDate);
     
+    // Calcular a duração real em dias
+    const durationDays = differenceInDays(endDate, startDate) + 1;
+    
+    // Obter as horas planejadas da tarefa
+    const taskHours = task.calculated_hours || task.fixed_hours || 0;
+    
     return {
       name: task.task_name,
       owner: task.owner,
@@ -189,7 +196,8 @@ export function GanttTab({ tasks }: GanttTabProps) {
       value: [startDate.getTime(), endDate.getTime()], // Array com início e fim
       displayStartDate: format(startDate, "dd/MM/yyyy", { locale: ptBR }),
       displayEndDate: format(endDate, "dd/MM/yyyy", { locale: ptBR }),
-      displayDuration: task.calculated_hours || task.fixed_hours || 0,
+      displayDuration: taskHours, // Usar as horas da tarefa
+      durationDays: durationDays // Duração em dias
     };
   });
 
@@ -197,6 +205,9 @@ export function GanttTab({ tasks }: GanttTabProps) {
   const allocationChartData = allocations.map(allocation => {
     const startDate = new Date(allocation.start_date);
     const endDate = new Date(allocation.end_date);
+    
+    // Calcular a duração em dias
+    const durationDays = differenceInDays(endDate, startDate) + 1;
     
     return {
       name: allocation.task_name,
@@ -207,6 +218,7 @@ export function GanttTab({ tasks }: GanttTabProps) {
       displayStartDate: format(startDate, "dd/MM/yyyy", { locale: ptBR }),
       displayEndDate: format(endDate, "dd/MM/yyyy", { locale: ptBR }),
       displayDuration: allocation.allocated_hours,
+      durationDays: durationDays,
       status: allocation.status
     };
   });
@@ -224,21 +236,25 @@ export function GanttTab({ tasks }: GanttTabProps) {
   // Formatar o conjunto de dados para o eixo X
   const xAxisTicks = dateRange.map(date => date.getTime());
 
+  // Componente personalizado para o tooltip das tarefas
   const TaskTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
         <div className="bg-white p-3 border rounded shadow">
           <p className="font-medium text-sm mb-1">{data.name}</p>
-          <p className="text-xs text-gray-600 mb-1">Responsável: {data.owner}</p>
+          <p className="text-xs text-gray-600 mb-1">Responsável: {data.owner || "Não atribuído"}</p>
           <p className="text-xs mb-1">
             Início: {data.displayStartDate}
           </p>
           <p className="text-xs mb-1">
             Fim: {data.displayEndDate}
           </p>
-          <p className="text-xs">
-            Duração: {data.displayDuration} horas
+          <p className="text-xs mb-1">
+            Duração: {data.durationDays} {data.durationDays === 1 ? 'dia' : 'dias'}
+          </p>
+          <p className="text-xs font-semibold">
+            Horas planejadas: {data.displayDuration} horas
           </p>
         </div>
       );
@@ -246,6 +262,7 @@ export function GanttTab({ tasks }: GanttTabProps) {
     return null;
   };
 
+  // Componente personalizado para o tooltip das alocações
   const AllocationTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -260,7 +277,10 @@ export function GanttTab({ tasks }: GanttTabProps) {
             Fim: {data.displayEndDate}
           </p>
           <p className="text-xs mb-1">
-            Horas alocadas: {data.displayDuration}
+            Duração: {data.durationDays} {data.durationDays === 1 ? 'dia' : 'dias'}
+          </p>
+          <p className="text-xs font-semibold">
+            Horas alocadas: {data.displayDuration} horas
           </p>
           <p className="text-xs">
             Status: {data.status === 'scheduled' ? 'Agendada' : 
@@ -324,6 +344,7 @@ export function GanttTab({ tasks }: GanttTabProps) {
                       tick={{ fontSize: 12 }}
                     />
                     <Tooltip content={<TaskTooltip />} />
+                    <Legend />
                     
                     {/* Barra representando a duração entre início e fim da tarefa */}
                     <Bar
