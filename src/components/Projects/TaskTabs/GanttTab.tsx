@@ -17,6 +17,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLocation } from "react-router-dom";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 interface GanttTabProps {
   tasks: Task[];
@@ -39,6 +42,10 @@ export function GanttTab({ tasks }: GanttTabProps) {
   const [allocations, setAllocations] = useState<TeamAllocation[]>([]);
   const [loadingAllocations, setLoadingAllocations] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("tasks");
+  const location = useLocation();
+  
+  // Verificar se estamos na página de novo projeto
+  const isNewProject = location.pathname === "/projects/new";
 
   // Filtrar tarefas que são apenas de implementação
   const implementationTasks = tasks.filter(task => 
@@ -47,7 +54,7 @@ export function GanttTab({ tasks }: GanttTabProps) {
   );
 
   useEffect(() => {
-    if (tasks.length > 0 && tasks[0].project_task_id) {
+    if (tasks.length > 0 && tasks[0].project_task_id && !isNewProject) {
       // Primeiro, buscar o project_id usando o project_task_id
       const fetchProjectId = async () => {
         const { data: projectTaskData, error: projectTaskError } = await supabase
@@ -68,7 +75,7 @@ export function GanttTab({ tasks }: GanttTabProps) {
 
       fetchProjectId();
     }
-  }, [tasks]);
+  }, [tasks, isNewProject]);
 
   const fetchAllocations = async (projectId: string) => {
     try {
@@ -118,6 +125,23 @@ export function GanttTab({ tasks }: GanttTabProps) {
     }
   };
 
+  // Exibir mensagem de alerta para projetos novos
+  if (isNewProject) {
+    return (
+      <div className="space-y-4 mt-4">
+        <Alert className="bg-amber-50 border-amber-200">
+          <Info className="h-5 w-5 text-amber-500" />
+          <AlertTitle className="text-amber-800">Projeto não salvo</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            O gráfico Gantt estará disponível após salvar o projeto, pois depende dos valores de horas calculados.
+            Por favor, salve o projeto primeiro para visualizar o gráfico de tarefas.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // A partir daqui, sabemos que não é um projeto novo
   // Organizar tarefas por data de início
   const sortedTasks = [...implementationTasks].sort((a, b) => {
     const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
@@ -254,7 +278,7 @@ export function GanttTab({ tasks }: GanttTabProps) {
             Duração: {data.durationDays} {data.durationDays === 1 ? 'dia' : 'dias'}
           </p>
           <p className="text-xs font-semibold">
-            Horas planejadas: {data.displayDuration} horas
+            Horas calculadas: {data.displayDuration} horas
           </p>
         </div>
       );
