@@ -1,3 +1,4 @@
+
 export interface Project {
   id: string;
   name: string;
@@ -62,6 +63,7 @@ export interface Task {
   end_date?: string;
   estimated_completion_date?: string;
   depends_on?: string;
+  isEstimated?: boolean; // Adicionado esta propriedade para indicar que é uma estimativa
   
   // Campos adicionados para compatibilidade e novos recursos
   order?: number; // Para compatibilidade com o campo 'order' do banco
