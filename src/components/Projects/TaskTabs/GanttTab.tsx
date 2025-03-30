@@ -10,7 +10,7 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { format, parseISO, isValid, addDays, differenceInDays } from "date-fns";
+import { format, parseISO, isValid, addDays, differenceInDays, addBusinessDays, setHours, setMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
@@ -18,8 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "react-router-dom";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface GanttTabProps {
   tasks: Task[];
@@ -54,6 +53,8 @@ export function GanttTab({ tasks }: GanttTabProps) {
   );
 
   useEffect(() => {
+    // Para projetos novos, não precisamos buscar alocações existentes
+    // Mas para projetos existentes, continuamos buscando as alocações
     if (tasks.length > 0 && tasks[0].project_task_id && !isNewProject) {
       // Primeiro, buscar o project_id usando o project_task_id
       const fetchProjectId = async () => {
@@ -74,8 +75,61 @@ export function GanttTab({ tasks }: GanttTabProps) {
       };
 
       fetchProjectId();
+    } else if (isNewProject) {
+      // Para projetos novos, buscamos alocações gerais da equipe
+      // para mostrar a disponibilidade atual
+      fetchTeamAllocations();
     }
   }, [tasks, isNewProject]);
+
+  const fetchTeamAllocations = async () => {
+    try {
+      setLoadingAllocations(true);
+      
+      // Buscar todas as alocações ativas para mostrar disponibilidade
+      const { data: allocationData, error: allocationError } = await supabase
+        .from('project_allocations')
+        .select(`
+          id,
+          project_id,
+          member_id,
+          task_id,
+          start_date,
+          end_date,
+          allocated_hours,
+          status,
+          tasks:task_id(task_name),
+          team_members:member_id(first_name, last_name)
+        `)
+        .in('status', ['scheduled', 'in_progress']);
+
+      if (allocationError) {
+        console.error("Erro ao buscar alocações gerais:", allocationError);
+        return;
+      }
+
+      // Formatar os dados de alocação
+      const formattedAllocations = allocationData.map(alloc => ({
+        id: alloc.id,
+        member_id: alloc.member_id,
+        member_name: `${alloc.team_members.first_name} ${alloc.team_members.last_name}`,
+        project_id: alloc.project_id,
+        task_id: alloc.task_id,
+        task_name: alloc.tasks?.task_name || "Sem tarefa",
+        start_date: alloc.start_date,
+        end_date: alloc.end_date,
+        allocated_hours: alloc.allocated_hours,
+        status: alloc.status
+      }));
+
+      console.log("Alocações gerais encontradas:", formattedAllocations.length);
+      setAllocations(formattedAllocations);
+    } catch (error) {
+      console.error("Erro ao carregar alocações gerais:", error);
+    } finally {
+      setLoadingAllocations(false);
+    }
+  };
 
   const fetchAllocations = async (projectId: string) => {
     try {
@@ -125,25 +179,107 @@ export function GanttTab({ tasks }: GanttTabProps) {
     }
   };
 
-  // Exibir mensagem de alerta para projetos novos
-  if (isNewProject) {
-    return (
-      <div className="space-y-4 mt-4">
-        <Alert className="bg-amber-50 border-amber-200">
-          <Info className="h-5 w-5 text-amber-500" />
-          <AlertTitle className="text-amber-800">Projeto não salvo</AlertTitle>
-          <AlertDescription className="text-amber-700">
-            O gráfico Gantt estará disponível após salvar o projeto, pois depende dos valores de horas calculados.
-            Por favor, salve o projeto primeiro para visualizar o gráfico de tarefas.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+  // Calcular datas estimadas para tarefas do novo projeto
+  const calculateEstimatedDates = (tasks: Task[]) => {
+    if (tasks.length === 0) return [];
+    
+    // Estrutura para armazenar a última data de disponibilidade para cada responsável
+    const ownerAvailability: Record<string, Date> = {};
+    
+    // Estrutura para armazenar a data de término de cada tarefa (para dependências)
+    const taskEndDates: Record<string, Date> = {};
+    
+    // Verificar se há alocações existentes que afetam a disponibilidade
+    allocations.forEach(allocation => {
+      const owner = allocation.member_name.split(' ')[0]; // Simplificação, usar apenas o primeiro nome
+      const endDate = new Date(allocation.end_date);
+      
+      if (!ownerAvailability[owner] || endDate > ownerAvailability[owner]) {
+        ownerAvailability[owner] = endDate;
+      }
+    });
+    
+    // Começar com a data atual se não houver alocações
+    const today = new Date();
+    const defaultStartDate = setHours(setMinutes(today, 0), 9); // 9h da manhã
+    
+    // Ordenar tarefas por dependências e ordem
+    const orderedTasks = [...tasks].sort((a, b) => {
+      // Primeiro por dependência
+      if (a.depends_on && a.depends_on === b.id) return 1;
+      if (b.depends_on && b.depends_on === a.id) return -1;
+      
+      // Depois por ordem
+      const orderA = a.order || 0;
+      const orderB = b.order || 0;
+      return orderA - orderB;
+    });
+    
+    // Calcular datas para cada tarefa
+    return orderedTasks.map(task => {
+      // Determinar data de início inicial
+      let startDate = defaultStartDate;
+      
+      // Considerar disponibilidade do responsável
+      if (task.owner && ownerAvailability[task.owner]) {
+        const ownerDate = new Date(ownerAvailability[task.owner]);
+        // Adicionar um dia útil após a última alocação do responsável
+        startDate = addBusinessDays(ownerDate, 1);
+        startDate = setHours(setMinutes(startDate, 0), 9); // Começar às 9h
+      }
+      
+      // Considerar dependências
+      if (task.depends_on && taskEndDates[task.depends_on]) {
+        const dependencyEndDate = new Date(taskEndDates[task.depends_on]);
+        // Usar a data que for mais tarde: disponibilidade do responsável ou término da dependência
+        if (dependencyEndDate > startDate) {
+          startDate = addBusinessDays(dependencyEndDate, 1);
+          startDate = setHours(setMinutes(startDate, 0), 9); // Começar às 9h
+        }
+      }
+      
+      // Calcular horas da tarefa
+      const taskHours = task.calculated_hours || task.fixed_hours || 0;
+      
+      // Estimar duração em dias úteis (assumindo 8h por dia)
+      const durationInDays = Math.ceil(taskHours / 8);
+      
+      // Calcular data de término
+      let endDate = startDate;
+      if (durationInDays > 0) {
+        endDate = addBusinessDays(startDate, durationInDays - 1);
+        endDate = setHours(setMinutes(endDate, 0), 17); // Terminar às 17h
+      }
+      
+      // Atualizar disponibilidade do responsável
+      if (task.owner) {
+        ownerAvailability[task.owner] = endDate;
+      }
+      
+      // Registrar data de término para dependências
+      taskEndDates[task.id] = endDate;
+      
+      // Criar cópia da tarefa com datas estimadas
+      return {
+        ...task,
+        start_date: format(startDate, "yyyy-MM-dd'T'HH:mm:ss"),
+        end_date: format(endDate, "yyyy-MM-dd'T'HH:mm:ss"),
+        // Flag para indicar que é uma estimativa para novo projeto
+        isEstimated: true
+      };
+    });
+  };
+
+  // Preparar tarefas para o gráfico, considerando se é um novo projeto ou não
+  let tasksForChart = implementationTasks;
+  
+  // Para novos projetos, calcular datas estimadas
+  if (isNewProject && implementationTasks.length > 0) {
+    tasksForChart = calculateEstimatedDates(implementationTasks);
   }
 
-  // A partir daqui, sabemos que não é um projeto novo
   // Organizar tarefas por data de início
-  const sortedTasks = [...implementationTasks].sort((a, b) => {
+  const sortedTasks = [...tasksForChart].sort((a, b) => {
     const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
     const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
     return dateA - dateB;
@@ -221,7 +357,8 @@ export function GanttTab({ tasks }: GanttTabProps) {
       displayStartDate: format(startDate, "dd/MM/yyyy", { locale: ptBR }),
       displayEndDate: format(endDate, "dd/MM/yyyy", { locale: ptBR }),
       displayDuration: taskHours, // Usar as horas da tarefa
-      durationDays: durationDays // Duração em dias
+      durationDays: durationDays, // Duração em dias
+      isEstimated: task.isEstimated // Flag para indicar se é uma estimativa
     };
   });
 
@@ -280,6 +417,11 @@ export function GanttTab({ tasks }: GanttTabProps) {
           <p className="text-xs font-semibold">
             Horas calculadas: {data.displayDuration} horas
           </p>
+          {data.isEstimated && (
+            <p className="text-xs text-amber-600 mt-1 font-semibold">
+              * Estimativa para novo projeto
+            </p>
+          )}
         </div>
       );
     }
@@ -323,6 +465,19 @@ export function GanttTab({ tasks }: GanttTabProps) {
 
   return (
     <div className="space-y-4 mt-4">
+      {isNewProject && (
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300">
+              Prévia
+            </Badge>
+            <p className="text-sm text-amber-800">
+              Estimativa de cronograma para o novo projeto. As datas serão ajustadas ao salvar.
+            </p>
+          </div>
+        </div>
+      )}
+      
       <Tabs 
         defaultValue="tasks" 
         className="w-full" 
@@ -376,7 +531,7 @@ export function GanttTab({ tasks }: GanttTabProps) {
                       name="Duração"
                       minPointSize={3}
                       barSize={20}
-                      fill="#60a5fa"
+                      fill={isNewProject ? "#f59e0b" : "#60a5fa"} // Cor diferente para projetos novos
                       radius={[4, 4, 4, 4]}
                       background={{ fill: "#eee" }}
                     />
@@ -399,7 +554,9 @@ export function GanttTab({ tasks }: GanttTabProps) {
           ) : allocationChartData.length === 0 ? (
             <div className="flex justify-center items-center h-64 bg-gray-50 rounded-md border">
               <p className="text-gray-500">
-                Não há alocações de recursos para este projeto.
+                {isNewProject 
+                  ? "Sem alocações existentes para exibir como referência." 
+                  : "Não há alocações de recursos para este projeto."}
               </p>
             </div>
           ) : (
