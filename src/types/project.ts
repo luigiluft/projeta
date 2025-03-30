@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   name: string;
@@ -107,4 +106,17 @@ export interface ProjectStats {
   in_progress_tasks: number;
   pending_tasks: number;
   hours_accuracy: number;
+}
+
+export interface TeamAllocation {
+  id: string;
+  member_id: string;
+  member_name: string;
+  project_id: string;
+  task_id: string;
+  task_name: string;
+  start_date: string;
+  end_date: string;
+  allocated_hours: number;
+  status: string;
 }
