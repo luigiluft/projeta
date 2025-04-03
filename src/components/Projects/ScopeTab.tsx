@@ -28,6 +28,13 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
     const processedTasks = processTasks(tasks, attributeValues);
     const { implementation, sustainment } = separateTasks(processedTasks);
     
+    console.log("Tarefas processadas:", processedTasks.map(t => ({
+      id: t.id,
+      name: t.task_name,
+      formula: t.hours_formula,
+      calculated: t.calculated_hours
+    })));
+    
     setCalculatedTasks(processedTasks);
     setImplementationTasks(implementation);
     setSustainmentTasks(sustainment);

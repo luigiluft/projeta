@@ -4,6 +4,9 @@ import { Task, Column } from "@/types/project";
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { calculateTaskHours } from '../Projects/utils/taskCalculations';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TaskListProps {
   tasks: Task[];
@@ -23,7 +26,39 @@ export function TaskList({
   selectedTasks = [] 
 }: TaskListProps) {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+  const [calculatedHoursByTask, setCalculatedHoursByTask] = useState<Record<string, number>>({});
   const navigate = useNavigate();
+
+  // Buscar atributos de projeto para cálculo de fórmulas
+  const { data: projectAttributes } = useQuery({
+    queryKey: ['project-attributes-for-calculations'],
+    queryFn: async () => {
+      console.log('Buscando atributos para cálculos de fórmulas');
+      const { data, error } = await supabase
+        .from('project_attributes')
+        .select('name, code, unit, description, default_value');
+
+      if (error) {
+        console.error('Erro ao buscar atributos de projeto para cálculos:', error);
+        return {};
+      }
+
+      const formattedAttributes = data?.reduce((acc: Record<string, any>, attr) => {
+        let defaultValue: string | number = attr.default_value || '';
+        
+        if (typeof defaultValue === 'string' && defaultValue.includes(',')) {
+          defaultValue = defaultValue.replace(',', '.');
+        }
+        
+        const numValue = Number(defaultValue);
+        acc[attr.code || attr.name] = !isNaN(numValue) ? numValue : defaultValue;
+        return acc;
+      }, {});
+
+      console.log('Atributos formatados para cálculos:', formattedAttributes);
+      return formattedAttributes || {};
+    }
+  });
 
   useEffect(() => {
     const visible = columns
@@ -34,6 +69,34 @@ export function TaskList({
     
     console.log("TaskList received columns:", columns.map(col => `${col.id} (${col.visible ? 'visible' : 'hidden'})`));
   }, [columns]);
+
+  // Calcular horas para tarefas com fórmulas
+  useEffect(() => {
+    if (!tasks.length || !projectAttributes) return;
+    
+    const hoursByTask: Record<string, number> = {};
+    
+    tasks.forEach(task => {
+      if (task.hours_type === 'formula' && task.hours_formula) {
+        try {
+          const calculatedHours = calculateTaskHours(task, projectAttributes);
+          hoursByTask[task.id] = calculatedHours;
+          console.log(`Horas calculadas para tarefa ${task.id} (${task.task_name}): ${calculatedHours}`);
+        } catch (error) {
+          console.error(`Erro ao calcular horas para tarefa ${task.id}:`, error);
+          hoursByTask[task.id] = 0;
+        }
+      } else if (task.fixed_hours) {
+        hoursByTask[task.id] = task.fixed_hours;
+      } else if (task.calculated_hours) {
+        hoursByTask[task.id] = task.calculated_hours;
+      } else {
+        hoursByTask[task.id] = 0;
+      }
+    });
+    
+    setCalculatedHoursByTask(hoursByTask);
+  }, [tasks, projectAttributes]);
 
   const truncateText = (text: string | undefined | null, maxLength: number = 20) => {
     if (!text) return '-';
@@ -71,10 +134,14 @@ export function TaskList({
         return formatDate(task.end_date);
       case 'hours':
         if (showHoursColumn) {
+          const calculatedHours = calculatedHoursByTask[task.id] !== undefined 
+            ? calculatedHoursByTask[task.id]
+            : (task.calculated_hours !== undefined ? task.calculated_hours : 0);
+            
           return (
             <div className="flex items-center space-x-1">
-              <span>{task.calculated_hours !== undefined ? task.calculated_hours.toFixed(2) : '-'}</span>
-              {task.hours_type !== 'fixed' && (
+              <span>{calculatedHours.toFixed(2)}</span>
+              {task.hours_type === 'formula' && (
                 <span className="text-xs text-blue-500" title={task.hours_formula || ''}>
                   (F)
                 </span>

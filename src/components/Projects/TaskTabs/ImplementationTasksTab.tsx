@@ -78,8 +78,17 @@ export function ImplementationTasksTab({
   useEffect(() => {
     if (!tasks.length) return;
     
+    console.log("ImplementationTasksTab - Processando tarefas com atributos:", attributeValues);
+    
     const { implementation } = separateTasks(tasks);
     const processedTasks = processTasks(implementation, attributeValues);
+    
+    console.log("ImplementationTasksTab - Tarefas processadas:", processedTasks.map(t => ({
+      id: t.id,
+      name: t.task_name,
+      formula: t.hours_formula,
+      calculated: t.calculated_hours
+    })));
     
     // Calcular datas das tarefas considerando dependências e um responsável por vez
     let currentDate = new Date();
