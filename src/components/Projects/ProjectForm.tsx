@@ -8,7 +8,7 @@ import { ProjectContent } from "./ProjectContent";
 import { ProjectActions } from "./ProjectActions";
 import { useProjectCalculations } from "@/hooks/projects/useProjectCalculations";
 import { ptBR } from "date-fns/locale";
-import { format } from "date-fns";
+import { format, addBusinessDays, setHours, setMinutes } from "date-fns";
 import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
 import { useForm } from "react-hook-form";
@@ -78,7 +78,7 @@ export function ProjectForm({
   const { taskColumns, handleColumnsChange } = useProjectTasks([]);
   const [attributeValues, setAttributeValues] = useState<Record<string, number>>({});
   const [estimatedEndDate, setEstimatedEndDate] = useState<string | null>(null);
-  const { estimateDeliveryDates } = useProjectCalculations();
+  const { estimateDeliveryDates, ROLE_HOURS_PER_DAY } = useProjectCalculations();
   
   const formSchema = createProjectFormSchema(attributes);
   const defaultValues: any = {
@@ -123,6 +123,14 @@ export function ProjectForm({
   });
 
   useEffect(() => {
+    const startDateValue = form.getValues("start_date");
+    
+    if (startDateValue && selectedTasks.length > 0) {
+      calculateEstimatedEndDate(selectedTasks, startDateValue);
+    }
+  }, [form.getValues("start_date"), selectedTasks]);
+
+  useEffect(() => {
     const tasks: Task[] = [];
     selectedEpics.forEach(epic => {
       if (epicTasks[epic]) {
@@ -130,7 +138,11 @@ export function ProjectForm({
       }
     });
     setSelectedTasks(tasks);
-    calculateEstimatedEndDate(tasks);
+    
+    const startDateValue = form.getValues("start_date");
+    if (startDateValue && tasks.length > 0) {
+      calculateEstimatedEndDate(tasks, startDateValue);
+    }
   }, [selectedEpics, epicTasks]);
 
   useEffect(() => {
@@ -142,64 +154,100 @@ export function ProjectForm({
     }
   }, [initialValues, initialSelectedEpics]);
 
-  const calculateEstimatedEndDate = async (tasks: Task[]) => {
-    const startDateValue = form.getValues("start_date");
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "start_date" && value.start_date && selectedTasks.length > 0) {
+        calculateEstimatedEndDate(selectedTasks, value.start_date);
+      }
+    });
     
-    if (!startDateValue || tasks.length === 0) {
+    return () => subscription.unsubscribe();
+  }, [form.watch, selectedTasks]);
+
+  const calculateEstimatedEndDate = (tasks: Task[], startDateStr: string) => {
+    if (!startDateStr || tasks.length === 0) {
       setEstimatedEndDate(null);
       return;
     }
 
     try {
+      console.log("Calculando data estimada para", tasks.length, "tarefas com data inicial:", startDateStr);
+      
       const implementationTasks = tasks.filter(task => 
         !task.epic.toLowerCase().includes('sustentação') && 
-        !task.epic.toLowerCase().includes('sustentacao'));
+        !task.epic.toLowerCase().includes('sustentacao') &&
+        !task.epic.toLowerCase().includes('atendimento ao consumidor') &&
+        !task.epic.toLowerCase().includes('sac 4.0') &&
+        !task.epic.toLowerCase().includes('faturamento de gestão operacional') &&
+        !task.epic.toLowerCase().includes('faturamento de gestao operacional'));
       
       if (implementationTasks.length === 0) {
+        console.log("Nenhuma tarefa de implementação encontrada.");
         setEstimatedEndDate(null);
         return;
       }
+      
+      console.log("Tarefas de implementação:", implementationTasks.length);
 
       const orderedTasks = [...implementationTasks].sort((a, b) => {
-        if (a.depends_on === b.id) return 1;
-        if (b.depends_on === a.id) return -1;
+        if (a.depends_on && a.depends_on === b.id) return 1;
+        if (b.depends_on && b.depends_on === a.id) return -1;
         return (a.order || 0) - (b.order || 0);
       });
 
-      const startDate = new Date(startDateValue);
+      const startDate = new Date(startDateStr);
       startDate.setHours(9, 0, 0, 0);
 
-      let currentDate = new Date(startDate);
-      let latestEndDate = new Date(startDate);
+      let projectEndDate = new Date(startDate);
+      
+      const ownerAvailability: Record<string, Date> = {};
+      const taskEndDates: Record<string, Date> = {};
 
-      const taskEndDates = new Map<string, Date>();
-
-      for (const task of orderedTasks) {
-        if (task.depends_on && taskEndDates.has(task.depends_on)) {
-          const dependencyEndDate = taskEndDates.get(task.depends_on)!;
-          if (dependencyEndDate > currentDate) {
-            currentDate = new Date(dependencyEndDate);
+      orderedTasks.forEach(task => {
+        let taskStartDate = new Date(startDate);
+        
+        if (task.owner && ownerAvailability[task.owner]) {
+          const ownerDate = new Date(ownerAvailability[task.owner]);
+          taskStartDate = addBusinessDays(ownerDate, 1);
+          taskStartDate = setHours(setMinutes(taskStartDate, 0), 9);
+        }
+        
+        if (task.depends_on && taskEndDates[task.depends_on]) {
+          const dependencyEndDate = new Date(taskEndDates[task.depends_on]);
+          if (dependencyEndDate > taskStartDate) {
+            taskStartDate = addBusinessDays(dependencyEndDate, 1);
+            taskStartDate = setHours(setMinutes(taskStartDate, 0), 9);
           }
         }
-
+        
         const taskHours = task.calculated_hours || task.fixed_hours || 0;
-        let workDays = Math.ceil(taskHours / 8);
-
-        for (let i = 0; i < workDays; i++) {
-          while (currentDate.getDay() === 0 || currentDate.getDay() === 6) {
-            currentDate.setDate(currentDate.getDate() + 1);
-          }
-          currentDate.setDate(currentDate.getDate() + 1);
+        const dailyCapacity = task.owner && ROLE_HOURS_PER_DAY[task.owner] 
+          ? ROLE_HOURS_PER_DAY[task.owner] 
+          : ROLE_HOURS_PER_DAY.default;
+        
+        const durationInDays = Math.ceil(taskHours / dailyCapacity);
+        
+        console.log(`Tarefa: ${task.task_name}, Horas: ${taskHours}, Capacidade: ${dailyCapacity}, Duração: ${durationInDays} dias`);
+        
+        let taskEndDate = taskStartDate;
+        if (durationInDays > 0) {
+          taskEndDate = addBusinessDays(taskStartDate, durationInDays - 1);
+          taskEndDate = setHours(setMinutes(taskEndDate, 0), 17);
         }
-
-        taskEndDates.set(task.id, new Date(currentDate));
-
-        if (currentDate > latestEndDate) {
-          latestEndDate = new Date(currentDate);
+        
+        if (task.owner) {
+          ownerAvailability[task.owner] = taskEndDate;
         }
-      }
-
-      const formattedEndDate = format(latestEndDate, 'dd/MM/yyyy', { locale: ptBR });
+        
+        taskEndDates[task.id] = taskEndDate;
+        
+        if (taskEndDate > projectEndDate) {
+          projectEndDate = new Date(taskEndDate);
+        }
+      });
+      
+      console.log("Data estimada de término calculada:", projectEndDate);
+      const formattedEndDate = format(projectEndDate, 'dd/MM/yyyy', { locale: ptBR });
       setEstimatedEndDate(formattedEndDate);
       
     } catch (error) {
@@ -211,6 +259,20 @@ export function ProjectForm({
   const handleEpicSelectionChange = (epics: string[]) => {
     setSelectedEpics(epics);
     onEpicsChange(epics);
+    
+    const startDateValue = form.getValues("start_date");
+    if (startDateValue) {
+      const tasks: Task[] = [];
+      epics.forEach(epic => {
+        if (epicTasks[epic]) {
+          tasks.push(...epicTasks[epic]);
+        }
+      });
+      
+      if (tasks.length > 0) {
+        calculateEstimatedEndDate(tasks, startDateValue);
+      }
+    }
   };
 
   const handleFormSubmit = (values: ProjectFormValues) => {
@@ -386,6 +448,12 @@ export function ProjectForm({
                     {...field} 
                     readOnly={readOnly}
                     className={readOnly ? "bg-gray-50" : ""}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      if (e.target.value && selectedTasks.length > 0) {
+                        calculateEstimatedEndDate(selectedTasks, e.target.value);
+                      }
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
