@@ -19,41 +19,21 @@ const ROLE_RATES: RoleRates = {
   "ATS": 65.85,
 };
 
-// Interface para armazenar capacidades diárias dos membros
-interface TeamMemberCapacity {
-  position: string;
-  daily_capacity: number;
-  hourly_rate: number;
-}
+// Horas fixas por cargo de responsável
+const ROLE_HOURS_PER_DAY: RoleRates = {
+  "BK": 6,
+  "DS": 7,
+  "PMO": 5,
+  "PO": 6,
+  "CS": 7,
+  "FRJ": 7,
+  "FRP": 6,
+  "BKT": 5,
+  "ATS": 6,
+  "default": 6
+};
 
 export const useProjectCalculations = () => {
-  // Função para obter capacidades da equipe
-  const getTeamCapacities = async (): Promise<Record<string, TeamMemberCapacity>> => {
-    try {
-      const { data, error } = await supabase
-        .from('team_members')
-        .select('position, daily_capacity, hourly_rate')
-        .eq('status', 'active');
-
-      if (error) throw error;
-
-      // Criar um mapa de capacidades por posição
-      const capacities: Record<string, TeamMemberCapacity> = {};
-      data?.forEach(member => {
-        capacities[member.position] = {
-          position: member.position,
-          daily_capacity: member.daily_capacity || 7, // Padrão: 7 horas/dia
-          hourly_rate: member.hourly_rate
-        };
-      });
-
-      return capacities;
-    } catch (error) {
-      console.error('Erro ao buscar capacidades da equipe:', error);
-      return {};
-    }
-  };
-
   // Função para calcular os custos do projeto com base nas tarefas e atributos
   const calculateProjectCosts = (tasks: Task[], attributeValues: Record<string, number> = {}) => {
     let totalHours = 0;
@@ -91,17 +71,14 @@ export const useProjectCalculations = () => {
     };
   };
 
-  // Função para estimar as datas de entrega com base nas capacidades da equipe
+  // Função para estimar as datas de entrega com base nas capacidades fixas por cargo
   const estimateDeliveryDates = async (tasks: Task[], startDate: Date) => {
-    // Buscar capacidades da equipe
-    const teamCapacities = await getTeamCapacities();
-    
     // Atribuir datas às tarefas
     const tasksWithDates = tasks.map(task => {
       // Determinar a capacidade diária do responsável
-      const ownerCapacity = teamCapacities[task.owner] 
-        ? teamCapacities[task.owner].daily_capacity 
-        : 7; // Padrão: 7 horas/dia
+      const ownerCapacity = task.owner && ROLE_HOURS_PER_DAY[task.owner] 
+        ? ROLE_HOURS_PER_DAY[task.owner] 
+        : ROLE_HOURS_PER_DAY.default;
 
       // Calcular duração em dias
       let taskHours = 0;
@@ -126,7 +103,7 @@ export const useProjectCalculations = () => {
   return {
     calculateProjectCosts,
     estimateDeliveryDates,
-    getTeamCapacities,
-    ROLE_RATES
+    ROLE_RATES,
+    ROLE_HOURS_PER_DAY
   };
 };

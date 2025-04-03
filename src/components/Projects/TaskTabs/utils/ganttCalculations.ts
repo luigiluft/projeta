@@ -1,10 +1,10 @@
 
-import { Task, TeamAllocation } from "@/types/project";
+import { Task } from "@/types/project";
 import { format, parseISO, isValid, addDays, differenceInDays, addBusinessDays, setHours, setMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // Função para calcular datas estimadas para tarefas do novo projeto
-export const calculateEstimatedDates = (tasks: Task[], allocations: TeamAllocation[] = []) => {
+export const calculateEstimatedDates = (tasks: Task[], roleHoursPerDay: Record<string, number>) => {
   if (tasks.length === 0) return [];
   
   // Estrutura para armazenar a última data de disponibilidade para cada responsável
@@ -13,17 +13,7 @@ export const calculateEstimatedDates = (tasks: Task[], allocations: TeamAllocati
   // Estrutura para armazenar a data de término de cada tarefa (para dependências)
   const taskEndDates: Record<string, Date> = {};
   
-  // Verificar se há alocações existentes que afetam a disponibilidade
-  allocations.forEach(allocation => {
-    const owner = allocation.member_name.split(' ')[0]; // Simplificação, usar apenas o primeiro nome
-    const endDate = new Date(allocation.end_date);
-    
-    if (!ownerAvailability[owner] || endDate > ownerAvailability[owner]) {
-      ownerAvailability[owner] = endDate;
-    }
-  });
-  
-  // Começar com a data atual se não houver alocações
+  // Começar com a data atual 
   const today = new Date();
   const defaultStartDate = setHours(setMinutes(today, 0), 9); // 9h da manhã
   
@@ -65,8 +55,13 @@ export const calculateEstimatedDates = (tasks: Task[], allocations: TeamAllocati
     // Calcular horas da tarefa
     const taskHours = task.calculated_hours || task.fixed_hours || 0;
     
-    // Estimar duração em dias úteis (assumindo 8h por dia)
-    const durationInDays = Math.ceil(taskHours / 8);
+    // Obter a capacidade diária com base no cargo do responsável
+    const dailyCapacity = task.owner && roleHoursPerDay[task.owner] 
+      ? roleHoursPerDay[task.owner] 
+      : roleHoursPerDay.default;
+    
+    // Estimar duração em dias úteis
+    const durationInDays = Math.ceil(taskHours / dailyCapacity);
     
     // Calcular data de término
     let endDate = startDate;
@@ -103,7 +98,7 @@ export const filterImplementationTasks = (tasks: Task[]) => {
 };
 
 // Função para encontrar datas mínimas e máximas para o gráfico
-export const findMinMaxDates = (tasks: Task[], allocations: TeamAllocation[] = []) => {
+export const findMinMaxDates = (tasks: Task[]) => {
   let minDate = new Date();
   let maxDate = new Date();
 
@@ -138,22 +133,6 @@ export const findMinMaxDates = (tasks: Task[], allocations: TeamAllocation[] = [
     maxDate = addDays(maxDate, 1);
   }
 
-  // Se temos alocações, considerar suas datas também para o domínio do gráfico
-  if (allocations.length > 0) {
-    allocations.forEach(allocation => {
-      const allocStart = new Date(allocation.start_date);
-      const allocEnd = new Date(allocation.end_date);
-      
-      if (isValid(allocStart) && allocStart < minDate) {
-        minDate = allocStart;
-      }
-      
-      if (isValid(allocEnd) && allocEnd > maxDate) {
-        maxDate = allocEnd;
-      }
-    });
-  }
-
   return { minDate, maxDate };
 };
 
@@ -181,30 +160,6 @@ export const prepareTaskChartData = (tasks: Task[]) => {
       displayDuration: taskHours, // Usar as horas da tarefa
       durationDays: durationDays, // Duração em dias
       isEstimated: task.isEstimated // Flag para indicar se é uma estimativa
-    };
-  });
-};
-
-// Função para preparar dados para o gráfico de alocações
-export const prepareAllocationChartData = (allocations: TeamAllocation[]) => {
-  return allocations.map(allocation => {
-    const startDate = new Date(allocation.start_date);
-    const endDate = new Date(allocation.end_date);
-    
-    // Calcular a duração em dias
-    const durationDays = differenceInDays(endDate, startDate) + 1;
-    
-    return {
-      name: allocation.task_name,
-      member: allocation.member_name,
-      startTime: startDate.getTime(),
-      endTime: endDate.getTime(),
-      value: [startDate.getTime(), endDate.getTime()],
-      displayStartDate: format(startDate, "dd/MM/yyyy", { locale: ptBR }),
-      displayEndDate: format(endDate, "dd/MM/yyyy", { locale: ptBR }),
-      displayDuration: allocation.allocated_hours,
-      durationDays: durationDays,
-      status: allocation.status
     };
   });
 };
