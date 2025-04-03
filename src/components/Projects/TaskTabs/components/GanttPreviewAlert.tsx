@@ -4,10 +4,12 @@ import { Badge } from "@/components/ui/badge";
 
 interface GanttPreviewAlertProps {
   isNewProject: boolean;
+  show: boolean; // Nova propriedade para controlar a exibição
 }
 
-export const GanttPreviewAlert: React.FC<GanttPreviewAlertProps> = ({ isNewProject }) => {
-  if (!isNewProject) return null;
+export const GanttPreviewAlert: React.FC<GanttPreviewAlertProps> = ({ isNewProject, show }) => {
+  // Se show for false, não exibiremos o alerta independentemente de ser um novo projeto
+  if (!isNewProject || !show) return null;
   
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
