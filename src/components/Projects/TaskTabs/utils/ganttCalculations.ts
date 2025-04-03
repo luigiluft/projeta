@@ -26,8 +26,8 @@ export const calculateEstimatedDates = (tasks: Task[], roleHoursPerDay: Record<s
     if (b.depends_on && b.depends_on === a.id) return -1;
     
     // Depois por ordem
-    const orderA = a.order || 0;
-    const orderB = b.order || 0;
+    const orderA = a.order_number || 0;
+    const orderB = b.order_number || 0;
     return orderA - orderB;
   });
   
@@ -109,6 +109,8 @@ export const findMinMaxDates = (tasks: Task[]) => {
   let maxDate = new Date();
   
   if (tasks.length === 0) {
+    // Se não há tarefas, mostrar um período de 30 dias a partir de hoje
+    maxDate = addDays(new Date(), 30);
     return { minDate, maxDate };
   }
 
@@ -171,7 +173,7 @@ export const prepareTaskChartData = (tasks: Task[]) => {
   return tasks.map(task => {
     // Garantir que temos datas válidas
     const startDate = task.start_date ? new Date(task.start_date) : new Date();
-    const endDate = task.end_date ? new Date(task.end_date) : new Date(startDate);
+    const endDate = task.end_date ? new Date(task.end_date) : addBusinessDays(new Date(startDate), 1);
     
     // Calcular a duração real em dias
     const durationDays = differenceInDays(endDate, startDate) + 1;
@@ -185,15 +187,15 @@ export const prepareTaskChartData = (tasks: Task[]) => {
       owner: task.owner,
       startTime: startDate.getTime(),
       endTime: endDate.getTime(),
-      value: [startDate.getTime(), endDate.getTime()], // Array com início e fim
+      value: [startDate.getTime(), endDate.getTime()], // Array com início e fim para o gráfico
       displayStartDate: format(startDate, "dd/MM/yyyy", { locale: ptBR }),
       displayEndDate: format(endDate, "dd/MM/yyyy", { locale: ptBR }),
-      displayDuration: `${taskHours.toFixed(1)}h`, // Mostrar horas com 1 decimal
+      displayDuration: `${durationDays} dias (${taskHours.toFixed(1)}h)`, // Mostrar duração em dias e horas
       durationDays: durationDays, // Duração em dias
       isEstimated: task.isEstimated // Flag para indicar se é uma estimativa
     };
     
-    console.log(`Item do gráfico: ${chartItem.name}, início ${chartItem.displayStartDate}, fim ${chartItem.displayEndDate}`);
+    console.log(`Item do gráfico: ${chartItem.name}, início ${chartItem.displayStartDate}, fim ${chartItem.displayEndDate}, duração ${chartItem.durationDays} dias`);
     
     return chartItem;
   });

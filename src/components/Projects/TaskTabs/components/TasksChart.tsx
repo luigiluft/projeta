@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  Label,
 } from "recharts";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TaskTooltip } from "./GanttTooltip";

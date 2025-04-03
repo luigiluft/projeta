@@ -41,11 +41,15 @@ export function GanttTab({ tasks }: GanttTabProps) {
   // Filtrar tarefas que são apenas de implementação
   const implementationTasks = filterImplementationTasks(tasks);
 
+  // Verificar se temos tarefas com datas definidas
+  const tasksWithDates = implementationTasks.filter(task => task.start_date && task.end_date);
+  const needsEstimation = tasksWithDates.length < implementationTasks.length || implementationTasks.length === 0;
+  
   // Preparar tarefas para o gráfico, considerando se é um novo projeto ou não
   let tasksForChart = implementationTasks;
   
-  // Para novos projetos, calcular datas estimadas usando as horas fixas por cargo
-  if (isNewProject && implementationTasks.length > 0) {
+  // Para novos projetos ou tarefas sem datas, calcular datas estimadas usando as horas fixas por cargo
+  if ((isNewProject || needsEstimation) && implementationTasks.length > 0) {
     tasksForChart = calculateEstimatedDates(implementationTasks, ROLE_HOURS_PER_DAY);
   }
 
@@ -73,8 +77,11 @@ export function GanttTab({ tasks }: GanttTabProps) {
 
   return (
     <div className="space-y-4 mt-4">
-      {/* Agora exibimos o alerta com base na página */}
-      <GanttPreviewAlert isNewProject={isNewProject} show={isNewProject} />
+      {/* Exibir alerta quando o cronograma for estimado */}
+      <GanttPreviewAlert 
+        isNewProject={isNewProject} 
+        show={isNewProject || needsEstimation} 
+      />
       
       <h3 className="text-lg font-medium mb-4">Cronograma de Tarefas</h3>
       
