@@ -84,7 +84,7 @@ export const AllocationsChart: React.FC<AllocationsChartProps> = ({
               width={140}
               tick={{ fontSize: 12 }}
             />
-            <Tooltip content={<AllocationTooltip />} />
+            <Tooltip content={(props) => <AllocationTooltip active={props.active} payload={props.payload} />} />
             <Legend />
             
             {/* Barra representando a duração entre início e fim da alocação */}

@@ -67,7 +67,7 @@ export const TasksChart: React.FC<TasksChartProps> = ({
               width={140}
               tick={{ fontSize: 12 }}
             />
-            <Tooltip content={<TaskTooltip />} />
+            <Tooltip content={(props) => <TaskTooltip active={props.active} payload={props.payload} />} />
             <Legend />
             
             {/* Barra representando a duração entre início e fim da tarefa */}
