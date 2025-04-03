@@ -73,8 +73,8 @@ export function GanttTab({ tasks }: GanttTabProps) {
 
   return (
     <div className="space-y-4 mt-4">
-      {/* Passamos o valor 'false' para a propriedade show para nunca exibir o alerta */}
-      <GanttPreviewAlert isNewProject={isNewProject} show={false} />
+      {/* Agora exibimos o alerta com base na página */}
+      <GanttPreviewAlert isNewProject={isNewProject} show={isNewProject} />
       
       <h3 className="text-lg font-medium mb-4">Cronograma de Tarefas</h3>
       
