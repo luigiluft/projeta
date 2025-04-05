@@ -62,8 +62,8 @@ export default function CalendarPage() {
       // Buscar membros da equipe diretamente
       const { data: teamMembers, error: teamError } = await supabase
         .from('team_members')
-        .select('id, name, position')
-        .order('name');
+        .select('id, first_name, last_name, position')
+        .order('first_name');
         
       if (teamError) {
         console.error("Erro ao buscar membros da equipe:", teamError);
@@ -97,7 +97,7 @@ export default function CalendarPage() {
         
         return {
           member_id: member.id,
-          member_name: member.name,
+          member_name: `${member.first_name} ${member.last_name}`,
           position: member.position,
           available_dates: availableDates
         };
