@@ -3,6 +3,7 @@ import { Project, Task, View } from "@/types/project";
 import { useProjectsQuery } from "./projects/useProjectsQuery";
 import { useProjectMutations } from "./projects/useProjectMutations";
 import { useProjectViews } from "./projects/useProjectViews";
+import { calculateCosts } from "@/components/Projects/utils/taskCalculations";
 
 export const useProjects = () => {
   // Buscar projetos usando o hook de query
@@ -22,5 +23,6 @@ export const useProjects = () => {
     handleSubmit,
     handleDelete,
     handleSaveView,
+    calculateCosts, // Adicionar função de cálculo para uso externo
   };
 };

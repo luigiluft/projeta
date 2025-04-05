@@ -74,13 +74,13 @@ export function ProjectsTable({
     
     if (columnId === 'total_hours') {
       return (
-        <div className="text-right">{rowData.total_hours.toFixed(1)}h</div>
+        <div className="text-right font-medium">{rowData.total_hours?.toFixed(1) || '0.0'}h</div>
       );
     }
     
     if (columnId === 'total_cost') {
       return (
-        <div className="text-right">{formatCurrency(rowData.total_cost)}</div>
+        <div className="text-right font-medium">{formatCurrency(rowData.total_cost || 0)}</div>
       );
     }
     
@@ -134,8 +134,6 @@ export function ProjectsTable({
           />
         </div>
       )}
-      
-      {/* Removido a duplicidade do aviso - mantendo apenas o que aparece na tabela */}
     </div>
   );
 }

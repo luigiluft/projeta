@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Project, Task } from "@/types/project";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateCosts } from "@/components/Projects/utils/taskCalculations";
 
 // Hook para buscar projetos do Supabase
 export const useProjectsQuery = () => {
@@ -73,7 +74,7 @@ export const useProjectsQuery = () => {
                     epic: task.epic || '',
                     story: task.story || '',
                     owner: task.owner || ptask.owner_id || '', // Podemos usar owner_id da project_tasks também
-                    calculated_hours: ptask.calculated_hours, // Usar o valor calculado armazenado na tabela project_tasks
+                    calculated_hours: ptask.calculated_hours || task.fixed_hours || 0, // Usar o valor calculado armazenado ou hours_fixed
                     status: ptask.status as "pending" | "in_progress" | "completed",
                     project_task_id: ptask.id // Referência ao id da tabela de relacionamento
                   } as Task;
@@ -103,6 +104,7 @@ export const useProjectsQuery = () => {
                         epic: task.epic || '',
                         story: task.story || '',
                         owner: task.owner || '',
+                        calculated_hours: task.fixed_hours || 0, // Usar hours_fixed como fallback
                         status: (task.status as "pending" | "in_progress" | "completed") || "pending",
                       })) as Task[];
                       
@@ -125,9 +127,40 @@ export const useProjectsQuery = () => {
                 }
               }
 
+              // Calcular horas e custos totais com base nas tarefas
+              const costs = calculateCosts(allTasks);
+              
+              // Verificar se precisamos atualizar o projeto se os valores calculados forem diferentes
+              const shouldUpdate = 
+                (Math.abs(project.total_hours - costs.totalHours) > 0.01) || 
+                (Math.abs(project.total_cost - costs.totalCost) > 0.01);
+              
+              // Se os valores calculados forem diferentes, atualizar o projeto no banco
+              if (shouldUpdate && allTasks.length > 0) {
+                console.log(`Atualizando projeto ${project.id} com novos valores calculados:`, {
+                  horas: costs.totalHours.toFixed(2),
+                  custo: costs.totalCost.toFixed(2)
+                });
+                
+                try {
+                  await supabase
+                    .from('projects')
+                    .update({
+                      total_hours: costs.totalHours,
+                      total_cost: costs.totalCost,
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', project.id);
+                } catch (updateError) {
+                  console.error(`Erro ao atualizar totais do projeto ${project.id}:`, updateError);
+                }
+              }
+
               return {
                 ...project,
                 tasks: allTasks,
+                total_hours: costs.totalHours, // Usar valores recalculados
+                total_cost: costs.totalCost,   // Usar valores recalculados
                 favorite: project.favorite || false,
                 priority: project.priority || 0,
                 tags: project.tags || [],
