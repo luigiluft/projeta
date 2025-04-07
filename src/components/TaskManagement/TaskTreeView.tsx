@@ -62,6 +62,30 @@ export function TaskTreeView({
     return phaseMap;
   };
 
+  // Inicializar o estado de expandido para que fase e epic estejam abertos por padrão
+  const initializeExpanded = () => {
+    if (Object.keys(expanded).length > 0) return;
+
+    const phaseMap = buildTreeStructure();
+    const newExpanded: Record<string, boolean> = {};
+
+    // Expandir todas as fases e epics por padrão
+    Object.keys(phaseMap).forEach(phase => {
+      newExpanded[`phase-${phase}`] = true;
+      
+      Object.keys(phaseMap[phase].epicMap).forEach(epic => {
+        newExpanded[`epic-${phase}-${epic}`] = true;
+      });
+    });
+
+    setExpanded(newExpanded);
+  };
+
+  // Inicializar o estado de expandido quando o componente é montado ou as tarefas mudam
+  useState(() => {
+    initializeExpanded();
+  });
+
   const toggleExpand = (id: string) => {
     setExpanded(prev => ({
       ...prev,
@@ -95,6 +119,8 @@ export function TaskTreeView({
   };
 
   const treeData = buildTreeStructure();
+  // Inicializar os níveis expandidos
+  initializeExpanded();
 
   return (
     <div className="overflow-y-auto border rounded-md p-2 bg-white">
@@ -180,38 +206,89 @@ export function TaskTreeView({
                                     {storyTasks.map(task => (
                                       <div
                                         key={task.id}
-                                        className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer border border-gray-100"
+                                        className="flex flex-col p-2 hover:bg-gray-50 rounded-md cursor-pointer border border-gray-100"
                                         onClick={() => handleTaskClick(task.id)}
                                       >
-                                        {onTaskSelect && (
-                                          <input 
-                                            type="checkbox"
-                                            className="h-4 w-4 mr-3 text-blue-600 border-gray-300 rounded"
-                                            checked={selectedTasks.includes(task.id)}
-                                            onChange={(e) => handleCheckboxChange(task.id, e)}
-                                            onClick={(e) => e.stopPropagation()}
-                                          />
-                                        )}
-                                        <div className="flex-1">
-                                          <div className="font-medium">{task.task_name}</div>
-                                          <div className="text-sm text-gray-500">
-                                            {task.owner ? `Responsável: ${task.owner}` : "Sem responsável"}
+                                        <div className="flex items-center mb-2">
+                                          {onTaskSelect && (
+                                            <input 
+                                              type="checkbox"
+                                              className="h-4 w-4 mr-3 text-blue-600 border-gray-300 rounded"
+                                              checked={selectedTasks.includes(task.id)}
+                                              onChange={(e) => handleCheckboxChange(task.id, e)}
+                                              onClick={(e) => e.stopPropagation()}
+                                            />
+                                          )}
+                                          <div className="flex-1">
+                                            <div className="font-medium">{task.task_name}</div>
                                           </div>
+                                          <Badge 
+                                            variant="outline" 
+                                            className={`ml-2 ${getStatusBadgeColor(task.status)}`}
+                                          >
+                                            {task.status}
+                                          </Badge>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="ml-2"
+                                            onClick={(e) => handleEditTask(task.id, e)}
+                                          >
+                                            <Pencil className="h-4 w-4 text-gray-500" />
+                                          </Button>
                                         </div>
-                                        <Badge 
-                                          variant="outline" 
-                                          className={`ml-2 ${getStatusBadgeColor(task.status)}`}
-                                        >
-                                          {task.status}
-                                        </Badge>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="ml-2"
-                                          onClick={(e) => handleEditTask(task.id, e)}
-                                        >
-                                          <Pencil className="h-4 w-4 text-gray-500" />
-                                        </Button>
+                                        
+                                        {/* Detalhes adicionais da tarefa */}
+                                        <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                                          {task.owner && (
+                                            <div className="flex items-center">
+                                              <span className="font-medium mr-2">Responsável:</span>
+                                              <span>{task.owner}</span>
+                                            </div>
+                                          )}
+                                          
+                                          {task.hours_type && (
+                                            <div className="flex items-center">
+                                              <span className="font-medium mr-2">Tipo de Horas:</span>
+                                              <span>{task.hours_type}</span>
+                                            </div>
+                                          )}
+                                          
+                                          {(task.calculated_hours !== undefined || task.fixed_hours !== undefined) && (
+                                            <div className="flex items-center">
+                                              <span className="font-medium mr-2">Horas:</span>
+                                              <span>{task.calculated_hours !== undefined ? task.calculated_hours : task.fixed_hours}</span>
+                                            </div>
+                                          )}
+                                          
+                                          {task.order && (
+                                            <div className="flex items-center">
+                                              <span className="font-medium mr-2">Ordem:</span>
+                                              <span>{task.order}</span>
+                                            </div>
+                                          )}
+                                          
+                                          {task.start_date && (
+                                            <div className="flex items-center">
+                                              <span className="font-medium mr-2">Início:</span>
+                                              <span>{new Date(task.start_date).toLocaleDateString('pt-BR')}</span>
+                                            </div>
+                                          )}
+                                          
+                                          {task.end_date && (
+                                            <div className="flex items-center">
+                                              <span className="font-medium mr-2">Término:</span>
+                                              <span>{new Date(task.end_date).toLocaleDateString('pt-BR')}</span>
+                                            </div>
+                                          )}
+                                          
+                                          {task.depends_on && (
+                                            <div className="flex items-center">
+                                              <span className="font-medium mr-2">Depende de:</span>
+                                              <span>{task.depends_on}</span>
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
