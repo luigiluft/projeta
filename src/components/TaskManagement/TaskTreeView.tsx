@@ -1,9 +1,10 @@
 
 import { useState } from 'react';
 import { Task } from "@/types/project";
-import { ChevronDown, ChevronRight, ListTree } from "lucide-react";
+import { ChevronDown, ChevronRight, ListTree, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
 
 interface TaskTreeViewProps {
   tasks: Task[];
@@ -69,6 +70,11 @@ export function TaskTreeView({
   };
 
   const handleTaskClick = (taskId: string) => {
+    navigate(`/task-management/${taskId}`);
+  };
+
+  const handleEditTask = (taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Impede que o clique no botão editar propague para o clique na tarefa
     navigate(`/task-management/${taskId}`);
   };
 
@@ -198,6 +204,14 @@ export function TaskTreeView({
                                         >
                                           {task.status}
                                         </Badge>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="ml-2"
+                                          onClick={(e) => handleEditTask(task.id, e)}
+                                        >
+                                          <Pencil className="h-4 w-4 text-gray-500" />
+                                        </Button>
                                       </div>
                                     ))}
                                   </div>
