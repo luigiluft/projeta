@@ -15,12 +15,19 @@ export function CostsHeader({ tasks, title }: CostsHeaderProps) {
   
   const costs = calculateCosts(validTasks);
   
-  // Log para depuração
+  // Log detalhado para depuração
   console.log(`CostsHeader para ${title}:`, {
     tarefasValidas: validTasks.length,
     totalHoras: costs.totalHours,
     totalCusto: costs.totalCost,
-    mediaHH: costs.averageHourlyRate
+    mediaHH: costs.averageHourlyRate,
+    primeirasTarefas: validTasks.slice(0, 3).map(t => ({ 
+      id: t.id, 
+      nome: t.task_name, 
+      horas_calculadas: t.calculated_hours,
+      horas_fixas: t.fixed_hours,
+      owner: t.owner
+    }))
   });
 
   return (

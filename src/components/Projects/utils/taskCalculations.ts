@@ -16,10 +16,26 @@ export const teamRates = {
 
 // Função para calcular custos a partir de uma lista de tarefas
 export const calculateCosts = (taskList: Task[]) => {
+  // Log para depuração
+  console.log(`Calculando custos para ${taskList.length} tarefas.`);
+  
   const costs = taskList.reduce((acc, task) => {
-    const hourlyRate = teamRates[task.owner as keyof typeof teamRates] || 0;
-    const hours = task.calculated_hours || 0;
+    // Determinar horas (calculadas ou fixas)
+    const hours = task.calculated_hours !== undefined ? task.calculated_hours : 
+                 (task.fixed_hours !== undefined ? task.fixed_hours : 0);
+                 
+    // Determinar taxa horária
+    const hourlyRate = task.owner && teamRates[task.owner as keyof typeof teamRates] ? 
+                      teamRates[task.owner as keyof typeof teamRates] : 0;
+    
+    // Calcular custo desta tarefa
     const taskCost = hourlyRate * hours;
+    
+    // Log de detalhes por tarefa
+    if (hours > 0 || hourlyRate > 0) {
+      console.log(`Tarefa ${task.id} (${task.task_name}): ${hours}h x R$${hourlyRate}/h = R$${taskCost}`);
+    }
+    
     return {
       hours: acc.hours + hours,
       cost: acc.cost + taskCost
@@ -130,6 +146,7 @@ export const calculateTaskHours = (task: Task, attributeValues: Record<string, n
       const calculatedHours = new Function(`return ${formula}`)();
       
       if (!isNaN(calculatedHours)) {
+        console.log(`Horas calculadas para tarefa ${task.id} (${task.task_name}):`, calculatedHours);
         return Number(calculatedHours);
       }
     } catch (error) {
@@ -147,18 +164,21 @@ export const calculateTaskHours = (task: Task, attributeValues: Record<string, n
 // Função para separar tarefas entre implementação e sustentação
 export const separateTasks = (tasks: Task[]) => {
   const implementation = tasks.filter(task => 
-    !task.epic.toLowerCase().includes('sustentação') && 
-    !task.epic.toLowerCase().includes('sustentacao'));
+    !task.epic?.toLowerCase().includes('sustentação') && 
+    !task.epic?.toLowerCase().includes('sustentacao'));
   
   const sustainment = tasks.filter(task => 
-    task.epic.toLowerCase().includes('sustentação') || 
-    task.epic.toLowerCase().includes('sustentacao'));
+    task.epic?.toLowerCase().includes('sustentação') || 
+    task.epic?.toLowerCase().includes('sustentacao'));
   
   return { implementation, sustainment };
 };
 
 // Função para processar tarefas e calcular horas
 export const processTasks = (tasks: Task[], attributeValues: Record<string, number>) => {
+  // Log geral para debug
+  console.log(`Processando ${tasks.length} tarefas com ${Object.keys(attributeValues).length} atributos`);
+
   return tasks.map(task => {
     const newTask = { ...task };
     
@@ -166,13 +186,15 @@ export const processTasks = (tasks: Task[], attributeValues: Record<string, numb
       try {
         const calculatedHours = calculateTaskHours(task, attributeValues);
         newTask.calculated_hours = calculatedHours;
-        console.log(`Tarefa "${task.task_name}" (${task.id}): Fórmula "${task.hours_formula}" = ${calculatedHours}`);
+        
+        console.log(`Tarefa "${task.task_name}" (${task.id}): Fórmula "${task.hours_formula}" = ${calculatedHours}h`);
       } catch (error) {
         console.error(`Erro ao calcular horas para tarefa "${task.task_name}":`, error);
         newTask.calculated_hours = 0;
       }
     } else if (task.fixed_hours) {
       newTask.calculated_hours = task.fixed_hours;
+      console.log(`Tarefa "${task.task_name}" (${task.id}): Horas fixas = ${task.fixed_hours}h`);
     }
     
     return newTask;
