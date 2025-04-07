@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Task } from "@/types/project";
 import { ChevronDown, ChevronRight, ListTree, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -62,29 +62,32 @@ export function TaskTreeView({
     return phaseMap;
   };
 
-  // Inicializar o estado de expandido para que fase e epic estejam abertos por padrão
+  // Inicializar o estado de expandido para que fase, epic e story estejam abertos por padrão
   const initializeExpanded = () => {
-    if (Object.keys(expanded).length > 0) return;
-
     const phaseMap = buildTreeStructure();
     const newExpanded: Record<string, boolean> = {};
 
-    // Expandir todas as fases e epics por padrão
+    // Expandir todas as fases, epics e stories por padrão
     Object.keys(phaseMap).forEach(phase => {
       newExpanded[`phase-${phase}`] = true;
       
       Object.keys(phaseMap[phase].epicMap).forEach(epic => {
         newExpanded[`epic-${phase}-${epic}`] = true;
+        
+        // Agora também expandir todas as stories por padrão
+        Object.keys(phaseMap[phase].epicMap[epic].storyMap).forEach(story => {
+          newExpanded[`story-${phase}-${epic}-${story}`] = true;
+        });
       });
     });
 
-    setExpanded(newExpanded);
+    return newExpanded;
   };
 
   // Inicializar o estado de expandido quando o componente é montado ou as tarefas mudam
-  useState(() => {
-    initializeExpanded();
-  });
+  useEffect(() => {
+    setExpanded(initializeExpanded());
+  }, [tasks]);
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => ({
@@ -119,8 +122,6 @@ export function TaskTreeView({
   };
 
   const treeData = buildTreeStructure();
-  // Inicializar os níveis expandidos
-  initializeExpanded();
 
   return (
     <div className="overflow-y-auto border rounded-md p-2 bg-white">

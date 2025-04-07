@@ -23,21 +23,27 @@ export function SustainmentTasksTab({
   attributeValues 
 }: SustainmentTasksTabProps) {
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
-  const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree'); // Alterado para iniciar com árvore
 
   useEffect(() => {
     if (!tasks.length) return;
     
     const sustainmentTasks = tasks.filter(task => 
-      task.epic.toLowerCase().startsWith('sustentação') ||
-      task.epic.toLowerCase().startsWith('sustentacao') ||
-      task.epic.toLowerCase().includes('atendimento ao consumidor') ||
-      task.epic.toLowerCase().includes('sac 4.0') ||
-      task.epic.toLowerCase().includes('faturamento e gestao') ||
-      task.epic.toLowerCase().includes('faturamento e gestão')
+      task.epic?.toLowerCase().startsWith('sustentação') ||
+      task.epic?.toLowerCase().startsWith('sustentacao') ||
+      task.epic?.toLowerCase().includes('atendimento ao consumidor') ||
+      task.epic?.toLowerCase().includes('sac 4.0') ||
+      task.epic?.toLowerCase().includes('faturamento e gestao') ||
+      task.epic?.toLowerCase().includes('faturamento e gestão')
     );
     
+    // Garantir que temos os valores de atributos para o cálculo
+    console.log("Atributos para cálculos em Sustentação:", attributeValues);
+    
+    // Processar as tarefas para calcular as horas
     const processedTasks = processTasks(sustainmentTasks, attributeValues);
+    console.log("Tarefas de sustentação processadas:", processedTasks.length);
+    console.log("Exemplo de tarefa processada:", processedTasks[0]);
     
     setCalculatedTasks(processedTasks);
   }, [tasks, attributeValues]);

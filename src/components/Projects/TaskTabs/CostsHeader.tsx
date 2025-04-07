@@ -8,7 +8,20 @@ interface CostsHeaderProps {
 }
 
 export function CostsHeader({ tasks, title }: CostsHeaderProps) {
-  const costs = calculateCosts(tasks);
+  // Garantir que temos tarefas válidas para calcular
+  const validTasks = tasks.filter(task => 
+    task && (task.calculated_hours !== undefined || task.fixed_hours !== undefined)
+  );
+  
+  const costs = calculateCosts(validTasks);
+  
+  // Log para depuração
+  console.log(`CostsHeader para ${title}:`, {
+    tarefasValidas: validTasks.length,
+    totalHoras: costs.totalHours,
+    totalCusto: costs.totalCost,
+    mediaHH: costs.averageHourlyRate
+  });
 
   return (
     <div className="flex justify-between items-center">
