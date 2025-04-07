@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Column, Task, View } from "@/types/project";
 import { toast } from "sonner";
@@ -8,6 +7,7 @@ import { exportToCSV } from "@/utils/csvExport";
 
 export function useTaskManagement() {
   const [showForm, setShowForm] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
   const queryClient = useQueryClient();
   
   const [columns, setColumns] = useState<Column[]>([
@@ -67,7 +67,6 @@ export function useTaskManagement() {
 
   const createTaskMutation = useMutation({
     mutationFn: async (newTask: Omit<Task, 'id' | 'created_at'>) => {
-      // Já que hours_type é opcional na interface Task, vamos usar um valor padrão quando não estiver presente
       const taskWithHoursType = {
         ...newTask,
         hours_type: newTask.hours_type || 'formula'
@@ -96,7 +95,6 @@ export function useTaskManagement() {
     mutationFn: async (taskIds: string[]) => {
       console.log("Tentando excluir tarefas com IDs:", taskIds);
       
-      // Primeiro, remover as referências na tabela project_tasks
       const { error: projectTasksError } = await supabase
         .from('project_tasks')
         .delete()
@@ -107,7 +105,6 @@ export function useTaskManagement() {
         throw new Error(`Erro ao remover referências: ${projectTasksError.message}`);
       }
 
-      // Depois, excluir as tarefas da tabela tasks
       const { data, error } = await supabase
         .from('tasks')
         .delete()
@@ -124,7 +121,7 @@ export function useTaskManagement() {
     onSuccess: (data) => {
       console.log("Tarefas excluídas com sucesso:", data);
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] }); // Também atualizar projetos já que project_tasks foi alterado
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success("Tarefas excluídas com sucesso!");
     },
     onError: (error) => {
@@ -227,6 +224,10 @@ export function useTaskManagement() {
     }
   };
 
+  const handleViewModeChange = (mode: 'table' | 'tree') => {
+    setViewMode(mode);
+  };
+
   return {
     showForm,
     tasks,
@@ -244,5 +245,7 @@ export function useTaskManagement() {
     setShowForm,
     exportTasks,
     refreshTasks,
+    viewMode,
+    handleViewModeChange,
   };
 }

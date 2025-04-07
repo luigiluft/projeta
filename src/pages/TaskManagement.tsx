@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useTaskManagement } from '@/hooks/useTaskManagement';
 import { TaskList } from '@/components/TaskManagement/TaskList';
+import { TaskTreeView } from '@/components/TaskManagement/TaskTreeView';
 import { TaskHeader } from '@/components/TaskManagement/TaskHeader';
 import { TaskImporter } from '@/components/TaskManagement/TaskImporter';
 import { type Task, type Column } from '@/types/project';
@@ -31,7 +32,9 @@ export default function TaskManagement() {
     deleteTasks, 
     handleColumnVisibilityChange,
     handleColumnsChange,
-    refreshTasks 
+    refreshTasks,
+    viewMode,
+    handleViewModeChange
   } = useTaskManagement();
   
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
@@ -73,13 +76,9 @@ export default function TaskManagement() {
             <TaskHeader 
               columns={columns}
               onColumnVisibilityChange={handleColumnVisibilityChange}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
             />
-            <div className="flex gap-2">
-              <TaskImporter
-                onSuccess={handleImportSuccess}
-                buttonLabel="Importar Tarefas"
-              />
-            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-6 bg-white">
@@ -99,13 +98,21 @@ export default function TaskManagement() {
             </div>
           </div>
           
-          <TaskList 
-            tasks={tasks} 
-            columns={columns}
-            onColumnsChange={handleColumnsChange}
-            onTaskSelect={handleTaskSelection}
-            selectedTasks={selectedTasks}
-          />
+          {viewMode === 'table' ? (
+            <TaskList 
+              tasks={tasks} 
+              columns={columns}
+              onColumnsChange={handleColumnsChange}
+              onTaskSelect={handleTaskSelection}
+              selectedTasks={selectedTasks}
+            />
+          ) : (
+            <TaskTreeView 
+              tasks={tasks} 
+              onTaskSelect={handleTaskSelection}
+              selectedTasks={selectedTasks}
+            />
+          )}
         </CardContent>
       </Card>
 
