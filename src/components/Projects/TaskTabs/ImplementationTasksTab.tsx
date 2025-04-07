@@ -7,6 +7,9 @@ import { EmptyTasks } from "./EmptyTasks";
 import { processTasks, separateTasks } from "../utils/taskCalculations";
 import { addBusinessDays, format, setHours, setMinutes, addHours, isAfter, max } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { TaskTreeView } from "@/components/TaskManagement/TaskTreeView";
+import { ListTree, Table } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ImplementationTasksTabProps {
   tasks: Task[];
@@ -23,6 +26,7 @@ export function ImplementationTasksTab({
 }: ImplementationTasksTabProps) {
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
   const [implementationColumns, setImplementationColumns] = useState<Column[]>([]);
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
 
   // Adicionar colunas de data e ordem à lista de colunas
   useEffect(() => {
@@ -207,6 +211,11 @@ export function ImplementationTasksTab({
     console.log("Tarefas com datas calculadas:", tasksWithDates);
     setCalculatedTasks(tasksWithDates);
   }, [tasks, attributeValues]);
+  
+  // Alternar entre visualização em tabela e em árvore
+  const toggleViewMode = (mode: 'table' | 'tree') => {
+    setViewMode(mode);
+  };
 
   return (
     <div className="space-y-4 mt-4">
@@ -214,12 +223,41 @@ export function ImplementationTasksTab({
       
       {calculatedTasks.length > 0 ? (
         <div className="border rounded-md p-4 bg-white shadow-sm">
-          <TaskList 
-            tasks={calculatedTasks} 
-            columns={implementationColumns}
-            onColumnsChange={onColumnsChange}
-            showHoursColumn={true}
-          />
+          <div className="flex justify-end mb-4">
+            <div className="border rounded-md flex">
+              <Button 
+                variant={viewMode === 'table' ? "default" : "ghost"} 
+                size="sm" 
+                className="flex items-center gap-2 rounded-r-none"
+                onClick={() => toggleViewMode('table')}
+              >
+                <Table className="h-4 w-4" />
+                Tabela
+              </Button>
+              <Button 
+                variant={viewMode === 'tree' ? "default" : "ghost"} 
+                size="sm" 
+                className="flex items-center gap-2 rounded-l-none"
+                onClick={() => toggleViewMode('tree')}
+              >
+                <ListTree className="h-4 w-4" />
+                Árvore
+              </Button>
+            </div>
+          </div>
+
+          {viewMode === 'table' ? (
+            <TaskList 
+              tasks={calculatedTasks} 
+              columns={implementationColumns}
+              onColumnsChange={onColumnsChange}
+              showHoursColumn={true}
+            />
+          ) : (
+            <TaskTreeView 
+              tasks={calculatedTasks} 
+            />
+          )}
         </div>
       ) : (
         <EmptyTasks message="Nenhuma tarefa de implementação selecionada" />

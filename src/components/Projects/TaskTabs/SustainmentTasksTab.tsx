@@ -1,9 +1,13 @@
+
 import { useEffect, useState } from "react";
 import { Column, Task } from "@/types/project";
 import { TaskList } from "@/components/TaskManagement/TaskList";
 import { CostsHeader } from "./CostsHeader";
 import { EmptyTasks } from "./EmptyTasks";
 import { processTasks } from "../utils/taskCalculations";
+import { TaskTreeView } from "@/components/TaskManagement/TaskTreeView";
+import { ListTree, Table } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SustainmentTasksTabProps {
   tasks: Task[];
@@ -19,6 +23,7 @@ export function SustainmentTasksTab({
   attributeValues 
 }: SustainmentTasksTabProps) {
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
 
   useEffect(() => {
     if (!tasks.length) return;
@@ -37,18 +42,52 @@ export function SustainmentTasksTab({
     setCalculatedTasks(processedTasks);
   }, [tasks, attributeValues]);
 
+  // Alternar entre visualização em tabela e em árvore
+  const toggleViewMode = (mode: 'table' | 'tree') => {
+    setViewMode(mode);
+  };
+
   return (
     <div className="space-y-4 mt-4">
       <CostsHeader tasks={calculatedTasks} title="Tarefas de Sustentação" />
       
       {calculatedTasks.length > 0 ? (
         <div className="border rounded-md p-4 bg-white shadow-sm">
-          <TaskList 
-            tasks={calculatedTasks} 
-            columns={columns}
-            onColumnsChange={onColumnsChange}
-            showHoursColumn={true}
-          />
+          <div className="flex justify-end mb-4">
+            <div className="border rounded-md flex">
+              <Button 
+                variant={viewMode === 'table' ? "default" : "ghost"} 
+                size="sm" 
+                className="flex items-center gap-2 rounded-r-none"
+                onClick={() => toggleViewMode('table')}
+              >
+                <Table className="h-4 w-4" />
+                Tabela
+              </Button>
+              <Button 
+                variant={viewMode === 'tree' ? "default" : "ghost"} 
+                size="sm" 
+                className="flex items-center gap-2 rounded-l-none"
+                onClick={() => toggleViewMode('tree')}
+              >
+                <ListTree className="h-4 w-4" />
+                Árvore
+              </Button>
+            </div>
+          </div>
+
+          {viewMode === 'table' ? (
+            <TaskList 
+              tasks={calculatedTasks} 
+              columns={columns}
+              onColumnsChange={onColumnsChange}
+              showHoursColumn={true}
+            />
+          ) : (
+            <TaskTreeView 
+              tasks={calculatedTasks} 
+            />
+          )}
         </div>
       ) : (
         <EmptyTasks message="Nenhuma tarefa de sustentação selecionada" />

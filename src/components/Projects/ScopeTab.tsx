@@ -6,6 +6,9 @@ import { calculateCosts, formatCurrency, processTasks, separateTasks } from "./u
 import { EmptyTasks } from "./TaskTabs/EmptyTasks";
 import { ImplementationTasksTab } from "./TaskTabs/ImplementationTasksTab";
 import { SustainmentTasksTab } from "./TaskTabs/SustainmentTasksTab";
+import { TaskTreeView } from "@/components/TaskManagement/TaskTreeView";
+import { ListTree, Table } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ScopeTabProps {
   tasks: Task[];
@@ -18,6 +21,7 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>(tasks);
   const [implementationTasks, setImplementationTasks] = useState<Task[]>([]);
   const [sustainmentTasks, setSustainmentTasks] = useState<Task[]>([]);
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
 
   // Recalcular horas das tarefas e separá-las em implementação e sustentação
   useEffect(() => {
@@ -43,6 +47,11 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
 
   const totalCosts = calculateCosts(calculatedTasks);
 
+  // Alternar entre visualização em tabela e em árvore
+  const toggleViewMode = (mode: 'table' | 'tree') => {
+    setViewMode(mode);
+  };
+
   return (
     <div className="space-y-8 mt-4">
       <div className="flex justify-between items-center">
@@ -66,23 +75,52 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
           <div className="border rounded-md p-4 bg-white shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <h4 className="font-medium text-base">Tarefas de Implementação</h4>
-              <div className="space-y-1 text-right text-sm">
-                <div className="text-gray-600">
-                  Horas: {calculateCosts(implementationTasks).totalHours.toFixed(2)}h
+              <div className="flex items-center gap-4">
+                <div className="space-y-1 text-right text-sm">
+                  <div className="text-gray-600">
+                    Horas: {calculateCosts(implementationTasks).totalHours.toFixed(2)}h
+                  </div>
+                  <div className="font-medium text-primary">
+                    Custo: {formatCurrency(calculateCosts(implementationTasks).totalCost)}
+                  </div>
                 </div>
-                <div className="font-medium text-primary">
-                  Custo: {formatCurrency(calculateCosts(implementationTasks).totalCost)}
+
+                <div className="border rounded-md flex">
+                  <Button 
+                    variant={viewMode === 'table' ? "default" : "ghost"} 
+                    size="sm" 
+                    className="flex items-center gap-2 rounded-r-none"
+                    onClick={() => toggleViewMode('table')}
+                  >
+                    <Table className="h-4 w-4" />
+                    Tabela
+                  </Button>
+                  <Button 
+                    variant={viewMode === 'tree' ? "default" : "ghost"} 
+                    size="sm" 
+                    className="flex items-center gap-2 rounded-l-none"
+                    onClick={() => toggleViewMode('tree')}
+                  >
+                    <ListTree className="h-4 w-4" />
+                    Árvore
+                  </Button>
                 </div>
               </div>
             </div>
             
             {implementationTasks.length > 0 ? (
-              <TaskList 
-                tasks={implementationTasks} 
-                columns={columns}
-                onColumnsChange={onColumnsChange}
-                showHoursColumn={true}
-              />
+              viewMode === 'table' ? (
+                <TaskList 
+                  tasks={implementationTasks} 
+                  columns={columns}
+                  onColumnsChange={onColumnsChange}
+                  showHoursColumn={true}
+                />
+              ) : (
+                <TaskTreeView 
+                  tasks={implementationTasks} 
+                />
+              )
             ) : (
               <div className="p-4 text-center bg-gray-50 rounded-md">
                 <p className="text-muted-foreground">Nenhuma tarefa de implementação selecionada</p>
