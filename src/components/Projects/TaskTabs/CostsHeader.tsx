@@ -26,7 +26,8 @@ export function CostsHeader({ tasks, title }: CostsHeaderProps) {
       nome: t.task_name, 
       horas_calculadas: t.calculated_hours,
       horas_fixas: t.fixed_hours,
-      owner: t.owner
+      owner: t.owner,
+      total_horas: t.calculated_hours !== undefined ? t.calculated_hours : (t.fixed_hours || 0)
     }))
   });
 

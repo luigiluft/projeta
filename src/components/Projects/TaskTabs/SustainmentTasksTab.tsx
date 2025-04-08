@@ -4,7 +4,7 @@ import { Column, Task } from "@/types/project";
 import { TaskList } from "@/components/TaskManagement/TaskList";
 import { CostsHeader } from "./CostsHeader";
 import { EmptyTasks } from "./EmptyTasks";
-import { processTasks } from "../utils/taskCalculations";
+import { processTasks, separateTasks } from "../utils/taskCalculations";
 import { TaskTreeView } from "@/components/TaskManagement/TaskTreeView";
 import { ListTree, Table } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,29 +28,23 @@ export function SustainmentTasksTab({
   useEffect(() => {
     if (!tasks.length) return;
     
-    const sustainmentTasks = tasks.filter(task => 
-      task.epic?.toLowerCase().startsWith('sustentação') ||
-      task.epic?.toLowerCase().startsWith('sustentacao') ||
-      task.epic?.toLowerCase().includes('atendimento ao consumidor') ||
-      task.epic?.toLowerCase().includes('sac 4.0') ||
-      task.epic?.toLowerCase().includes('faturamento e gestao') ||
-      task.epic?.toLowerCase().includes('faturamento e gestão')
-    );
+    console.log("SustainmentTasksTab - Processando tarefas com atributos:", attributeValues);
     
-    // Log detalhado para debug
-    console.log("Atributos para cálculos em Sustentação:", attributeValues);
-    console.log("Tarefas de sustentação antes do processamento:", sustainmentTasks.length);
+    // Separar apenas as tarefas de sustentação
+    const { sustainment } = separateTasks(tasks);
+    
+    console.log("SustainmentTasksTab - Tarefas de sustentação encontradas:", sustainment.length);
     
     // Processar as tarefas para calcular as horas
-    const processedTasks = processTasks(sustainmentTasks, attributeValues);
+    const processedTasks = processTasks(sustainment, attributeValues);
     
-    // Log detalhado das tarefas processadas
-    console.log("Tarefas de sustentação processadas:", processedTasks.length);
-    if (processedTasks.length > 0) {
-      console.log("Exemplo de tarefa processada:", processedTasks[0]);
-      console.log("Horas calculadas nas tarefas:", processedTasks.map(t => 
-        ({ id: t.id, nome: t.task_name, horas: t.calculated_hours, owner: t.owner })));
-    }
+    console.log("SustainmentTasksTab - Tarefas processadas:", processedTasks.map(t => ({
+      id: t.id,
+      name: t.task_name,
+      formula: t.hours_formula,
+      calculated: t.calculated_hours,
+      fixed: t.fixed_hours
+    })));
     
     setCalculatedTasks(processedTasks);
   }, [tasks, attributeValues]);
