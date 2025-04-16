@@ -51,6 +51,14 @@ export function SustainmentTasksTab({
 
   // Alternar entre visualização em tabela e em árvore
   const toggleViewMode = (mode: 'table' | 'tree') => {
+    console.log("Mudando modo de visualização para:", mode);
+    console.log("Tarefas processadas antes da mudança:", calculatedTasks.map(t => ({
+      id: t.id,
+      name: t.task_name,
+      calculated: t.calculated_hours,
+      fixed: t.fixed_hours,
+      hours_type: t.hours_type
+    })));
     setViewMode(mode);
   };
 

@@ -18,6 +18,18 @@ export function TaskTreeView({
 }: TaskTreeViewProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  // Debug log para verificar as horas das tarefas
+  useEffect(() => {
+    console.log("TaskTreeView recebeu", tasks.length, "tarefas");
+    console.log("Exemplo de tarefas recebidas:", tasks.slice(0, 5).map(t => ({
+      id: t.id,
+      name: t.task_name,
+      calculated: t.calculated_hours,
+      fixed: t.fixed_hours,
+      hours_type: t.hours_type
+    })));
+  }, [tasks]);
+
   // Construir a estrutura de árvore
   const treeData = buildTreeStructure(tasks);
 

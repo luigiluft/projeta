@@ -45,6 +45,10 @@ export function TaskItem({
 
   // Determina as horas totais da tarefa (calculadas ou fixas)
   const getTaskHours = () => {
+    // Log para debugging
+    console.log(`TaskItem - ${task.task_name} - calculated_hours:`, task.calculated_hours, 
+                "fixed_hours:", task.fixed_hours);
+                
     if (task.calculated_hours !== undefined && task.calculated_hours !== null) {
       return task.calculated_hours;
     } else if (task.fixed_hours !== undefined && task.fixed_hours !== null) {

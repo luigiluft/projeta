@@ -196,7 +196,9 @@ export const processTasks = (tasks: Task[], attributeValues: Record<string, numb
   // Log geral para debug
   console.log(`Processando ${tasks.length} tarefas com ${Object.keys(attributeValues).length} atributos`);
 
-  return tasks.map(task => {
+  // Criar um novo array com tarefas processadas para não mutar o original
+  const processedTasks = tasks.map(task => {
+    // Criar uma cópia da tarefa para não mutar o objeto original
     const newTask = { ...task };
     
     if (task.hours_type === 'formula' && task.hours_formula) {
@@ -210,10 +212,21 @@ export const processTasks = (tasks: Task[], attributeValues: Record<string, numb
         newTask.calculated_hours = 0;
       }
     } else if (task.fixed_hours) {
+      // Garantir que calculated_hours esteja definido mesmo para tarefas com horas fixas
       newTask.calculated_hours = task.fixed_hours;
       console.log(`Tarefa "${task.task_name}" (${task.id}): Horas fixas = ${task.fixed_hours}h`);
     }
     
     return newTask;
   });
+  
+  // Log adicional depois de processar todas as tarefas
+  console.log("Tarefas após processamento:", processedTasks.map(t => ({
+    id: t.id,
+    name: t.task_name,
+    calculated_hours: t.calculated_hours,
+    fixed_hours: t.fixed_hours
+  })));
+  
+  return processedTasks;
 };
