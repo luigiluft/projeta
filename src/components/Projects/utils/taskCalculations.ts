@@ -1,4 +1,3 @@
-
 import { Task } from "@/types/project";
 
 // Rates para diferentes papéis na equipe

@@ -43,6 +43,18 @@ export function TaskItem({
     return statusColors[status] || statusColors.pending;
   };
 
+  // Determina as horas totais da tarefa (calculadas ou fixas)
+  const getTaskHours = () => {
+    if (task.calculated_hours !== undefined && task.calculated_hours !== null) {
+      return task.calculated_hours;
+    } else if (task.fixed_hours !== undefined && task.fixed_hours !== null) {
+      return task.fixed_hours;
+    }
+    return 0;
+  };
+
+  const taskHours = getTaskHours();
+
   return (
     <div
       className="flex flex-col p-2 hover:bg-gray-50 rounded-md cursor-pointer border border-gray-100"
@@ -93,12 +105,10 @@ export function TaskItem({
           </div>
         )}
         
-        {(task.calculated_hours !== undefined || task.fixed_hours !== undefined) && (
-          <div className="flex items-center">
-            <span className="font-medium mr-2">Horas:</span>
-            <span>{task.calculated_hours !== undefined ? task.calculated_hours : task.fixed_hours}</span>
-          </div>
-        )}
+        <div className="flex items-center">
+          <span className="font-medium mr-2">Horas:</span>
+          <span>{taskHours !== 0 ? taskHours.toFixed(2) : "0"}</span>
+        </div>
         
         {task.order && (
           <div className="flex items-center">
