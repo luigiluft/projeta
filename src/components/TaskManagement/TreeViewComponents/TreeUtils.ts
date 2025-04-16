@@ -3,14 +3,16 @@ import { Task } from "@/types/project";
 
 // Interface para estrutura de árvore
 interface TreeNode {
-  phase: string;
-  epicMap: Record<string, {
-    epic: string;
-    storyMap: Record<string, {
-      story: string;
-      tasks: Task[];
+  [phase: string]: {
+    phase: string;
+    epicMap: Record<string, {
+      epic: string;
+      storyMap: Record<string, {
+        story: string;
+        tasks: Task[];
+      }>;
     }>;
-  }>;
+  };
 }
 
 // Função para construir a estrutura de árvore
@@ -26,6 +28,11 @@ export function buildTreeStructure(tasks: Task[]): TreeNode {
 
   // Inicializar a estrutura
   const treeData: TreeNode = {};
+
+  // Se não houver tarefas, retornar a estrutura vazia, mas válida conforme a interface
+  if (tasks.length === 0) {
+    return treeData;
+  }
 
   // Organizar tarefas por fase, epic e story
   tasks.forEach((task) => {
