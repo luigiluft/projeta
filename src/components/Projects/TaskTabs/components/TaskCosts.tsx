@@ -1,5 +1,5 @@
 
-import { formatCurrency } from "../../utils/taskCalculations";
+import { formatCurrency } from "@/utils/format";
 import { useTaskCalculations } from "@/hooks/useTaskCalculations";
 import { Task } from "@/types/project";
 

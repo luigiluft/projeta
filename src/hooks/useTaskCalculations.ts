@@ -1,7 +1,7 @@
 
 import { Task } from "@/types/project";
 import { useMemo } from "react";
-import { teamRates } from "@/components/Projects/utils/taskCalculations";
+import { TEAM_RATES } from "@/components/Projects/utils/constants";
 
 export interface TaskCostMetrics {
   hoursSum: number;
@@ -38,8 +38,8 @@ export const useTaskCalculations = (tasks: Task[] = []) => {
         : (task.fixed_hours !== undefined && task.fixed_hours !== null ? task.fixed_hours : 0);
       
       // Determinar taxa horária baseada no owner
-      const hourlyRate = task.owner && teamRates[task.owner as keyof typeof teamRates] 
-        ? teamRates[task.owner as keyof typeof teamRates] 
+      const hourlyRate = task.owner && TEAM_RATES[task.owner as keyof typeof TEAM_RATES] 
+        ? TEAM_RATES[task.owner as keyof typeof TEAM_RATES] 
         : 70; // Taxa padrão caso não tenha owner ou taxa definida
       
       // Calcular custo desta tarefa

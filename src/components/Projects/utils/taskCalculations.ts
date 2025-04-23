@@ -1,9 +1,10 @@
-
 import { Task } from "@/types/project";
 import { isSustainmentTask } from "./taskUtils";
 import { calculateTaskHours, calculateTaskCost } from "./taskCalculator";
+import { formatCurrency } from "@/utils/format";
 
 export { calculateTaskHours } from "./taskCalculator";
+export { formatCurrency };
 
 export const separateTasks = (tasks: Task[]) => {
   console.log(`Separando ${tasks.length} tarefas entre implementação e sustentação`);

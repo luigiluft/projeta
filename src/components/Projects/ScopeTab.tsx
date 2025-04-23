@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { Column, Task } from "@/types/project";
 import { TaskList } from "@/components/TaskManagement/TaskList";
-import { calculateCosts, formatCurrency, processTasks, separateTasks } from "./utils/taskCalculations";
+import { calculateCosts, processTasks, separateTasks } from "./utils/taskCalculations";
+import { formatCurrency } from "@/utils/format";
 import { EmptyTasks } from "./TaskTabs/EmptyTasks";
 import { ImplementationTasksTab } from "./TaskTabs/ImplementationTasksTab";
 import { SustainmentTasksTab } from "./TaskTabs/SustainmentTasksTab";

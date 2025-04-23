@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Project, Task, Attribute } from "@/types/project";
 import { useProjectManagement } from "@/hooks/useProjectManagement";
+import { useProjectTasks } from "@/hooks/useProjectTasks";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createProjectFormSchema } from "@/utils/projectFormSchema";
