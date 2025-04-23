@@ -164,21 +164,62 @@ export const calculateTaskHours = (task: Task, attributeValues: Record<string, n
   return 0;
 };
 
+// Função para normalizar texto (remover acentos e converter para minúsculas)
+const normalizeText = (text: string): string => {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+};
+
 // Função para separar tarefas entre implementação e sustentação
 export const separateTasks = (tasks: Task[]) => {
   console.log("Verificando separação de tarefas entre implementação e sustentação");
   
-  const sustainment = tasks.filter(task => 
-    task.phase?.toLowerCase() === 'sustentação' || 
-    task.phase?.toLowerCase() === 'sustentacao'
-  );
+  const sustainment = tasks.filter(task => {
+    const phase = normalizeText(task.phase || '');
+    const epic = normalizeText(task.epic || '');
+    
+    // Log detalhado para cada tarefa
+    console.log(`Tarefa "${task.task_name}" (${task.id}):`, {
+      phase,
+      epic,
+      isSustainment: 
+        phase.includes('sustentacao') || 
+        epic.includes('sustentacao') ||
+        epic.includes('atendimento ao consumidor') ||
+        epic.includes('sac 4.0') ||
+        epic.includes('faturamento de gestao operacional') ||
+        epic.includes('faturamento e gestao operacional')
+    });
+    
+    return (
+      phase.includes('sustentacao') || 
+      epic.includes('sustentacao') ||
+      epic.includes('atendimento ao consumidor') ||
+      epic.includes('sac 4.0') ||
+      epic.includes('faturamento de gestao operacional') ||
+      epic.includes('faturamento e gestao operacional')
+    );
+  });
   
   // Tarefas que não são de sustentação são de implementação
   const implementation = tasks.filter(task => !sustainment.includes(task));
   
   console.log(`Separação de tarefas: ${implementation.length} implementação, ${sustainment.length} sustentação`);
-  console.log('Tarefas de implementação:', implementation.map(t => t.epic));
-  console.log('Tarefas de sustentação:', sustainment.map(t => t.epic));
+  console.log('Tarefas de implementação:', implementation.map(t => ({
+    id: t.id,
+    name: t.task_name,
+    phase: t.phase,
+    epic: t.epic
+  })));
+  console.log('Tarefas de sustentação:', sustainment.map(t => ({
+    id: t.id,
+    name: t.task_name,
+    phase: t.phase,
+    epic: t.epic
+  })));
   
   return { implementation, sustainment };
 };
