@@ -6,7 +6,7 @@ import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
 
 interface ProjectDatesProps {
-  form: UseFormReturn<ProjectFormValues>;
+  form: UseFormReturn<ProjectFormValues, any, undefined>;
   readOnly?: boolean;
   estimatedEndDate: string | null;
   onStartDateChange: (date: string) => void;
