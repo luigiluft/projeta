@@ -88,6 +88,8 @@ export function ImplementationTasksTab({
     console.log("ImplementationTasksTab - Processando", tasks.length, "tarefas com atributos:", attributeValues);
     
     const { implementation } = separateTasks(tasks);
+    console.log("ImplementationTasksTab - Filtradas", implementation.length, "tarefas de implementação");
+    
     if (!implementation || implementation.length === 0) {
       console.log("ImplementationTasksTab - Nenhuma tarefa de implementação encontrada");
       setCalculatedTasks([]);

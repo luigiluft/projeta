@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Column, Task } from "@/types/project";
 import { TaskList } from "@/components/TaskManagement/TaskList";
 import { EmptyTasks } from "./EmptyTasks";
-import { processTasks } from "../utils/taskCalculations";
+import { processTasks, separateTasks } from "../utils/taskCalculations";
 import { TaskTreeView } from "@/components/TaskManagement/TaskTreeView";
 import { ListTree, Table } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,13 @@ export function SustainmentTasksTab({
     }
     
     console.log("SustainmentTasksTab - Processando", tasks.length, "tarefas com atributos:", attributeValues);
-    const processedTasks = processTasks(tasks, attributeValues);
+    
+    // Filtrar apenas tarefas de sustentação
+    const { sustainment } = separateTasks(tasks);
+    console.log("SustainmentTasksTab - Filtradas", sustainment.length, "tarefas de sustentação");
+    
+    // Processar as horas apenas das tarefas de sustentação
+    const processedTasks = processTasks(sustainment, attributeValues);
     
     console.log("SustainmentTasksTab - Tarefas processadas:", processedTasks.length, processedTasks.map(t => ({
       id: t.id,
