@@ -27,15 +27,10 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
   const implementationEpics = availableEpics.filter(epic => 
     epic.toLowerCase().startsWith('implementação') ||
     epic.toLowerCase().startsWith('implementacao') ||
-    // Incluir as integrações (exceto "Integração com ERP") na categoria de implementação
+    // Incluir todas as integrações (exceto "Integração com ERP") na categoria de implementação
     (epic.toLowerCase().startsWith('integração') || 
      epic.toLowerCase().startsWith('integracao')) && 
     epic.toLowerCase() !== 'integração com erp'
-  );
-
-  // Agora a categoria de integração só terá "Integração com ERP"
-  const integrationEpics = availableEpics.filter(epic => 
-    epic.toLowerCase() === 'integração com erp'
   );
 
   const sustainmentEpics = availableEpics.filter(epic => 
@@ -44,7 +39,8 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     epic.toLowerCase().includes('atendimento ao consumidor') ||
     epic.toLowerCase().includes('sac 4.0') ||
     epic.toLowerCase().includes('faturamento e gestao') ||
-    epic.toLowerCase().includes('faturamento e gestão')
+    epic.toLowerCase().includes('faturamento e gestão') ||
+    epic.toLowerCase() === 'integração com erp'
   );
 
   // Definição das ordens específicas para cada categoria
@@ -64,17 +60,13 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     'Integração com CRM'
   ];
 
-  // A ordem de integração agora só terá "Integração com ERP"
-  const integrationOrder = [
-    'Integração com ERP'
-  ];
-
   const sustainmentOrder = [
     'Sustentação Ecommerce',
     'Atendimento ao Consumidor (SAC 4.0)',
     'Sustentação do Anymarket',
     'Faturamento e gestao operacional',
-    'Faturamento e gestão operacional agrega'
+    'Faturamento e gestão operacional agrega',
+    'Integração com ERP'
   ];
 
   // Função auxiliar para ordenar epics baseado em uma ordem específica
@@ -90,7 +82,6 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
 
   // Ordenar cada categoria conforme a ordem especificada
   const sortedImplementationEpics = sortBySpecificOrder(implementationEpics, implementationOrder);
-  const sortedIntegrationEpics = sortBySpecificOrder(integrationEpics, integrationOrder);
   const sortedSustainmentEpics = sortBySpecificOrder(sustainmentEpics, sustainmentOrder);
 
   return (
@@ -134,42 +125,6 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
                 )}
               </div>
             </div>
-            
-            {/* Só mostrar a seção de Integração se houver "Integração com ERP" */}
-            {sortedIntegrationEpics.length > 0 && (
-              <>
-                <Separator />
-                <div>
-                  <h4 className="text-sm font-semibold mb-3">Sustentação de Integrações</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {sortedIntegrationEpics.map((epic) => (
-                      <div key={epic} className="flex items-center space-x-2">
-                        {readOnly ? (
-                          <Badge 
-                            variant={selectedEpics.includes(epic) ? "default" : "outline"}
-                            className={selectedEpics.includes(epic) ? "bg-primary" : "text-muted-foreground"}
-                          >
-                            {epic}
-                          </Badge>
-                        ) : (
-                          <>
-                            <Checkbox 
-                              id={`epic-${epic}`} 
-                              checked={selectedEpics.includes(epic)}
-                              onCheckedChange={(checked) => handleEpicChange(epic, checked === true)}
-                              disabled={readOnly}
-                            />
-                            <Label htmlFor={`epic-${epic}`} className={`cursor-${readOnly ? 'default' : 'pointer'}`}>
-                              {epic}
-                            </Label>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
             
             <Separator />
             
