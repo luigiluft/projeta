@@ -1,9 +1,11 @@
 
+import { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EpicSelectorProps {
   availableEpics: string[];
@@ -13,6 +15,49 @@ interface EpicSelectorProps {
 }
 
 export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly = false }: EpicSelectorProps) {
+  const [implementationEpics, setImplementationEpics] = useState<string[]>([]);
+  const [sustainmentEpics, setSustainmentEpics] = useState<string[]>([]);
+  
+  useEffect(() => {
+    // Classificar os epics com base nas fases das tasks
+    const loadEpicsByPhase = async () => {
+      try {
+        const { data: tasks, error } = await supabase
+          .from('tasks')
+          .select('epic, phase')
+          .not('epic', 'is', null);
+          
+        if (error) {
+          console.error("Erro ao carregar dados de tarefas:", error);
+          return;
+        }
+
+        const epicPhaseMap = new Map<string, string>();
+        tasks?.forEach(task => {
+          if (task.epic) {
+            epicPhaseMap.set(task.epic, task.phase || '');
+          }
+        });
+        
+        const implementation = availableEpics.filter(epic => 
+          epicPhaseMap.get(epic) === 'implementação');
+        
+        const sustainment = availableEpics.filter(epic => 
+          epicPhaseMap.get(epic) === 'sustentação');
+          
+        console.log("Epics de implementação:", implementation);
+        console.log("Epics de sustentação:", sustainment);
+          
+        setImplementationEpics(implementation);
+        setSustainmentEpics(sustainment);
+      } catch (error) {
+        console.error("Erro ao carregar as fases dos epics:", error);
+      }
+    };
+    
+    loadEpicsByPhase();
+  }, [availableEpics]);
+
   const handleEpicChange = (epic: string, checked: boolean) => {
     if (readOnly) return;
     
@@ -21,32 +66,6 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     } else {
       onChange(selectedEpics.filter(e => e !== epic));
     }
-  };
-
-  // Classificar os epics com base nas fases das tasks
-  const { implementationEpics, sustainmentEpics } = async () => {
-    const { data: tasks } = await supabase
-      .from('tasks')
-      .select('epic, phase')
-      .not('epic', 'is', null);
-
-    const epicPhaseMap = new Map<string, string>();
-    tasks?.forEach(task => {
-      if (task.epic) {
-        epicPhaseMap.set(task.epic, task.phase || '');
-      }
-    });
-
-    const implementation = availableEpics.filter(epic => 
-      epicPhaseMap.get(epic) === 'implementação');
-    
-    const sustainment = availableEpics.filter(epic => 
-      epicPhaseMap.get(epic) === 'sustentação');
-
-    return {
-      implementationEpics: implementation,
-      sustainmentEpics: sustainment
-    };
   };
 
   // Definição das ordens específicas para cada categoria
@@ -76,6 +95,8 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
 
   // Função auxiliar para ordenar epics baseado em uma ordem específica
   const sortBySpecificOrder = (epics: string[], order: string[]) => {
+    if (!epics || epics.length === 0) return [];
+    
     return epics.sort((a, b) => {
       const indexA = order.indexOf(a);
       const indexB = order.indexOf(b);
@@ -173,4 +194,3 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     </Card>
   );
 }
-
