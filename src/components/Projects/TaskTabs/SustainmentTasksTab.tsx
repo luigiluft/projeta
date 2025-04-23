@@ -42,6 +42,28 @@ export function SustainmentTasksTab({
       formula: t.hours_formula
     })));
     
+    // Vamos fazer uma verificação adicional para debug
+    let totalHoras = 0;
+    let totalCusto = 0;
+    
+    processedTasks.forEach(task => {
+      const horas = task.calculated_hours || task.fixed_hours || 0;
+      totalHoras += horas;
+      
+      // Calcular custo se houver owner
+      if (task.owner) {
+        const TEAM_RATES: Record<string, number> = {
+          "BK": 78.75, "DS": 48.13, "PMO": 87.50, "PO": 35.00,
+          "CS": 48.13, "FRJ": 70.00, "FRP": 119.00, "BKT": 131.04, "ATS": 65.85
+        };
+        
+        const taxa = task.owner in TEAM_RATES ? TEAM_RATES[task.owner] : 0;
+        totalCusto += horas * taxa;
+      }
+    });
+    
+    console.log(`SustainmentTasksTab - Total calculado manualmente: ${totalHoras}h e R$${totalCusto.toFixed(2)}`);
+    
     setCalculatedTasks(processedTasks);
   }, [tasks, attributeValues]);
 

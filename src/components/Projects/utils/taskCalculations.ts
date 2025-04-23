@@ -1,3 +1,4 @@
+
 import { Task } from "@/types/project";
 
 // Rates para diferentes papéis na equipe
@@ -31,9 +32,7 @@ export const calculateCosts = (taskList: Task[]) => {
     const taskCost = hourlyRate * hours;
     
     // Log de detalhes por tarefa
-    if (hours > 0 || hourlyRate > 0) {
-      console.log(`Tarefa ${task.id} (${task.task_name}): ${hours}h x R$${hourlyRate}/h = R$${taskCost}`);
-    }
+    console.log(`Tarefa ${task.id} (${task.task_name}): ${hours}h x R$${hourlyRate}/h = R$${taskCost}`);
     
     return {
       hours: acc.hours + hours,
@@ -183,6 +182,7 @@ export const separateTasks = (tasks: Task[]) => {
 export const processTasks = (tasks: Task[], attributeValues: Record<string, number>) => {
   // Log geral para debug
   console.log(`Processando ${tasks.length} tarefas com ${Object.keys(attributeValues).length} atributos`);
+  console.log("Atributos formatados para cálculos:", attributeValues);
 
   // Criar um novo array com tarefas processadas para não mutar o original
   const processedTasks = tasks.map(task => {
@@ -203,6 +203,15 @@ export const processTasks = (tasks: Task[], attributeValues: Record<string, numb
       // Garantir que calculated_hours esteja definido mesmo para tarefas com horas fixas
       newTask.calculated_hours = task.fixed_hours;
       console.log(`Tarefa "${task.task_name}" (${task.id}): Horas fixas = ${task.fixed_hours}h`);
+    } else if (task.hours_formula) {
+      // Tentar calcular horas a partir da fórmula mesmo se hours_type não estiver definido
+      try {
+        const calculatedHours = calculateTaskHours(task, attributeValues);
+        newTask.calculated_hours = calculatedHours;
+        console.log(`Tarefa "${task.task_name}" (${task.id}): Fórmula "${task.hours_formula}" (sem tipo) = ${calculatedHours}h`);
+      } catch (error) {
+        console.error(`Erro ao calcular fórmula sem tipo para tarefa "${task.task_name}":`, error);
+      }
     }
     
     return newTask;

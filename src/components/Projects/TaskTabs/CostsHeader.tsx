@@ -13,6 +13,16 @@ export function CostsHeader({ tasks, title }: CostsHeaderProps) {
     task && (task.calculated_hours !== undefined || task.fixed_hours !== undefined)
   );
   
+  // Log detalhado de todas as tarefas e seus valores para depuração
+  console.log(`CostsHeader - Todas as tarefas recebidas para ${title}:`, tasks.map(t => ({
+    id: t.id,
+    nome: t.task_name,
+    horas_calculadas: t.calculated_hours,
+    horas_fixas: t.fixed_hours,
+    owner: t.owner,
+    formula: t.hours_formula
+  })));
+  
   const costs = calculateCosts(validTasks);
   
   // Log detalhado para depuração
