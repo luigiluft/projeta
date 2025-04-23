@@ -12,6 +12,7 @@ export function TaskCosts({ tasks, title }: TaskCostsProps) {
   const costs = useTaskCalculations(tasks);
   
   console.log(`TaskCosts - ${title}:`, {
+    tasks: tasks.length,
     totalHours: costs.totalHours,
     totalCost: costs.totalCost,
     averageHourlyRate: costs.averageHourlyRate

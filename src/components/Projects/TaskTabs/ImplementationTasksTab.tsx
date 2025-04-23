@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Column, Task } from "@/types/project";
 import { TaskList } from "@/components/TaskManagement/TaskList";
@@ -32,7 +31,7 @@ export function ImplementationTasksTab({
 }: ImplementationTasksTabProps) {
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
   const [implementationColumns, setImplementationColumns] = useState<Column[]>([]);
-  const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree'); // Alterado para iniciar com árvore
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree');
 
   useEffect(() => {
     const updatedColumns = [...columns];
@@ -80,14 +79,24 @@ export function ImplementationTasksTab({
   }, [columns, onColumnsChange]);
 
   useEffect(() => {
-    if (!tasks.length) return;
+    if (!tasks || tasks.length === 0) {
+      console.log("ImplementationTasksTab - Nenhuma tarefa para processar");
+      setCalculatedTasks([]);
+      return;
+    }
     
-    console.log("ImplementationTasksTab - Processando tarefas com atributos:", attributeValues);
+    console.log("ImplementationTasksTab - Processando", tasks.length, "tarefas com atributos:", attributeValues);
     
     const { implementation } = separateTasks(tasks);
+    if (!implementation || implementation.length === 0) {
+      console.log("ImplementationTasksTab - Nenhuma tarefa de implementação encontrada");
+      setCalculatedTasks([]);
+      return;
+    }
+    
     const processedTasks = processTasks(implementation, attributeValues);
     
-    console.log("ImplementationTasksTab - Tarefas processadas:", processedTasks.map(t => ({
+    console.log("ImplementationTasksTab - Tarefas processadas:", processedTasks.length, processedTasks.map(t => ({
       id: t.id,
       name: t.task_name,
       formula: t.hours_formula,
@@ -97,7 +106,6 @@ export function ImplementationTasksTab({
     let currentDate = new Date();
     currentDate = setHours(setMinutes(currentDate, 0), 9);
     
-    // O cálculo do cronograma não depende mais do nome do projeto
     const orderedTasks = [...processedTasks].sort((a, b) => {
       if (a.depends_on && a.depends_on === b.id) return 1;
       if (b.depends_on && b.depends_on === a.id) return -1;
@@ -182,7 +190,7 @@ export function ImplementationTasksTab({
       };
     });
     
-    console.log("Tarefas com datas calculadas:", tasksWithDates);
+    console.log("Tarefas com datas calculadas:", tasksWithDates.length);
     setCalculatedTasks(tasksWithDates);
   }, [tasks, attributeValues]);
   

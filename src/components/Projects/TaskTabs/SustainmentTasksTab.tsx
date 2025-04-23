@@ -26,10 +26,16 @@ export function SustainmentTasksTab({
   const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree');
 
   useEffect(() => {
-    if (!tasks.length) return;
+    if (!tasks || tasks.length === 0) {
+      console.log("SustainmentTasksTab - Nenhuma tarefa para processar");
+      setCalculatedTasks([]);
+      return;
+    }
     
+    console.log("SustainmentTasksTab - Processando", tasks.length, "tarefas com atributos:", attributeValues);
     const processedTasks = processTasks(tasks, attributeValues);
-    console.log("SustainmentTasksTab - Tarefas processadas:", processedTasks.map(t => ({
+    
+    console.log("SustainmentTasksTab - Tarefas processadas:", processedTasks.length, processedTasks.map(t => ({
       id: t.id,
       name: t.task_name,
       calculatedHours: t.calculated_hours,

@@ -1,4 +1,3 @@
-
 import { Task } from "@/types/project";
 
 // Rates para diferentes papéis na equipe
@@ -71,8 +70,6 @@ export const processHoursFormula = (formula: string, attributeValues: Record<str
     processedFormula = processedFormula.replace(regex, value.toString());
   });
   
-  console.log("Fórmula após substituição de atributos:", processedFormula);
-  
   // Implementar funções personalizadas
   // IF(condition, trueValue, falseValue)
   processedFormula = processedFormula.replace(/IF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/gi, 
@@ -135,7 +132,10 @@ export const processHoursFormula = (formula: string, attributeValues: Record<str
 export const calculateTaskHours = (task: Task, attributeValues: Record<string, number>): number => {
   if (!task) return 0;
   
-  if (task.hours_formula && task.hours_type !== 'fixed') {
+  console.log(`Calculando horas para tarefa "${task.task_name}" (${task.id})`);
+  console.log(`  hours_type: ${task.hours_type}, hours_formula: ${task.hours_formula}, fixed_hours: ${task.fixed_hours}`);
+  
+  if (task.hours_formula) {
     try {
       const formula = processHoursFormula(task.hours_formula, attributeValues);
       
@@ -144,18 +144,23 @@ export const calculateTaskHours = (task: Task, attributeValues: Record<string, n
       const calculatedHours = new Function(`return ${formula}`)();
       
       if (!isNaN(calculatedHours)) {
-        console.log(`Horas calculadas para tarefa ${task.id} (${task.task_name}):`, calculatedHours);
+        console.log(`  Horas calculadas: ${calculatedHours}`);
         return Number(calculatedHours);
+      } else {
+        console.log(`  Erro: Resultado da fórmula é NaN`);
       }
     } catch (error) {
-      console.error('Erro ao calcular fórmula:', task.hours_formula, error);
+      console.error('  Erro ao calcular fórmula:', task.hours_formula, error);
     }
-  } else if (task.fixed_hours) {
+  } else if (task.fixed_hours !== undefined && task.fixed_hours !== null) {
+    console.log(`  Usando horas fixas: ${task.fixed_hours}`);
     return task.fixed_hours;
-  } else if (task.calculated_hours) {
+  } else if (task.calculated_hours !== undefined && task.calculated_hours !== null) {
+    console.log(`  Usando horas já calculadas: ${task.calculated_hours}`);
     return task.calculated_hours;
   }
   
+  console.log(`  Nenhuma hora definida, retornando 0`);
   return 0;
 };
 
@@ -179,39 +184,34 @@ export const separateTasks = (tasks: Task[]) => {
 };
 
 // Função para processar tarefas e calcular horas
-export const processTasks = (tasks: Task[], attributeValues: Record<string, number>) => {
+export const processTasks = (tasks: Task[], attributeValues: Record<string, number> = {}) => {
+  if (!tasks || tasks.length === 0) {
+    console.log("Nenhuma tarefa para processar");
+    return [];
+  }
+  
   // Log geral para debug
   console.log(`Processando ${tasks.length} tarefas com ${Object.keys(attributeValues).length} atributos`);
-  console.log("Atributos formatados para cálculos:", attributeValues);
-
+  
   // Criar um novo array com tarefas processadas para não mutar o original
   const processedTasks = tasks.map(task => {
     // Criar uma cópia da tarefa para não mutar o objeto original
     const newTask = { ...task };
     
-    if (task.hours_type === 'formula' && task.hours_formula) {
-      try {
-        const calculatedHours = calculateTaskHours(task, attributeValues);
-        newTask.calculated_hours = calculatedHours;
-        
-        console.log(`Tarefa "${task.task_name}" (${task.id}): Fórmula "${task.hours_formula}" = ${calculatedHours}h`);
-      } catch (error) {
-        console.error(`Erro ao calcular horas para tarefa "${task.task_name}":`, error);
-        newTask.calculated_hours = 0;
-      }
-    } else if (task.fixed_hours) {
-      // Garantir que calculated_hours esteja definido mesmo para tarefas com horas fixas
-      newTask.calculated_hours = task.fixed_hours;
-      console.log(`Tarefa "${task.task_name}" (${task.id}): Horas fixas = ${task.fixed_hours}h`);
-    } else if (task.hours_formula) {
-      // Tentar calcular horas a partir da fórmula mesmo se hours_type não estiver definido
-      try {
-        const calculatedHours = calculateTaskHours(task, attributeValues);
-        newTask.calculated_hours = calculatedHours;
-        console.log(`Tarefa "${task.task_name}" (${task.id}): Fórmula "${task.hours_formula}" (sem tipo) = ${calculatedHours}h`);
-      } catch (error) {
-        console.error(`Erro ao calcular fórmula sem tipo para tarefa "${task.task_name}":`, error);
-      }
+    // Tentar calcular horas para a tarefa, independentemente do tipo de horas
+    try {
+      const calculatedHours = calculateTaskHours(task, attributeValues);
+      newTask.calculated_hours = calculatedHours;
+      
+      console.log(`Tarefa "${task.task_name}" (${task.id}): ${
+        task.hours_formula 
+          ? `Fórmula "${task.hours_formula}"` 
+          : `Horas fixas ${task.fixed_hours}`
+      } = ${calculatedHours}h`);
+    } catch (error) {
+      console.error(`Erro ao calcular horas para tarefa "${task.task_name}":`, error);
+      // Garantir que sempre tenhamos um valor para calculated_hours
+      newTask.calculated_hours = task.fixed_hours || 0;
     }
     
     return newTask;
