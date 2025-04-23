@@ -71,6 +71,7 @@ export default function NewProject() {
     try {
       setIsLoading(true);
       
+      // Consultar tarefas com epics não nulos e exclusivos
       const { data, error } = await supabase
         .from('tasks')
         .select('epic')
@@ -85,9 +86,12 @@ export default function NewProject() {
         return;
       }
 
+      // Extrair epics únicos
       const epics = [...new Set(data.map(item => item.epic))];
+      console.log("Epics carregados do banco:", epics);
       setAvailableEpics(epics);
 
+      // Carregar tarefas para cada epic
       const tasksMap: { [key: string]: Task[] } = {};
       for (const epic of epics) {
         const { data: tasksData, error: tasksError } = await supabase
@@ -127,6 +131,7 @@ export default function NewProject() {
         }
       }
       
+      console.log("Mapa de tasks por epic:", tasksMap);
       setEpicTasks(tasksMap);
     } catch (e) {
       console.error("Erro não tratado ao carregar epics:", e);

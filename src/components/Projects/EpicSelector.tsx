@@ -112,10 +112,10 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
   ];
 
   // Função auxiliar para ordenar epics baseado em uma ordem específica
-  const sortBySpecificOrder = (epics: string[], order: string[]) => {
+  const sortBySpecificOrder = (epics: string[] | undefined, order: string[]) => {
     if (!epics || epics.length === 0) return [];
     
-    return epics.sort((a, b) => {
+    return [...epics].sort((a, b) => {
       const indexA = order.indexOf(a);
       const indexB = order.indexOf(b);
       if (indexA === -1) return 1;
