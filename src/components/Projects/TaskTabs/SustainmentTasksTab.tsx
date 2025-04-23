@@ -34,6 +34,14 @@ export function SustainmentTasksTab({
     // Processar as tarefas para calcular as horas independentemente do nome do projeto
     const processedTasks = processTasks(sustainment, attributeValues);
     
+    console.log("SustainmentTasksTab - Tarefas processadas:", processedTasks.map(t => ({
+      id: t.id,
+      name: t.task_name,
+      calculatedHours: t.calculated_hours,
+      fixedHours: t.fixed_hours,
+      formula: t.hours_formula
+    })));
+    
     setCalculatedTasks(processedTasks);
   }, [tasks, attributeValues]);
 
