@@ -23,11 +23,18 @@ export const useTaskCalculations = (tasks: Task[] = []) => {
 
   const costs = useMemo(() => {
     if (!tasks || !tasks.length) {
-      console.log("Nenhuma tarefa disponível para cálculo");
+      console.log("useTaskCalculations: Nenhuma tarefa disponível para cálculo");
       return { hours: 0, cost: 0 };
     }
 
-    console.log(`Calculando custos para ${tasks.length} tarefas`);
+    console.log(`useTaskCalculations: Calculando custos para ${tasks.length} tarefas`);
+    console.log("Tarefas para cálculo:", tasks.map(t => ({
+      id: t.id,
+      nome: t.task_name,
+      calculatedHours: t.calculated_hours, 
+      fixedHours: t.fixed_hours,
+      owner: t.owner
+    })));
     
     return tasks.reduce((acc, task) => {
       // Usar qualquer valor disponível: calculated_hours, fixed_hours ou 0

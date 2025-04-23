@@ -38,6 +38,14 @@ export function SustainmentTasksTab({
     const { sustainment } = separateTasks(tasks);
     console.log("SustainmentTasksTab - Filtradas", sustainment.length, "tarefas de sustentação");
     
+    // Adicionar log detalhado de cada tarefa de sustentação
+    console.log("Detalhes das tarefas de sustentação:", sustainment.map(t => ({
+      id: t.id,
+      name: t.task_name,
+      phase: t.phase,
+      epic: t.epic
+    })));
+    
     // Processar as horas apenas das tarefas de sustentação
     const processedTasks = processTasks(sustainment, attributeValues);
     

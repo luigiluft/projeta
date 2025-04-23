@@ -90,6 +90,13 @@ export function ImplementationTasksTab({
     const { implementation } = separateTasks(tasks);
     console.log("ImplementationTasksTab - Filtradas", implementation.length, "tarefas de implementação");
     
+    console.log("Detalhes das tarefas de implementação:", implementation.map(t => ({
+      id: t.id,
+      name: t.task_name,
+      phase: t.phase,
+      epic: t.epic
+    })));
+    
     if (!implementation || implementation.length === 0) {
       console.log("ImplementationTasksTab - Nenhuma tarefa de implementação encontrada");
       setCalculatedTasks([]);
