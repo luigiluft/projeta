@@ -74,6 +74,65 @@ export const separateTasks = (tasks: Task[]) => {
   return { implementation, sustainment };
 };
 
+// Função para calcular horas de uma tarefa com base em sua fórmula
+export const calculateTaskHours = (task: Task, attributeValues: Record<string, any> = {}): number => {
+  if (!task) {
+    console.log('Tarefa inválida para cálculo de horas');
+    return 0;
+  }
+  
+  console.log(`Calculando horas para tarefa ${task.id} (${task.task_name})`);
+  
+  // Se a tarefa já tem horas calculadas, retorna esse valor
+  if (task.calculated_hours !== undefined && task.calculated_hours !== null) {
+    console.log(`Usando horas já calculadas: ${task.calculated_hours}`);
+    return task.calculated_hours;
+  }
+  
+  // Se a tarefa tem horas fixas, retorna esse valor
+  if (task.fixed_hours !== undefined && task.fixed_hours !== null) {
+    console.log(`Usando horas fixas: ${task.fixed_hours}`);
+    return task.fixed_hours;
+  }
+  
+  // Se não tem fórmula, retorna 0
+  if (!task.hours_formula) {
+    console.log('Tarefa sem fórmula de horas');
+    return 0;
+  }
+  
+  try {
+    console.log(`Avaliando fórmula: ${task.hours_formula}`);
+    console.log('Atributos disponíveis:', attributeValues);
+    
+    // Substituir variáveis na fórmula pelos valores correspondentes
+    let formula = task.hours_formula;
+    Object.entries(attributeValues).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        const regex = new RegExp(`\\b${key}\\b`, 'g');
+        formula = formula.replace(regex, value.toString());
+      }
+    });
+    
+    console.log(`Fórmula processada: ${formula}`);
+    
+    // Avaliar a fórmula
+    const result = eval(formula);
+    
+    // Verificar se o resultado é um número válido
+    if (isNaN(result)) {
+      console.error('Resultado não é um número válido:', result);
+      return 0;
+    }
+    
+    console.log(`Resultado do cálculo: ${result}`);
+    return result;
+  } catch (error) {
+    console.error(`Erro ao calcular horas com fórmula ${task.hours_formula}:`, error);
+    return 0;
+  }
+};
+
 // Função para processar tarefas e calcular horas
 export const processTasks = (tasks: Task[], attributeValues: Record<string, number> = {}) => {
   if (!tasks || tasks.length === 0) {
@@ -95,6 +154,12 @@ export const processTasks = (tasks: Task[], attributeValues: Record<string, numb
     // Se temos fixed_hours, usar como calculated_hours
     if (processedTask.fixed_hours !== undefined && processedTask.fixed_hours !== null) {
       processedTask.calculated_hours = processedTask.fixed_hours;
+      return processedTask;
+    }
+    
+    // Se temos uma fórmula, calcular as horas
+    if (processedTask.hours_formula && processedTask.hours_type === 'formula') {
+      processedTask.calculated_hours = calculateTaskHours(processedTask, attributeValues);
       return processedTask;
     }
     

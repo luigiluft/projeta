@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Task, Column } from "@/types/project";
 import { useNavigate } from 'react-router-dom';
@@ -29,7 +28,6 @@ export function TaskList({
   const [calculatedHoursByTask, setCalculatedHoursByTask] = useState<Record<string, number>>({});
   const navigate = useNavigate();
 
-  // Buscar atributos de projeto para cálculo de fórmulas
   const { data: projectAttributes } = useQuery({
     queryKey: ['project-attributes-for-calculations'],
     queryFn: async () => {
@@ -70,7 +68,6 @@ export function TaskList({
     console.log("TaskList received columns:", columns.map(col => `${col.id} (${col.visible ? 'visible' : 'hidden'})`));
   }, [columns]);
 
-  // Calcular horas para tarefas com fórmulas
   useEffect(() => {
     if (!tasks.length || !projectAttributes) return;
     
@@ -160,14 +157,11 @@ export function TaskList({
       case 'hours_type':
         return truncateText(task.hours_type, 10);
       case 'order':
-        // Mostrar qualquer valor, incluindo zero
         return task.order !== null && task.order !== undefined ? task.order.toString() : '-';
       case 'order_number':
-        // Mostrar qualquer valor, incluindo zero
         return task.order_number !== null && task.order_number !== undefined ? task.order_number.toString() : '-';
       case 'dependency':
       case 'depends_on':
-        // Não truncar a dependência e mostrar o valor exato
         return task.depends_on !== null && task.depends_on !== undefined ? task.depends_on : '-';
       case 'actions':
         return (
