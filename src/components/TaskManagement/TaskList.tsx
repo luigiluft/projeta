@@ -1,11 +1,6 @@
-import { useState, useEffect } from 'react';
 import { Task, Column } from "@/types/project";
 import { useNavigate } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { calculateTaskHours } from '../Projects/utils/taskCalculations';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useTaskDisplay } from '@/hooks/useTaskDisplay';
 
 interface TaskListProps {
   tasks: Task[];
@@ -25,38 +20,8 @@ export function TaskList({
   selectedTasks = [] 
 }: TaskListProps) {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
-  const [calculatedHoursByTask, setCalculatedHoursByTask] = useState<Record<string, number>>({});
   const navigate = useNavigate();
-
-  const { data: projectAttributes } = useQuery({
-    queryKey: ['project-attributes-for-calculations'],
-    queryFn: async () => {
-      console.log('Buscando atributos para cálculos de fórmulas');
-      const { data, error } = await supabase
-        .from('project_attributes')
-        .select('name, code, unit, description, default_value');
-
-      if (error) {
-        console.error('Erro ao buscar atributos de projeto para cálculos:', error);
-        return {};
-      }
-
-      const formattedAttributes = data?.reduce((acc: Record<string, any>, attr) => {
-        let defaultValue: string | number = attr.default_value || '';
-        
-        if (typeof defaultValue === 'string' && defaultValue.includes(',')) {
-          defaultValue = defaultValue.replace(',', '.');
-        }
-        
-        const numValue = Number(defaultValue);
-        acc[attr.code || attr.name] = !isNaN(numValue) ? numValue : defaultValue;
-        return acc;
-      }, {});
-
-      console.log('Atributos formatados para cálculos:', formattedAttributes);
-      return formattedAttributes || {};
-    }
-  });
+  const { calculatedHoursByTask, truncateText, formatDate } = useTaskDisplay(tasks);
 
   useEffect(() => {
     const visible = columns
@@ -64,54 +29,9 @@ export function TaskList({
       .map(col => col.id);
     
     setVisibleColumns(visible);
-    
-    console.log("TaskList received columns:", columns.map(col => `${col.id} (${col.visible ? 'visible' : 'hidden'})`));
   }, [columns]);
 
-  useEffect(() => {
-    if (!tasks.length || !projectAttributes) return;
-    
-    const hoursByTask: Record<string, number> = {};
-    
-    tasks.forEach(task => {
-      if (task.hours_type === 'formula' && task.hours_formula) {
-        try {
-          const calculatedHours = calculateTaskHours(task, projectAttributes);
-          hoursByTask[task.id] = calculatedHours;
-          console.log(`Horas calculadas para tarefa ${task.id} (${task.task_name}): ${calculatedHours}`);
-        } catch (error) {
-          console.error(`Erro ao calcular horas para tarefa ${task.id}:`, error);
-          hoursByTask[task.id] = 0;
-        }
-      } else if (task.fixed_hours) {
-        hoursByTask[task.id] = task.fixed_hours;
-      } else if (task.calculated_hours) {
-        hoursByTask[task.id] = task.calculated_hours;
-      } else {
-        hoursByTask[task.id] = 0;
-      }
-    });
-    
-    setCalculatedHoursByTask(hoursByTask);
-  }, [tasks, projectAttributes]);
-
-  const truncateText = (text: string | undefined | null, maxLength: number = 20) => {
-    if (!text) return '-';
-    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-  };
-
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return '-';
-    try {
-      return format(parseISO(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return dateString;
-    }
-  };
-
   const handleEditClick = (taskId: string) => {
-    console.log(`Navigating to task details: /task-management/${taskId}`);
     navigate(`/task-management/${taskId}`);
   };
 
@@ -131,13 +51,10 @@ export function TaskList({
         return formatDate(task.end_date);
       case 'hours':
         if (showHoursColumn) {
-          const calculatedHours = calculatedHoursByTask[task.id] !== undefined 
-            ? calculatedHoursByTask[task.id]
-            : (task.calculated_hours !== undefined ? task.calculated_hours : 0);
-            
+          const hours = calculatedHoursByTask[task.id] || 0;
           return (
             <div className="flex items-center space-x-1">
-              <span>{calculatedHours.toFixed(2)}</span>
+              <span>{hours.toFixed(2)}</span>
               {task.hours_type === 'formula' && (
                 <span className="text-xs text-blue-500" title={task.hours_formula || ''}>
                   (F)
@@ -146,10 +63,9 @@ export function TaskList({
             </div>
           );
         }
-        if (task.hours_formula) {
-          return <span title={task.hours_formula}>{truncateText(task.hours_formula, 15)}</span>;
-        }
-        return task.fixed_hours || '-';
+        return task.hours_formula ? 
+          <span title={task.hours_formula}>{truncateText(task.hours_formula, 15)}</span> : 
+          (task.fixed_hours || '-');
       case 'hours_formula':
         return task.hours_formula ? <span title={task.hours_formula}>{truncateText(task.hours_formula, 15)}</span> : '-';
       case 'fixed_hours':

@@ -1,19 +1,15 @@
-import { Project, Task, Attribute } from "@/types/project";
 import { useState, useEffect } from "react";
-import { useProjectTasks } from "@/hooks/useProjectTasks";
-import { toast } from "sonner";
-import { EpicSelector } from "./EpicSelector";
-import { ProjectFormProvider } from "./ProjectFormProvider";
-import { ProjectContent } from "./ProjectContent";
-import { ProjectActions } from "./ProjectActions";
-import { useProjectCalculations } from "@/hooks/projects/useProjectCalculations";
-import { ptBR } from "date-fns/locale";
-import { format, addBusinessDays, setHours, setMinutes } from "date-fns";
-import { UseFormReturn } from "react-hook-form";
-import { ProjectFormValues } from "@/utils/projectFormSchema";
+import { Project, Task, Attribute } from "@/types/project";
+import { useProjectManagement } from "@/hooks/useProjectManagement";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createProjectFormSchema } from "@/utils/projectFormSchema";
+import { EpicSelector } from "./EpicSelector";
+import { ProjectContent } from "./ProjectContent";
+import { ProjectActions } from "./ProjectActions";
+import { toast } from "sonner";
+import { UseFormReturn } from "react-hook-form";
+import { ProjectFormValues } from "@/utils/projectFormSchema";
 import { 
   Form, 
   FormField, 
@@ -33,20 +29,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-
-const TEAM_RATES = {
-  "BK": 78.75,
-  "DS": 48.13,
-  "PMO": 87.50,
-  "PO": 35.00,
-  "CS": 48.13,
-  "FRJ": 70.00,
-  "FRP": 119.00,
-  "BKT": 131.04,
-  "ATS": 65.85,
-};
-
-const DEFAULT_PROFIT_MARGIN = 30;
+import { ptBR } from "date-fns/locale";
+import { format, addBusinessDays, setHours, setMinutes } from "date-fns";
 
 interface ProjectFormProps {
   editingId?: string | null;
@@ -66,7 +50,7 @@ export function ProjectForm({
   editingId = null, 
   attributes = [], 
   onSubmit = () => {}, 
-  initialValues, 
+  initialValues,
   availableEpics,
   epicTasks,
   onEpicsChange = () => {},
@@ -75,14 +59,17 @@ export function ProjectForm({
   selectedEpics: initialSelectedEpics = [],
   requireProjectName = true
 }: ProjectFormProps) {
-  const [selectedEpics, setSelectedEpics] = useState<string[]>(initialSelectedEpics);
-  const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
-  const { taskColumns, handleColumnsChange } = useProjectTasks([]);
+  const {
+    selectedEpics,
+    selectedTasks,
+    estimatedEndDate,
+    setEstimatedEndDate,
+    handleEpicSelectionChange,
+  } = useProjectManagement(epicTasks);
+
   const [attributeValues, setAttributeValues] = useState<Record<string, number>>({});
-  const [estimatedEndDate, setEstimatedEndDate] = useState<string | null>(null);
-  const { estimateDeliveryDates, ROLE_HOURS_PER_DAY } = useProjectCalculations();
-  
   const formSchema = createProjectFormSchema(attributes, requireProjectName);
+  
   const defaultValues: any = {
     name: initialValues?.name || "",
     description: initialValues?.description || "",
@@ -139,7 +126,6 @@ export function ProjectForm({
         tasks.push(...epicTasks[epic]);
       }
     });
-    setSelectedTasks(tasks);
     
     const startDateValue = form.getValues("start_date");
     if (startDateValue && tasks.length > 0) {
@@ -150,9 +136,9 @@ export function ProjectForm({
   useEffect(() => {
     if (initialValues?.epic && initialSelectedEpics.length === 0) {
       const epics = initialValues.epic.split(',').map(e => e.trim());
-      setSelectedEpics(epics);
+      handleEpicSelectionChange(epics);
     } else if (initialSelectedEpics.length > 0) {
-      setSelectedEpics(initialSelectedEpics);
+      handleEpicSelectionChange(initialSelectedEpics);
     }
   }, [initialValues, initialSelectedEpics]);
 
@@ -223,13 +209,10 @@ export function ProjectForm({
         }
         
         const taskHours = task.calculated_hours || task.fixed_hours || 0;
-        const dailyCapacity = task.owner && ROLE_HOURS_PER_DAY[task.owner] 
-          ? ROLE_HOURS_PER_DAY[task.owner] 
-          : ROLE_HOURS_PER_DAY.default;
         
-        const durationInDays = Math.ceil(taskHours / dailyCapacity);
+        const durationInDays = 1;
         
-        console.log(`Tarefa: ${task.task_name}, Horas: ${taskHours}, Capacidade: ${dailyCapacity}, Duração: ${durationInDays} dias`);
+        console.log(`Tarefa: ${task.task_name}, Horas: ${taskHours}, Duração: ${durationInDays} dias`);
         
         let taskEndDate = taskStartDate;
         if (durationInDays > 0) {
@@ -258,57 +241,11 @@ export function ProjectForm({
     }
   };
 
-  const handleEpicSelectionChange = (epics: string[]) => {
-    setSelectedEpics(epics);
-    onEpicsChange(epics);
-    
-    const startDateValue = form.getValues("start_date");
-    if (startDateValue) {
-      const tasks: Task[] = [];
-      epics.forEach(epic => {
-        if (epicTasks[epic]) {
-          tasks.push(...epicTasks[epic]);
-        }
-      });
-      
-      if (tasks.length > 0) {
-        calculateEstimatedEndDate(tasks, startDateValue);
-      }
-    }
-  };
-
   const handleFormSubmit = (values: ProjectFormValues) => {
     if (selectedEpics.length === 0) {
       toast.error("Selecione pelo menos um Epic para o projeto");
       return;
     }
-
-    const implementationTasks = selectedTasks.filter(task => 
-      !task.epic.toLowerCase().includes('sustentação') && 
-      !task.epic.toLowerCase().includes('sustentacao'));
-    
-    const sustainmentTasks = selectedTasks.filter(task => 
-      task.epic.toLowerCase().includes('sustentação') || 
-      task.epic.toLowerCase().includes('sustentacao'));
-    
-    const implTaskCosts = implementationTasks.reduce((acc, task) => {
-      const hourlyRate = TEAM_RATES[task.owner as keyof typeof TEAM_RATES] || 0;
-      const hours = task.calculated_hours || (task.hours_formula ? parseFloat(task.hours_formula) : 0);
-      return acc + (hourlyRate * hours);
-    }, 0);
-    
-    const taskCosts = selectedTasks.reduce((acc, task) => {
-      const hourlyRate = TEAM_RATES[task.owner as keyof typeof TEAM_RATES] || 0;
-      const hours = task.calculated_hours || (task.hours_formula ? parseFloat(task.hours_formula) : 0);
-      return acc + (hourlyRate * hours);
-    }, 0);
-
-    const totalHours = selectedTasks.reduce((sum, task) => {
-      const hours = task.calculated_hours || (task.hours_formula ? parseFloat(task.hours_formula) : 0);
-      return sum + hours;
-    }, 0);
-
-    const totalCost = taskCosts * (1 + DEFAULT_PROFIT_MARGIN / 100);
 
     onSubmit({
       ...values,
@@ -323,10 +260,10 @@ export function ProjectForm({
       expected_end_date: estimatedEndDate ? format(new Date(estimatedEndDate.split('/').reverse().join('-')), 'yyyy-MM-dd') : undefined,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      total_hours: totalHours,
-      total_cost: totalCost,
-      base_cost: taskCosts,
-      profit_margin: DEFAULT_PROFIT_MARGIN,
+      total_hours: 0,
+      total_cost: 0,
+      base_cost: 0,
+      profit_margin: 30,
       status: 'draft',
       currency: 'BRL',
       tasks: selectedTasks,
@@ -357,13 +294,15 @@ export function ProjectForm({
             .filter(attr => attr.type === 'number')
             .map(attr => [attr.id, Number(values[attr.id]) || 0])
         ),
-        implementation_tasks_count: implementationTasks.length,
-        sustainment_tasks_count: sustainmentTasks.length,
-        implementation_cost: implTaskCosts
+        implementation_tasks_count: 0,
+        sustainment_tasks_count: 0,
+        implementation_cost: 0
       },
       settings: {},
     } as Project);
   };
+
+  const { taskColumns, handleColumnsChange } = useProjectTasks([]);
 
   return (
     <Form {...form}>
