@@ -2,7 +2,7 @@
 import * as z from "zod";
 import { Attribute } from "@/types/project";
 
-export const createProjectFormSchema = (attributes: Attribute[], isRequired: boolean = true) => {
+export const createProjectFormSchema = (attributes: Attribute[], isRequired: boolean = false) => {
   return z.object({
     name: isRequired 
       ? z.string().min(2, {

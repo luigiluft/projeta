@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -145,6 +144,9 @@ export default function NewProject() {
       setIsLoading(true);
       console.log("Projeto enviado para criação:", project);
       
+      // Gerar um nome de projeto padrão se nenhum nome for fornecido
+      const projectName = project.name || `Projeto ${new Date().toLocaleDateString()}`;
+      
       // Usar a mesma lógica consistente para filtrar tarefas de implementação e sustentação
       const implementationTasks = project.tasks.filter(task => 
         !task.epic.toLowerCase().includes('sustentação') && 
@@ -167,8 +169,8 @@ export default function NewProject() {
       console.log(`Tarefas de implementação: ${implementationTasks.length}, Tarefas de sustentação: ${sustainmentTasks.length}`);
       
       const projectData = {
-        name: project.name,
-        project_name: project.name,
+        name: projectName,
+        project_name: projectName,
         description: project.description || "",
         client_name: project.client_name || "",
         start_date: project.start_date || null,
@@ -266,7 +268,7 @@ export default function NewProject() {
         attributes={attributes}
         onSubmit={handleSubmit}
         onEpicsChange={handleEpicsChange}
-        requireProjectName={true}
+        requireProjectName={false}
       />
     </div>
   );
