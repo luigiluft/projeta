@@ -9,7 +9,7 @@ interface TaskCostsProps {
 }
 
 export function TaskCosts({ tasks, title }: TaskCostsProps) {
-  const costs = useTaskCalculations(tasks);
+  const metrics = useTaskCalculations(tasks);
   
   console.log(`TaskCosts - ${title}:`, {
     tasks: tasks.length,
@@ -20,9 +20,10 @@ export function TaskCosts({ tasks, title }: TaskCostsProps) {
       epic: t.epic,
       hours: t.calculated_hours 
     })),
-    totalHours: costs.totalHours,
-    totalCost: costs.totalCost,
-    averageHourlyRate: costs.averageHourlyRate
+    hoursSum: metrics.hoursSum,
+    costSum: metrics.costSum,
+    hourlyRate: metrics.hourlyRate,
+    taskCount: metrics.taskCount
   });
 
   return (
@@ -30,13 +31,16 @@ export function TaskCosts({ tasks, title }: TaskCostsProps) {
       <h3 className="text-lg font-semibold">{title}</h3>
       <div className="space-y-1 text-right">
         <div className="text-sm text-gray-600">
-          Total de Horas: {costs.totalHours.toFixed(2)}h
+          Quantidade de Tarefas: {metrics.taskCount}
+        </div>
+        <div className="text-sm text-gray-600">
+          Volume Total: {metrics.hoursSum.toFixed(2)}h
         </div>
         <div className="text-sm font-medium text-primary">
-          Custo Total: {formatCurrency(costs.totalCost)}
+          Valor Total: {formatCurrency(metrics.costSum)}
         </div>
         <div className="text-xs text-gray-500">
-          Média HH: {formatCurrency(costs.averageHourlyRate)}/h
+          Valor Médio/h: {formatCurrency(metrics.hourlyRate)}/h
         </div>
       </div>
     </div>

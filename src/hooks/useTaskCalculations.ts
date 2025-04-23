@@ -2,10 +2,11 @@
 import { Task } from "@/types/project";
 import { useMemo } from "react";
 
-export interface TaskCosts {
-  totalHours: number;
-  totalCost: number;
-  averageHourlyRate: number;
+export interface TaskCostMetrics {
+  hoursSum: number;
+  costSum: number;
+  hourlyRate: number;
+  taskCount: number;
 }
 
 export const useTaskCalculations = (tasks: Task[] = []) => {
@@ -21,14 +22,16 @@ export const useTaskCalculations = (tasks: Task[] = []) => {
     "ATS": 65.85,
   };
 
-  const costs = useMemo(() => {
-    if (!tasks || !tasks.length) {
-      console.log("useTaskCalculations: Nenhuma tarefa disponível para cálculo");
-      return { hours: 0, cost: 0 };
+  const metrics = useMemo(() => {
+    if (!tasks || tasks.length === 0) {
+      console.log("useTaskCalculations: Nenhuma tarefa para calcular");
+      return { hoursSum: 0, costSum: 0, hourlyRate: 0, taskCount: 0 };
     }
 
-    console.log(`useTaskCalculations: Calculando custos para ${tasks.length} tarefas`);
-    console.log("Tarefas para cálculo:", tasks.map(t => ({
+    console.log(`useTaskCalculations: Calculando métricas para ${tasks.length} tarefas`);
+    
+    // Exibir detalhes de cada tarefa para debug
+    console.log("Tarefas para cálculo de métricas:", tasks.map(t => ({
       id: t.id,
       nome: t.task_name,
       calculatedHours: t.calculated_hours, 
@@ -38,31 +41,49 @@ export const useTaskCalculations = (tasks: Task[] = []) => {
       phase: t.phase
     })));
     
-    return tasks.reduce((acc, task) => {
-      // Usar qualquer valor disponível: calculated_hours, fixed_hours ou 0
-      const hours = typeof task.calculated_hours === 'number' ? task.calculated_hours : 
-                   (typeof task.fixed_hours === 'number' ? task.fixed_hours : 0);
+    // Reduzir as tarefas para calcular os totais
+    const result = tasks.reduce((acc, task) => {
+      // Determinar horas (usar calculated_hours ou fixed_hours)
+      const hours = task.calculated_hours !== undefined && task.calculated_hours !== null 
+        ? task.calculated_hours 
+        : (task.fixed_hours !== undefined && task.fixed_hours !== null ? task.fixed_hours : 0);
       
-      // Determinar a taxa horária com base no proprietário da tarefa
-      const hourlyRate = task.owner && TEAM_RATES[task.owner as keyof typeof TEAM_RATES] ? 
-                        TEAM_RATES[task.owner as keyof typeof TEAM_RATES] : 0;
+      // Determinar taxa horária baseada no owner
+      const hourlyRate = task.owner && TEAM_RATES[task.owner as keyof typeof TEAM_RATES] 
+        ? TEAM_RATES[task.owner as keyof typeof TEAM_RATES] 
+        : 0;
       
-      // Calcular o custo para esta tarefa
+      // Calcular custo desta tarefa
       const taskCost = hourlyRate * hours;
       
-      console.log(`Tarefa "${task.task_name}": ${hours}h x R$${hourlyRate}/h = R$${taskCost}`);
+      // Registrar detalhes do cálculo
+      console.log(`Tarefa "${task.task_name}" (${task.id}): ${hours}h x R$${hourlyRate}/h = R$${taskCost.toFixed(2)}`);
       
-      // Acumular horas e custo
+      // Atualizar acumuladores
       return {
-        hours: acc.hours + hours,
-        cost: acc.cost + taskCost
+        hoursSum: acc.hoursSum + hours,
+        costSum: acc.costSum + taskCost,
+        taskCount: acc.taskCount + 1
       };
-    }, { hours: 0, cost: 0 });
+    }, { hoursSum: 0, costSum: 0, taskCount: 0 });
+    
+    // Calcular taxa média
+    const hourlyRate = result.hoursSum > 0 ? result.costSum / result.hoursSum : 0;
+    
+    console.log("Métricas calculadas:", {
+      horasTotal: result.hoursSum,
+      custoTotal: result.costSum,
+      taxaMedia: hourlyRate,
+      numTarefas: result.taskCount
+    });
+    
+    return {
+      hoursSum: result.hoursSum,
+      costSum: result.costSum,
+      hourlyRate: hourlyRate,
+      taskCount: result.taskCount
+    };
   }, [tasks]);
 
-  return {
-    totalHours: costs.hours,
-    totalCost: costs.cost,
-    averageHourlyRate: costs.hours > 0 ? costs.cost / costs.hours : 0
-  };
+  return metrics;
 };
