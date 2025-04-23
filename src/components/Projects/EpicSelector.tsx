@@ -22,6 +22,13 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     // Classificar os epics com base nas fases das tasks
     const loadEpicsByPhase = async () => {
       try {
+        console.log("Epics disponíveis:", availableEpics);
+        
+        if (!availableEpics || availableEpics.length === 0) {
+          console.log("Nenhum epic disponível para classificar");
+          return;
+        }
+        
         const { data: tasks, error } = await supabase
           .from('tasks')
           .select('epic, phase')
@@ -31,7 +38,10 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
           console.error("Erro ao carregar dados de tarefas:", error);
           return;
         }
+        
+        console.log("Dados de tarefas carregados:", tasks);
 
+        // Criar mapa de epic -> phase
         const epicPhaseMap = new Map<string, string>();
         tasks?.forEach(task => {
           if (task.epic) {
@@ -39,16 +49,24 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
           }
         });
         
+        console.log("Mapa de epic -> phase:", Object.fromEntries(epicPhaseMap));
+        
+        // Classificar epics disponíveis
         const implementation = availableEpics.filter(epic => 
           epicPhaseMap.get(epic) === 'implementação');
         
         const sustainment = availableEpics.filter(epic => 
           epicPhaseMap.get(epic) === 'sustentação');
+        
+        // Se um epic não estiver no mapa, coloque-o em implementação por padrão
+        const unclassified = availableEpics.filter(epic => 
+          !epicPhaseMap.has(epic));
           
         console.log("Epics de implementação:", implementation);
         console.log("Epics de sustentação:", sustainment);
+        console.log("Epics não classificados:", unclassified);
           
-        setImplementationEpics(implementation);
+        setImplementationEpics([...implementation, ...unclassified]);
         setSustainmentEpics(sustainment);
       } catch (error) {
         console.error("Erro ao carregar as fases dos epics:", error);
