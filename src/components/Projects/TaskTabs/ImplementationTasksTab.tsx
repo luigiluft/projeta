@@ -2,12 +2,12 @@
 import { useEffect, useState } from "react";
 import { Column, Task } from "@/types/project";
 import { TaskList } from "@/components/TaskManagement/TaskList";
-import { CostsHeader } from "./CostsHeader";
 import { EmptyTasks } from "./EmptyTasks";
 import { processTasks, separateTasks } from "../utils/taskCalculations";
 import { TaskTreeView } from "@/components/TaskManagement/TaskTreeView";
 import { ListTree, Table } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TaskCosts } from "./components/TaskCosts";
 import { 
   format, 
   setHours, 
@@ -192,7 +192,7 @@ export function ImplementationTasksTab({
 
   return (
     <div className="space-y-4 mt-4">
-      <CostsHeader tasks={calculatedTasks} title="Tarefas de Implementação" />
+      <TaskCosts tasks={calculatedTasks} title="Tarefas de Implementação" />
       
       {calculatedTasks.length > 0 ? (
         <div className="border rounded-md p-4 bg-white shadow-sm">

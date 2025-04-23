@@ -40,6 +40,10 @@ export function SustainmentTasksTab({
     setCalculatedTasks(processedTasks);
   }, [tasks, attributeValues]);
 
+  const toggleViewMode = (mode: 'table' | 'tree') => {
+    setViewMode(mode);
+  };
+
   return (
     <div className="space-y-4 mt-4">
       <TaskCosts tasks={calculatedTasks} title="Tarefas de Sustentação" />
