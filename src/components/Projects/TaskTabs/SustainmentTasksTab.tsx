@@ -2,12 +2,12 @@
 import { useEffect, useState } from "react";
 import { Column, Task } from "@/types/project";
 import { TaskList } from "@/components/TaskManagement/TaskList";
-import { CostsHeader } from "./CostsHeader";
 import { EmptyTasks } from "./EmptyTasks";
-import { processTasks, separateTasks } from "../utils/taskCalculations";
+import { processTasks } from "../utils/taskCalculations";
 import { TaskTreeView } from "@/components/TaskManagement/TaskTreeView";
 import { ListTree, Table } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TaskCosts } from "./components/TaskCosts";
 
 interface SustainmentTasksTabProps {
   tasks: Task[];
@@ -28,12 +28,7 @@ export function SustainmentTasksTab({
   useEffect(() => {
     if (!tasks.length) return;
     
-    // Separar apenas as tarefas de sustentação
-    const { sustainment } = separateTasks(tasks);
-    
-    // Processar as tarefas para calcular as horas independentemente do nome do projeto
-    const processedTasks = processTasks(sustainment, attributeValues);
-    
+    const processedTasks = processTasks(tasks, attributeValues);
     console.log("SustainmentTasksTab - Tarefas processadas:", processedTasks.map(t => ({
       id: t.id,
       name: t.task_name,
@@ -42,39 +37,12 @@ export function SustainmentTasksTab({
       formula: t.hours_formula
     })));
     
-    // Vamos fazer uma verificação adicional para debug
-    let totalHoras = 0;
-    let totalCusto = 0;
-    
-    processedTasks.forEach(task => {
-      const horas = task.calculated_hours || task.fixed_hours || 0;
-      totalHoras += horas;
-      
-      // Calcular custo se houver owner
-      if (task.owner) {
-        const TEAM_RATES: Record<string, number> = {
-          "BK": 78.75, "DS": 48.13, "PMO": 87.50, "PO": 35.00,
-          "CS": 48.13, "FRJ": 70.00, "FRP": 119.00, "BKT": 131.04, "ATS": 65.85
-        };
-        
-        const taxa = task.owner in TEAM_RATES ? TEAM_RATES[task.owner] : 0;
-        totalCusto += horas * taxa;
-      }
-    });
-    
-    console.log(`SustainmentTasksTab - Total calculado manualmente: ${totalHoras}h e R$${totalCusto.toFixed(2)}`);
-    
     setCalculatedTasks(processedTasks);
   }, [tasks, attributeValues]);
 
-  // Alternar entre visualização em tabela e em árvore
-  const toggleViewMode = (mode: 'table' | 'tree') => {
-    setViewMode(mode);
-  };
-
   return (
     <div className="space-y-4 mt-4">
-      <CostsHeader tasks={calculatedTasks} title="Tarefas de Sustentação" />
+      <TaskCosts tasks={calculatedTasks} title="Tarefas de Sustentação" />
       
       {calculatedTasks.length > 0 ? (
         <div className="border rounded-md p-4 bg-white shadow-sm">
