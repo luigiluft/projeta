@@ -19,46 +19,26 @@ interface SustainmentTasksTabProps {
 export function SustainmentTasksTab({ 
   tasks, 
   columns, 
-  onColumnsChange, 
+  onColumnsChange,
   attributeValues 
 }: SustainmentTasksTabProps) {
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
-  const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree'); // Iniciar com árvore
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree');
 
   useEffect(() => {
     if (!tasks.length) return;
     
-    console.log("SustainmentTasksTab - Processando tarefas com atributos:", attributeValues);
-    
     // Separar apenas as tarefas de sustentação
     const { sustainment } = separateTasks(tasks);
     
-    console.log("SustainmentTasksTab - Tarefas de sustentação encontradas:", sustainment.length);
-    
-    // Processar as tarefas para calcular as horas - sem depender do nome do projeto
+    // Processar as tarefas para calcular as horas independentemente do nome do projeto
     const processedTasks = processTasks(sustainment, attributeValues);
-    
-    console.log("SustainmentTasksTab - Tarefas processadas:", processedTasks.map(t => ({
-      id: t.id,
-      name: t.task_name,
-      formula: t.hours_formula,
-      calculated: t.calculated_hours,
-      fixed: t.fixed_hours
-    })));
     
     setCalculatedTasks(processedTasks);
   }, [tasks, attributeValues]);
 
   // Alternar entre visualização em tabela e em árvore
   const toggleViewMode = (mode: 'table' | 'tree') => {
-    console.log("Mudando modo de visualização para:", mode);
-    console.log("Tarefas processadas antes da mudança:", calculatedTasks.map(t => ({
-      id: t.id,
-      name: t.task_name,
-      calculated: t.calculated_hours,
-      fixed: t.fixed_hours,
-      hours_type: t.hours_type
-    })));
     setViewMode(mode);
   };
 
@@ -68,7 +48,10 @@ export function SustainmentTasksTab({
       
       {calculatedTasks.length > 0 ? (
         <div className="border rounded-md p-4 bg-white shadow-sm">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-sm font-medium">
+              Total de Tarefas: {calculatedTasks.length}
+            </div>
             <div className="border rounded-md flex">
               <Button 
                 variant={viewMode === 'table' ? "default" : "ghost"} 
