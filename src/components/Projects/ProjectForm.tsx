@@ -59,6 +59,7 @@ interface ProjectFormProps {
   isLoading?: boolean;
   readOnly?: boolean;
   selectedEpics?: string[];
+  requireProjectName?: boolean;
 }
 
 export function ProjectForm({ 
@@ -71,7 +72,8 @@ export function ProjectForm({
   onEpicsChange = () => {},
   isLoading = false,
   readOnly = false,
-  selectedEpics: initialSelectedEpics = []
+  selectedEpics: initialSelectedEpics = [],
+  requireProjectName = true
 }: ProjectFormProps) {
   const [selectedEpics, setSelectedEpics] = useState<string[]>(initialSelectedEpics);
   const [selectedTasks, setSelectedTasks] = useState<Task[]>([]);
@@ -80,7 +82,7 @@ export function ProjectForm({
   const [estimatedEndDate, setEstimatedEndDate] = useState<string | null>(null);
   const { estimateDeliveryDates, ROLE_HOURS_PER_DAY } = useProjectCalculations();
   
-  const formSchema = createProjectFormSchema(attributes);
+  const formSchema = createProjectFormSchema(attributes, requireProjectName);
   const defaultValues: any = {
     name: initialValues?.name || "",
     description: initialValues?.description || "",

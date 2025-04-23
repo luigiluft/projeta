@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -265,6 +266,7 @@ export default function NewProject() {
         attributes={attributes}
         onSubmit={handleSubmit}
         onEpicsChange={handleEpicsChange}
+        requireProjectName={true}
       />
     </div>
   );
