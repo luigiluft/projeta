@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,8 +17,8 @@ export default function NewProject() {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
 
   useEffect(() => {
-    loadAvailableEpics();
     loadAttributes();
+    loadAvailableEpics();
   }, []);
 
   const loadAttributes = async () => {
@@ -71,55 +70,50 @@ export default function NewProject() {
     try {
       setIsLoading(true);
       
-      // Consultar tarefas com epics não nulos e exclusivos
-      const { data, error } = await supabase
+      console.log("Iniciando carregamento de epics...");
+      
+      // Consultar todas as tarefas primeiro
+      const { data: tasksData, error: tasksError } = await supabase
         .from('tasks')
-        .select('epic')
+        .select('*')
         .not('epic', 'is', null)
-        .not('epic', 'eq', '')
-        .order('epic', { ascending: true });
-
-      if (error) {
-        console.error("Erro ao carregar epics:", error);
-        toast.error("Erro ao carregar epics");
+        .not('epic', 'eq', '');
+      
+      if (tasksError) {
+        console.error("Erro ao carregar tarefas:", tasksError);
+        toast.error("Erro ao carregar tarefas");
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Total de tarefas carregadas:", tasksData?.length);
+      
+      // Verificar se temos tarefas
+      if (!tasksData || tasksData.length === 0) {
+        console.log("Nenhuma tarefa encontrada com epics");
+        setAvailableEpics([]);
+        setEpicTasks({});
         setIsLoading(false);
         return;
       }
 
-      // Extrair epics únicos
-      const epics = [...new Set(data.map(item => item.epic))];
-      console.log("Epics carregados do banco:", epics);
+      // Extrair epics únicos diretamente das tarefas carregadas
+      const epics = [...new Set(tasksData.map(task => task.epic).filter(Boolean))];
+      console.log("Epics únicos extraídos:", epics);
       setAvailableEpics(epics);
-
-      // Carregar tarefas para cada epic
+      
+      // Organizar tarefas por epic
       const tasksMap: { [key: string]: Task[] } = {};
+      
       for (const epic of epics) {
-        const { data: tasksData, error: tasksError } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('epic', epic);
-
-        if (tasksError) {
-          console.error(`Erro ao carregar tarefas do epic ${epic}:`, tasksError);
-          continue;
-        }
-
-        if (tasksData && tasksData.length > 0) {
-          const formattedTasks: Task[] = tasksData.map((task, index) => {
-            // Identificar consistently quais epics são de sustentação
-            const isSustainment = 
-              task.epic.toLowerCase().includes('sustentação') || 
-              task.epic.toLowerCase().includes('sustentacao') ||
-              task.epic.toLowerCase().includes('atendimento ao consumidor') ||
-              task.epic.toLowerCase().includes('sac 4.0') ||
-              task.epic.toLowerCase().includes('faturamento de gestão operacional') ||
-              task.epic.toLowerCase().includes('faturamento de gestao operacional');
-            
+        const epicTasks = tasksData
+          .filter(task => task.epic === epic)
+          .map((task, index) => {
             return {
               ...task,
               order_number: index + 1,
               is_active: task.is_active || true,
-              phase: isSustainment ? 'sustentação' : 'implementação',
+              phase: task.phase || 'implementação', // Valor padrão se phase não estiver definido
               epic: task.epic || '',
               story: task.story || '',
               owner: task.owner || '',
@@ -127,11 +121,11 @@ export default function NewProject() {
             };
           });
           
-          tasksMap[epic] = formattedTasks;
-        }
+        tasksMap[epic] = epicTasks;
+        console.log(`Tarefas para epic ${epic}:`, epicTasks.length);
       }
       
-      console.log("Mapa de tasks por epic:", tasksMap);
+      console.log("Mapa final de tarefas por epic:", Object.keys(tasksMap));
       setEpicTasks(tasksMap);
     } catch (e) {
       console.error("Erro não tratado ao carregar epics:", e);

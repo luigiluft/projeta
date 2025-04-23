@@ -19,39 +19,56 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
   const [sustainmentEpics, setSustainmentEpics] = useState<string[]>([]);
   
   useEffect(() => {
+    console.log("EpicSelector received availableEpics:", availableEpics);
+    
     // Classificar os epics com base nas fases das tasks
     const loadEpicsByPhase = async () => {
       try {
-        console.log("Epics disponíveis:", availableEpics);
-        
         if (!availableEpics || availableEpics.length === 0) {
           console.log("Nenhum epic disponível para classificar");
           return;
         }
         
-        const { data: tasks, error } = await supabase
-          .from('tasks')
-          .select('epic, phase')
-          .not('epic', 'is', null);
+        // Criar mapa para guardar a classificação de cada epic
+        const epicPhaseMap = new Map<string, string>();
+        
+        // Buscar tasks diretamente para cada epic disponível
+        for (const epic of availableEpics) {
+          const { data: epicTasks, error } = await supabase
+            .from('tasks')
+            .select('epic, phase')
+            .eq('epic', epic)
+            .limit(10);
+            
+          if (error) {
+            console.error(`Erro ao carregar dados de tarefas para epic ${epic}:`, error);
+            continue;
+          }
           
-        if (error) {
-          console.error("Erro ao carregar dados de tarefas:", error);
-          return;
+          console.log(`Tarefas encontradas para epic ${epic}:`, epicTasks?.length);
+          
+          // Se encontrou tarefas para este epic, verifica a fase
+          if (epicTasks && epicTasks.length > 0) {
+            // Usar a fase da primeira tarefa como referência
+            // Normalizar o valor da fase para minúsculas
+            let phase = epicTasks[0].phase?.toLowerCase() || '';
+            
+            // Verificar se a fase é sustentação (com ou sem acentos)
+            if (phase === 'sustentação' || phase === 'sustentacao') {
+              epicPhaseMap.set(epic, 'sustentação');
+            } else {
+              // Se não for sustentação ou se não tiver fase, consideramos como implementação
+              epicPhaseMap.set(epic, 'implementação');
+            }
+          } else {
+            // Se não encontrou tarefas, considera como implementação por padrão
+            epicPhaseMap.set(epic, 'implementação');
+          }
         }
         
-        console.log("Dados de tarefas carregados:", tasks);
-
-        // Criar mapa de epic -> phase
-        const epicPhaseMap = new Map<string, string>();
-        tasks?.forEach(task => {
-          if (task.epic) {
-            epicPhaseMap.set(task.epic, task.phase || '');
-          }
-        });
+        console.log("Mapa de epic -> phase completo:", Object.fromEntries(epicPhaseMap));
         
-        console.log("Mapa de epic -> phase:", Object.fromEntries(epicPhaseMap));
-        
-        // Classificar epics disponíveis
+        // Classificar epics disponíveis com base no mapa
         const implementation = availableEpics.filter(epic => 
           epicPhaseMap.get(epic) === 'implementação');
         
