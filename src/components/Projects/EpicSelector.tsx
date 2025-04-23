@@ -23,25 +23,31 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     }
   };
 
-  // Classificar os epics por categoria
-  const implementationEpics = availableEpics.filter(epic => 
-    epic.toLowerCase().startsWith('implementação') ||
-    epic.toLowerCase().startsWith('implementacao') ||
-    // Incluir todas as integrações (exceto "Integração com ERP") na categoria de implementação
-    (epic.toLowerCase().startsWith('integração') || 
-     epic.toLowerCase().startsWith('integracao')) && 
-    epic.toLowerCase() !== 'integração com erp'
-  );
+  // Classificar os epics com base nas fases das tasks
+  const { implementationEpics, sustainmentEpics } = async () => {
+    const { data: tasks } = await supabase
+      .from('tasks')
+      .select('epic, phase')
+      .not('epic', 'is', null);
 
-  const sustainmentEpics = availableEpics.filter(epic => 
-    epic.toLowerCase().startsWith('sustentação') ||
-    epic.toLowerCase().startsWith('sustentacao') ||
-    epic.toLowerCase().includes('atendimento ao consumidor') ||
-    epic.toLowerCase().includes('sac 4.0') ||
-    epic.toLowerCase().includes('faturamento e gestao') ||
-    epic.toLowerCase().includes('faturamento e gestão') ||
-    epic.toLowerCase() === 'integração com erp'
-  );
+    const epicPhaseMap = new Map<string, string>();
+    tasks?.forEach(task => {
+      if (task.epic) {
+        epicPhaseMap.set(task.epic, task.phase || '');
+      }
+    });
+
+    const implementation = availableEpics.filter(epic => 
+      epicPhaseMap.get(epic) === 'implementação');
+    
+    const sustainment = availableEpics.filter(epic => 
+      epicPhaseMap.get(epic) === 'sustentação');
+
+    return {
+      implementationEpics: implementation,
+      sustainmentEpics: sustainment
+    };
+  };
 
   // Definição das ordens específicas para cada categoria
   const implementationOrder = [
@@ -52,7 +58,6 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     'Implementação do Anymarket',
     'Implementação ERP AGREGA',
     'Implementação ERP',
-    // Adicionar integrações (exceto ERP) na ordem de implementação
     'Integração com Luft digital',
     'Integração com ERP Homologado',
     'Integração com ERP Não- Homologado',
@@ -168,3 +173,4 @@ export function EpicSelector({ availableEpics, selectedEpics, onChange, readOnly
     </Card>
   );
 }
+

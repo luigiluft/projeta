@@ -162,30 +162,12 @@ export const calculateTaskHours = (task: Task, attributeValues: Record<string, n
 
 // Função para separar tarefas entre implementação e sustentação
 export const separateTasks = (tasks: Task[]) => {
-  // Lista de palavras-chave que identificam tarefas de sustentação
-  const sustainmentKeywords = [
-    'sustentação', 'sustentacao', 'suporte',
-    'atendimento ao consumidor', 'sac 4.0',
-    'faturamento e gestao', 'faturamento e gestão',
-    'manutenção', 'manutencao',
-    'integração com erp' // Adicionando "Integração com ERP" como sustentação
-  ];
-  
-  // Log para debug
   console.log("Verificando separação de tarefas entre implementação e sustentação");
   
-  const sustainment = tasks.filter(task => {
-    // Verificar se o epic é "Integração com ERP" especificamente
-    if (task.epic?.toLowerCase() === 'integração com erp') {
-      return true;
-    }
-    
-    // Ou se contém outras palavras-chave de sustentação
-    return sustainmentKeywords.some(keyword => 
-      task.epic?.toLowerCase().includes(keyword.toLowerCase()) &&
-      !task.epic?.toLowerCase().startsWith('integração') // Excluir outras integrações
-    );
-  });
+  const sustainment = tasks.filter(task => 
+    task.phase?.toLowerCase() === 'sustentação' || 
+    task.phase?.toLowerCase() === 'sustentacao'
+  );
   
   // Tarefas que não são de sustentação são de implementação
   const implementation = tasks.filter(task => !sustainment.includes(task));
