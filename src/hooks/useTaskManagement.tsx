@@ -7,7 +7,7 @@ import { exportToCSV } from "@/utils/csvExport";
 
 export function useTaskManagement() {
   const [showForm, setShowForm] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree');
   const queryClient = useQueryClient();
   
   const [columns, setColumns] = useState<Column[]>([

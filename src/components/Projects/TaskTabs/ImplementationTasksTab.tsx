@@ -32,7 +32,7 @@ export function ImplementationTasksTab({
 }: ImplementationTasksTabProps) {
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
   const [implementationColumns, setImplementationColumns] = useState<Column[]>([]);
-  const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree'); // Alterado para iniciar com árvore
 
   useEffect(() => {
     const updatedColumns = [...columns];
@@ -97,6 +97,7 @@ export function ImplementationTasksTab({
     let currentDate = new Date();
     currentDate = setHours(setMinutes(currentDate, 0), 9);
     
+    // O cálculo do cronograma não depende mais do nome do projeto
     const orderedTasks = [...processedTasks].sort((a, b) => {
       if (a.depends_on && a.depends_on === b.id) return 1;
       if (b.depends_on && b.depends_on === a.id) return -1;

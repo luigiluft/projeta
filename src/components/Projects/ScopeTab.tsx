@@ -21,7 +21,7 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>(tasks);
   const [implementationTasks, setImplementationTasks] = useState<Task[]>([]);
   const [sustainmentTasks, setSustainmentTasks] = useState<Task[]>([]);
-  const [viewMode, setViewMode] = useState<'table' | 'tree'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree'); // Alterado para iniciar com árvore
 
   // Recalcular horas das tarefas e separá-las em implementação e sustentação
   useEffect(() => {
