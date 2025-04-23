@@ -1,10 +1,9 @@
-
 import { Project, Task, Attribute } from "@/types/project";
 import { useProjectManagement } from "@/hooks/useProjectManagement";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createProjectFormSchema } from "@/utils/projectFormSchema";
+import { createProjectFormSchema, ProjectFormValues } from "@/utils/projectFormSchema";
 import { EpicSelector } from "./EpicSelector";
 import { ProjectContent } from "./ProjectContent";
 import { ProjectActions } from "./ProjectActions";
@@ -51,7 +50,7 @@ export function ProjectForm({
   } = useProjectManagement(epicTasks);
 
   const formSchema = createProjectFormSchema(attributes, requireProjectName);
-  const defaultValues = {
+  const defaultValues: ProjectFormValues = {
     name: initialValues?.name || "",
     description: initialValues?.description || "",
     client_name: initialValues?.client_name || "",
@@ -67,7 +66,7 @@ export function ProjectForm({
     ),
   };
 
-  const form = useForm({
+  const form = useForm<ProjectFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
@@ -169,7 +168,7 @@ export function ProjectForm({
     }
   };
 
-  const handleFormSubmit = async (values: any) => {
+  const handleFormSubmit = async (values: ProjectFormValues) => {
     if (selectedEpics.length === 0) {
       toast.error("Selecione pelo menos um Epic para o projeto");
       return;
