@@ -33,7 +33,9 @@ export const useTaskCalculations = (tasks: Task[] = []) => {
       nome: t.task_name,
       calculatedHours: t.calculated_hours, 
       fixedHours: t.fixed_hours,
-      owner: t.owner
+      owner: t.owner,
+      epic: t.epic,
+      phase: t.phase
     })));
     
     return tasks.reduce((acc, task) => {

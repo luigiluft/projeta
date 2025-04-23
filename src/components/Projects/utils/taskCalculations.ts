@@ -1,3 +1,4 @@
+
 import { Task } from "@/types/project";
 
 // Rates para diferentes papéis na equipe
@@ -173,35 +174,48 @@ const normalizeText = (text: string): string => {
     .replace(/[\u0300-\u036f]/g, '');
 };
 
+// Lista de termos que identificam tarefas de sustentação
+const SUSTAINMENT_TERMS = [
+  'sustentacao',
+  'sustentação',
+  'atendimento ao consumidor',
+  'sac 4.0',
+  'faturamento de gestao operacional',
+  'faturamento e gestao operacional',
+  'faturamento e gestão operacional'
+];
+
+// Função para verificar se um texto contém termos de sustentação
+const hasSustainmentTerm = (text: string): boolean => {
+  if (!text) return false;
+  const normalizedText = normalizeText(text);
+  return SUSTAINMENT_TERMS.some(term => normalizedText.includes(normalizeText(term)));
+};
+
 // Função para separar tarefas entre implementação e sustentação
 export const separateTasks = (tasks: Task[]) => {
   console.log("Verificando separação de tarefas entre implementação e sustentação");
   
   const sustainment = tasks.filter(task => {
-    const phase = normalizeText(task.phase || '');
-    const epic = normalizeText(task.epic || '');
+    const phase = task.phase || '';
+    const epic = task.epic || '';
+    
+    const isSustainment = hasSustainmentTerm(phase) || hasSustainmentTerm(epic);
     
     // Log detalhado para cada tarefa
     console.log(`Tarefa "${task.task_name}" (${task.id}):`, {
-      phase,
-      epic,
-      isSustainment: 
-        phase.includes('sustentacao') || 
-        epic.includes('sustentacao') ||
-        epic.includes('atendimento ao consumidor') ||
-        epic.includes('sac 4.0') ||
-        epic.includes('faturamento de gestao operacional') ||
-        epic.includes('faturamento e gestao operacional')
+      phase: phase,
+      normalizedPhase: normalizeText(phase),
+      epic: epic,
+      normalizedEpic: normalizeText(epic),
+      isSustainment: isSustainment,
+      matchTerms: SUSTAINMENT_TERMS.filter(term => 
+        normalizeText(phase).includes(normalizeText(term)) || 
+        normalizeText(epic).includes(normalizeText(term))
+      )
     });
     
-    return (
-      phase.includes('sustentacao') || 
-      epic.includes('sustentacao') ||
-      epic.includes('atendimento ao consumidor') ||
-      epic.includes('sac 4.0') ||
-      epic.includes('faturamento de gestao operacional') ||
-      epic.includes('faturamento e gestao operacional')
-    );
+    return isSustainment;
   });
   
   // Tarefas que não são de sustentação são de implementação

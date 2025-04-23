@@ -13,7 +13,13 @@ export function TaskCosts({ tasks, title }: TaskCostsProps) {
   
   console.log(`TaskCosts - ${title}:`, {
     tasks: tasks.length,
-    tarefas: tasks.map(t => ({ id: t.id, nome: t.task_name, hours: t.calculated_hours })),
+    tarefas: tasks.map(t => ({ 
+      id: t.id, 
+      nome: t.task_name, 
+      phase: t.phase,
+      epic: t.epic,
+      hours: t.calculated_hours 
+    })),
     totalHours: costs.totalHours,
     totalCost: costs.totalCost,
     averageHourlyRate: costs.averageHourlyRate
