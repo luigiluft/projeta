@@ -1,6 +1,7 @@
 
 import { Task } from "@/types/project";
 import { useMemo } from "react";
+import { teamRates } from "@/components/Projects/utils/taskCalculations";
 
 export interface TaskCostMetrics {
   hoursSum: number;
@@ -10,18 +11,6 @@ export interface TaskCostMetrics {
 }
 
 export const useTaskCalculations = (tasks: Task[] = []) => {
-  const TEAM_RATES = {
-    "BK": 78.75,
-    "DS": 48.13,
-    "PMO": 87.50,
-    "PO": 35.00,
-    "CS": 48.13,
-    "FRJ": 70.00,
-    "FRP": 119.00,
-    "BKT": 131.04,
-    "ATS": 65.85,
-  };
-
   const metrics = useMemo(() => {
     if (!tasks || tasks.length === 0) {
       console.log("useTaskCalculations: Nenhuma tarefa para calcular");
@@ -49,9 +38,9 @@ export const useTaskCalculations = (tasks: Task[] = []) => {
         : (task.fixed_hours !== undefined && task.fixed_hours !== null ? task.fixed_hours : 0);
       
       // Determinar taxa horária baseada no owner
-      const hourlyRate = task.owner && TEAM_RATES[task.owner as keyof typeof TEAM_RATES] 
-        ? TEAM_RATES[task.owner as keyof typeof TEAM_RATES] 
-        : 0;
+      const hourlyRate = task.owner && teamRates[task.owner as keyof typeof teamRates] 
+        ? teamRates[task.owner as keyof typeof teamRates] 
+        : 70; // Taxa padrão caso não tenha owner ou taxa definida
       
       // Calcular custo desta tarefa
       const taskCost = hourlyRate * hours;

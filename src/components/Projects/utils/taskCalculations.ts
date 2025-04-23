@@ -42,6 +42,20 @@ const SUSTAINMENT_TERMS = [
   'faturamento e gestão operacional'
 ];
 
+// Mapeamento de tarefas de sustentação para atributos correspondentes
+const SUSTAINMENT_TASK_ATTRIBUTES: Record<string, string> = {
+  "suporte técnico": "suporte_tecnico",
+  "suporte na configuração": "atualizacao_de_configuracao",
+  "monitoramento de bug": "monitoramento_de_bugs",
+  "atualizar o conteúdo institucional": "atualizacao_de_conteudo_institucional",
+  "implementar melhorias": "implementacao_de_melhorias",
+  "correções de erros": "correcao_de_erros_no_front",
+  "configurar e ajustar": "atualizacao_de_configuracoes_de_atendimento",
+  "editar regras de negócio": "atualizacao_de_regras_de_negocio",
+  "criar e gerenciar regras promocionais": "criacao_de_regras_promocionais",
+  "corrigir erros relacionados a processos de integração": "correcao_de_erros_de_integracao"
+};
+
 // Função para verificar se uma tarefa é de sustentação
 const isSustainmentTask = (task: Task): boolean => {
   if (!task) return false;
@@ -74,7 +88,7 @@ export const separateTasks = (tasks: Task[]) => {
   return { implementation, sustainment };
 };
 
-// Função para calcular horas de uma tarefa com base em sua fórmula
+// Função para calcular horas de uma tarefa com base em sua fórmula ou atributos padrão
 export const calculateTaskHours = (task: Task, attributeValues: Record<string, any> = {}): number => {
   if (!task) {
     console.log('Tarefa inválida para cálculo de horas');
@@ -95,42 +109,89 @@ export const calculateTaskHours = (task: Task, attributeValues: Record<string, a
     return task.fixed_hours;
   }
   
-  // Se não tem fórmula, retorna 0
-  if (!task.hours_formula) {
-    console.log('Tarefa sem fórmula de horas');
-    return 0;
+  // Se tem fórmula definida, tenta calcular com base nela
+  if (task.hours_formula) {
+    try {
+      console.log(`Avaliando fórmula: ${task.hours_formula}`);
+      console.log('Atributos disponíveis:', attributeValues);
+      
+      // Substituir variáveis na fórmula pelos valores correspondentes
+      let formula = task.hours_formula;
+      Object.entries(attributeValues).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          const regex = new RegExp(`\\b${key}\\b`, 'g');
+          formula = formula.replace(regex, value.toString());
+        }
+      });
+      
+      console.log(`Fórmula processada: ${formula}`);
+      
+      // Avaliar a fórmula
+      const result = eval(formula);
+      
+      // Verificar se o resultado é um número válido
+      if (isNaN(result)) {
+        console.error('Resultado não é um número válido:', result);
+      } else {
+        console.log(`Resultado do cálculo via fórmula: ${result}`);
+        return result;
+      }
+    } catch (error) {
+      console.error(`Erro ao calcular horas com fórmula ${task.hours_formula}:`, error);
+    }
   }
   
-  try {
-    console.log(`Avaliando fórmula: ${task.hours_formula}`);
-    console.log('Atributos disponíveis:', attributeValues);
+  // Se chegamos aqui, não temos valores calculados, fixos ou fórmula válida
+  // Vamos tentar usar atributos padrão para tarefas de sustentação
+  if (isSustainmentTask(task)) {
+    const taskNameLower = normalizeText(task.task_name);
     
-    // Substituir variáveis na fórmula pelos valores correspondentes
-    let formula = task.hours_formula;
-    Object.entries(attributeValues).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        const regex = new RegExp(`\\b${key}\\b`, 'g');
-        formula = formula.replace(regex, value.toString());
+    for (const [keyword, attributeCode] of Object.entries(SUSTAINMENT_TASK_ATTRIBUTES)) {
+      if (taskNameLower.includes(normalizeText(keyword)) && attributeValues[attributeCode]) {
+        const hours = Number(attributeValues[attributeCode]);
+        console.log(`Usando atributo ${attributeCode} (${hours}h) para tarefa: ${task.task_name}`);
+        return hours;
       }
-    });
-    
-    console.log(`Fórmula processada: ${formula}`);
-    
-    // Avaliar a fórmula
-    const result = eval(formula);
-    
-    // Verificar se o resultado é um número válido
-    if (isNaN(result)) {
-      console.error('Resultado não é um número válido:', result);
-      return 0;
     }
     
-    console.log(`Resultado do cálculo: ${result}`);
-    return result;
-  } catch (error) {
-    console.error(`Erro ao calcular horas com fórmula ${task.hours_formula}:`, error);
-    return 0;
+    // Se não encontrou por palavras-chave específicas, tenta identificar por atributos genéricos
+    if (taskNameLower.includes("suporte") && attributeValues.suporte_tecnico) {
+      console.log(`Usando atributo suporte_tecnico (${attributeValues.suporte_tecnico}h) para tarefa: ${task.task_name}`);
+      return attributeValues.suporte_tecnico;
+    }
+    
+    if (taskNameLower.includes("monitor") && attributeValues.monitoramento_de_bugs) {
+      console.log(`Usando atributo monitoramento_de_bugs (${attributeValues.monitoramento_de_bugs}h) para tarefa: ${task.task_name}`);
+      return attributeValues.monitoramento_de_bugs;
+    }
+    
+    if (taskNameLower.includes("correc") || taskNameLower.includes("correc") || taskNameLower.includes("bug")) {
+      if (attributeValues.correcao_de_erros_no_front) {
+        console.log(`Usando atributo correcao_de_erros_no_front (${attributeValues.correcao_de_erros_no_front}h) para tarefa: ${task.task_name}`);
+        return attributeValues.correcao_de_erros_no_front;
+      }
+    }
+    
+    if (taskNameLower.includes("integra")) {
+      if (attributeValues.correcao_de_erros_de_integracao) {
+        console.log(`Usando atributo correcao_de_erros_de_integracao (${attributeValues.correcao_de_erros_de_integracao}h) para tarefa: ${task.task_name}`);
+        return attributeValues.correcao_de_erros_de_integracao;
+      }
+    }
+    
+    if ((taskNameLower.includes("regra") || taskNameLower.includes("promocion") || taskNameLower.includes("desconto")) && 
+        attributeValues.criacao_de_regras_promocionais) {
+      console.log(`Usando atributo criacao_de_regras_promocionais (${attributeValues.criacao_de_regras_promocionais}h) para tarefa: ${task.task_name}`);
+      return attributeValues.criacao_de_regras_promocionais;
+    }
+    
+    // Valor padrão para tarefas de sustentação sem atributo específico
+    console.log(`Usando valor padrão (4h) para tarefa de sustentação: ${task.task_name}`);
+    return 4;
   }
+  
+  console.log(`Nenhum cálculo aplicável para a tarefa ${task.task_name}. Retornando 0h.`);
+  return 0;
 };
 
 // Função para processar tarefas e calcular horas
@@ -141,35 +202,28 @@ export const processTasks = (tasks: Task[], attributeValues: Record<string, numb
   }
   
   console.log(`Processando ${tasks.length} tarefas com ${Object.keys(attributeValues).length} atributos`);
+  console.log("Atributos disponíveis para cálculos:", attributeValues);
   
   return tasks.map(task => {
     // Criar uma cópia da tarefa para não alterar o original
     const processedTask = { ...task };
     
     // Se já temos calculated_hours, usar esse valor
-    if (processedTask.calculated_hours !== undefined && processedTask.calculated_hours !== null) {
+    if (processedTask.calculated_hours !== undefined && processedTask.calculated_hours !== null && processedTask.calculated_hours > 0) {
       return processedTask;
     }
     
-    // Se temos fixed_hours, usar como calculated_hours
-    if (processedTask.fixed_hours !== undefined && processedTask.fixed_hours !== null) {
-      processedTask.calculated_hours = processedTask.fixed_hours;
-      return processedTask;
-    }
+    // Calcular as horas para a tarefa
+    const calculatedHours = calculateTaskHours(processedTask, attributeValues);
+    processedTask.calculated_hours = calculatedHours;
     
-    // Se temos uma fórmula, calcular as horas
-    if (processedTask.hours_formula && processedTask.hours_type === 'formula') {
-      processedTask.calculated_hours = calculateTaskHours(processedTask, attributeValues);
-      return processedTask;
-    }
+    console.log(`Horas calculadas para tarefa "${processedTask.task_name}": ${calculatedHours}h`);
     
-    // Se chegamos aqui, definir calculated_hours como 0
-    processedTask.calculated_hours = 0;
     return processedTask;
   });
 };
 
-// Função simplificada para calcular custos a partir de uma lista de tarefas
+// Função para calcular custos a partir de uma lista de tarefas
 export const calculateCosts = (taskList: Task[]) => {
   if (!taskList || taskList.length === 0) {
     return {
@@ -179,11 +233,15 @@ export const calculateCosts = (taskList: Task[]) => {
     };
   }
 
+  console.log(`Calculando custos para ${taskList.length} tarefas`);
+  
   const costs = taskList.reduce((acc, task) => {
     const hours = task.calculated_hours ?? task.fixed_hours ?? 0;
     const hourlyRate = task.owner && teamRates[task.owner as keyof typeof teamRates] ? 
                       teamRates[task.owner as keyof typeof teamRates] : 0;
     const taskCost = hourlyRate * hours;
+    
+    console.log(`Tarefa "${task.task_name}": ${hours}h x R$${hourlyRate}/h = R$${taskCost}`);
     
     return {
       hours: acc.hours + hours,
@@ -191,9 +249,13 @@ export const calculateCosts = (taskList: Task[]) => {
     };
   }, { hours: 0, cost: 0 });
 
-  return {
+  const result = {
     totalHours: costs.hours,
     totalCost: costs.cost,
     averageHourlyRate: costs.hours > 0 ? costs.cost / costs.hours : 0
   };
+  
+  console.log(`Resultado cálculo de custos: ${result.totalHours}h, custo R$${result.totalCost}, média R$${result.averageHourlyRate}/h`);
+  
+  return result;
 };

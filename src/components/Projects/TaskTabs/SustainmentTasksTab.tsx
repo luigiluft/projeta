@@ -43,7 +43,10 @@ export function SustainmentTasksTab({
       id: t.id,
       name: t.task_name,
       phase: t.phase,
-      epic: t.epic
+      epic: t.epic,
+      owner: t.owner,
+      formula: t.hours_formula,
+      fixedHours: t.fixed_hours
     })));
     
     // Processar as horas apenas das tarefas de sustentação
@@ -54,7 +57,8 @@ export function SustainmentTasksTab({
       name: t.task_name,
       calculatedHours: t.calculated_hours,
       fixedHours: t.fixed_hours,
-      formula: t.hours_formula
+      formula: t.hours_formula,
+      owner: t.owner
     })));
     
     setCalculatedTasks(processedTasks);
