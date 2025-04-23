@@ -6,7 +6,7 @@ import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
 
 interface ProjectFormHeaderProps {
-  form: UseFormReturn<ProjectFormValues, any, undefined>;
+  form: UseFormReturn<ProjectFormValues>;
   readOnly?: boolean;
 }
 

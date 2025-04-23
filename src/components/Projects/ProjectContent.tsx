@@ -9,7 +9,7 @@ import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
 
 interface ProjectContentProps {
-  form: UseFormReturn<ProjectFormValues, any, undefined>;
+  form: UseFormReturn<ProjectFormValues>;
   selectedTasks: Task[];
   taskColumns: any;
   handleColumnsChange: (columns: any) => void;

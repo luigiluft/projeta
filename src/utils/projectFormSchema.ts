@@ -23,4 +23,5 @@ export const createProjectFormSchema = (attributes: Attribute[], isRequired: boo
   });
 };
 
+// Explicitly define the ProjectFormValues type with the third generic parameter as undefined
 export type ProjectFormValues = z.infer<ReturnType<typeof createProjectFormSchema>>;
