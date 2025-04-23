@@ -167,26 +167,32 @@ export const separateTasks = (tasks: Task[]) => {
     'sustentação', 'sustentacao', 'suporte',
     'atendimento ao consumidor', 'sac 4.0',
     'faturamento e gestao', 'faturamento e gestão',
-    'manutenção', 'manutencao', 'suporte'
+    'manutenção', 'manutencao',
+    'integração com erp' // Adicionando "Integração com ERP" como sustentação
   ];
   
   // Log para debug
   console.log("Verificando separação de tarefas entre implementação e sustentação");
   
   const sustainment = tasks.filter(task => {
-    // Verificar se o epic contém alguma das palavras-chave de sustentação
-    const isSustainment = task.epic && 
-      sustainmentKeywords.some(keyword => 
-        task.epic?.toLowerCase().includes(keyword.toLowerCase())
-      );
+    // Verificar se o epic é "Integração com ERP" especificamente
+    if (task.epic?.toLowerCase() === 'integração com erp') {
+      return true;
+    }
     
-    return isSustainment;
+    // Ou se contém outras palavras-chave de sustentação
+    return sustainmentKeywords.some(keyword => 
+      task.epic?.toLowerCase().includes(keyword.toLowerCase()) &&
+      !task.epic?.toLowerCase().startsWith('integração') // Excluir outras integrações
+    );
   });
   
   // Tarefas que não são de sustentação são de implementação
   const implementation = tasks.filter(task => !sustainment.includes(task));
   
   console.log(`Separação de tarefas: ${implementation.length} implementação, ${sustainment.length} sustentação`);
+  console.log('Tarefas de implementação:', implementation.map(t => t.epic));
+  console.log('Tarefas de sustentação:', sustainment.map(t => t.epic));
   
   return { implementation, sustainment };
 };
