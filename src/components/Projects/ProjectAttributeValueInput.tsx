@@ -14,29 +14,44 @@ interface ProjectAttributeValueInputProps {
     description?: string;
     default_value?: string;
   };
-  form: UseFormReturn<ProjectFormValues>;
+  form?: UseFormReturn<ProjectFormValues>;
   readOnly?: boolean;
+  value?: number;
+  onChange?: (code: string, value: number) => void;
 }
 
 export function ProjectAttributeValueInput({ 
   attribute, 
   form,
-  readOnly = false
+  readOnly = false,
+  value: externalValue,
+  onChange
 }: ProjectAttributeValueInputProps) {
   const code = attribute.code || attribute.id;
-  const value = form.getValues()[code];
-  const [inputValue, setInputValue] = useState(value?.toString() || '0');
+  
+  // Inicializar o valor do input de acordo com a fonte (form ou props)
+  const initialValue = 
+    form ? (form.getValues()[code as keyof ProjectFormValues]?.toString() || '0') :
+    externalValue !== undefined ? externalValue.toString() : '0';
+  
+  const [inputValue, setInputValue] = useState(initialValue);
 
+  // Efeito para sincronizar com o formulário se estiver presente
   useEffect(() => {
-    const subscription = form.watch((values) => {
-      const newValue = values[code];
-      if (newValue !== undefined) {
-        setInputValue(newValue.toString());
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [form, code]);
+    if (form) {
+      const subscription = form.watch((values) => {
+        const newValue = values[code as keyof ProjectFormValues];
+        if (newValue !== undefined) {
+          setInputValue(newValue.toString());
+        }
+      });
+      
+      return () => subscription.unsubscribe();
+    } else if (externalValue !== undefined) {
+      // Sincronizar com props quando não estiver usando formulário
+      setInputValue(externalValue.toString());
+    }
+  }, [form, code, externalValue]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -44,10 +59,19 @@ export function ProjectAttributeValueInput({
     
     // Tentar converter para número
     const numericValue = parseFloat(newValue);
+    
     if (!isNaN(numericValue)) {
-      form.setValue(code, numericValue);
+      if (form) {
+        // Se temos um formulário, usamos setValue
+        form.setValue(code as keyof ProjectFormValues, numericValue);
+      } else if (onChange) {
+        // Caso contrário, usamos a função onChange
+        onChange(code, numericValue);
+      }
     } else {
-      form.setValue(code, newValue);
+      if (form) {
+        form.setValue(code as keyof ProjectFormValues, newValue);
+      }
     }
   };
 

@@ -22,6 +22,15 @@ export function GanttTab({ tasks, attributeValues, columns, onColumnsChange }: G
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
   const [ganttData, setGanttData] = useState<any[]>([]);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [taskChartData, setTaskChartData] = useState<any[]>([]);
+  const [allocationChartData, setAllocationChartData] = useState<any[]>([]);
+  const [taskChartHeight, setTaskChartHeight] = useState(400);
+  const [allocationChartHeight, setAllocationChartHeight] = useState(300);
+  const [xAxisTicks, setXAxisTicks] = useState<number[]>([]);
+  const [minDate, setMinDate] = useState<Date>(new Date());
+  const [maxDate, setMaxDate] = useState<Date>(new Date());
+  const [isNewProject, setIsNewProject] = useState(false);
+  const [loadingAllocations, setLoadingAllocations] = useState(false);
 
   useEffect(() => {
     if (!tasks || tasks.length === 0) {
@@ -41,6 +50,46 @@ export function GanttTab({ tasks, attributeValues, columns, onColumnsChange }: G
     
     console.log("GanttTab: Dados calculados para o Gantt:", ganttInfo.length);
     
+    // Preparar dados para o gráfico de tarefas
+    // Neste exemplo, usamos os mesmos dados do gantt, mas em um projeto real
+    // você poderia processar dados específicos para cada visualização
+    setTaskChartData(ganttInfo);
+    setTaskChartHeight(30 * Math.max(5, ganttInfo.length)); // altura dinâmica baseada no número de tarefas
+    
+    // Normalmente você buscaria dados de alocação do backend
+    setAllocationChartData([]);
+    setAllocationChartHeight(200);
+    
+    // Definir datas mínimas e máximas para os gráficos
+    if (ganttInfo.length > 0) {
+      let earliestDate = new Date();
+      let latestDate = new Date();
+      
+      ganttInfo.forEach(item => {
+        const startDate = new Date(item.start);
+        const endDate = new Date(item.end);
+        
+        if (startDate < earliestDate) earliestDate = startDate;
+        if (endDate > latestDate) latestDate = endDate;
+      });
+      
+      setMinDate(earliestDate);
+      setMaxDate(latestDate);
+      
+      // Criar ticks para o eixo X
+      const ticks: number[] = [];
+      const currentDate = new Date(earliestDate);
+      while (currentDate <= latestDate) {
+        ticks.push(new Date(currentDate).getTime());
+        currentDate.setDate(currentDate.getDate() + 7); // Ticks a cada 7 dias
+      }
+      setXAxisTicks(ticks);
+    }
+    
+    // Verificar se é um novo projeto (sem datas definidas nas tarefas)
+    const isNew = tasks.some(task => !task.start_date || !task.end_date);
+    setIsNewProject(isNew);
+    
   }, [tasks, attributeValues]);
 
   // Resto do componente...
@@ -49,12 +98,27 @@ export function GanttTab({ tasks, attributeValues, columns, onColumnsChange }: G
     <div className="space-y-6">
       {calculatedTasks.length > 0 ? (
         <>
-          <GanttPreviewAlert />
+          <GanttPreviewAlert isNewProject={isNewProject} show={isNewProject} />
           
           {/* Gráficos de tarefas e alocações */}
           <div className="space-y-6">
-            <TasksChart tasks={calculatedTasks} />
-            <AllocationsChart tasks={calculatedTasks} />
+            <TasksChart 
+              taskChartData={taskChartData} 
+              taskChartHeight={taskChartHeight}
+              xAxisTicks={xAxisTicks}
+              minDate={minDate}
+              maxDate={maxDate}
+              isNewProject={isNewProject}
+            />
+            <AllocationsChart 
+              allocationChartData={allocationChartData}
+              allocationChartHeight={allocationChartHeight}
+              xAxisTicks={xAxisTicks}
+              minDate={minDate}
+              maxDate={maxDate}
+              loadingAllocations={loadingAllocations}
+              isNewProject={isNewProject}
+            />
           </div>
           
           {/* Visualização do Gantt */}

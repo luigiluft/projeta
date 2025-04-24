@@ -1,49 +1,64 @@
 
-import { Task } from "@/types/project";
+import React from 'react';
+import { TooltipProps } from 'recharts';
 
-interface TooltipProps {
+interface GanttTooltipProps {
   active?: boolean;
   payload?: any[];
+  label?: string;
 }
 
-export const TaskTooltip = ({ active, payload }: TooltipProps) => {
-  if (!active || !payload || !payload.length) {
+export const GanttTooltip: React.FC<GanttTooltipProps> = ({ active, payload }) => {
+  if (!active || !payload || payload.length === 0) {
     return null;
   }
 
   const data = payload[0].payload;
 
   return (
-    <div className="bg-white p-3 rounded shadow-md border border-gray-200 max-w-xs">
-      <h6 className="font-semibold text-gray-900 mb-1">{data.name}</h6>
-      
-      {data.owner && (
-        <div className="text-sm mb-1">
-          <span className="text-gray-600 font-medium">Responsável:</span> {data.owner}
-        </div>
-      )}
-      
-      <div className="text-sm mb-1">
-        <span className="text-gray-600 font-medium">Início:</span> {data.displayStartDate}
-      </div>
-      
-      <div className="text-sm mb-1">
-        <span className="text-gray-600 font-medium">Término:</span> {data.displayEndDate}
-      </div>
-      
-      <div className="text-sm mb-1">
-        <span className="text-gray-600 font-medium">Duração:</span> {data.durationDays} {data.durationDays === 1 ? 'dia' : 'dias'}
-      </div>
-      
-      <div className="text-sm">
-        <span className="text-gray-600 font-medium">Horas:</span> {data.displayDuration}
-      </div>
-      
+    <div className="bg-white p-3 rounded-md shadow-md border border-gray-200 text-sm">
+      <p className="font-medium">{data.name}</p>
+      <p className="text-gray-600">Início: {data.displayStartDate}</p>
+      <p className="text-gray-600">Fim: {data.displayEndDate}</p>
+      <p className="text-gray-600">Duração: {data.displayDuration}</p>
       {data.isEstimated && (
-        <div className="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-          Estimativa baseada na capacidade da equipe
-        </div>
+        <p className="text-amber-600 font-medium mt-1">Estimativa prévia</p>
       )}
+    </div>
+  );
+};
+
+export const TaskTooltip: React.FC<TooltipProps<any, any>> = ({ active, payload }) => {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+
+  const data = payload[0].payload;
+
+  return (
+    <div className="bg-white p-3 rounded-md shadow-md border border-gray-200 text-sm">
+      <p className="font-medium">{data.name}</p>
+      <p className="text-gray-600">Início: {data.displayStartDate}</p>
+      <p className="text-gray-600">Fim: {data.displayEndDate}</p>
+      <p className="text-gray-600">Duração: {data.durationDays} dias</p>
+      {data.owner && <p className="text-gray-600">Responsável: {data.owner}</p>}
+    </div>
+  );
+};
+
+export const AllocationTooltip: React.FC<TooltipProps<any, any>> = ({ active, payload }) => {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+
+  const data = payload[0].payload;
+
+  return (
+    <div className="bg-white p-3 rounded-md shadow-md border border-gray-200 text-sm">
+      <p className="font-medium">{data.name}</p>
+      <p className="text-gray-600">Período: {data.displayDateRange}</p>
+      <p className="text-gray-600">Horas alocadas: {data.hours}h</p>
+      {data.projects && <p className="text-gray-600">Projetos: {data.projects}</p>}
     </div>
   );
 };
