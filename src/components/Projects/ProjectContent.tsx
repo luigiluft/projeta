@@ -72,7 +72,10 @@ export function ProjectContent({
             {attributes.map((attribute) => (
               <ProjectAttributeValueInput
                 key={attribute.id}
-                attribute={attribute}
+                attribute={{
+                  ...attribute,
+                  code: attribute.id // Garantir que código está sempre presente
+                }}
                 form={form}
                 readOnly={readOnly}
               />
@@ -101,12 +104,16 @@ export function ProjectContent({
           <TabsContent value="gantt">
             <GanttTab 
               tasks={selectedTasks}
+              columns={taskColumns}
+              onColumnsChange={handleColumnsChange}
               attributeValues={currentAttributeValues}
             />
           </TabsContent>
           
           <TabsContent value="pricing">
             <PricingTab 
+              columns={taskColumns}
+              onColumnsChange={handleColumnsChange}
               tasks={selectedTasks} 
               attributeValues={currentAttributeValues}
             />

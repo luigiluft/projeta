@@ -2,27 +2,41 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { UseFormReturn } from "react-hook-form";
+import { ProjectFormValues } from "@/utils/projectFormSchema";
 
 interface ProjectAttributeValueInputProps {
   attribute: {
     id: string;
     name: string;
-    code: string | null;
+    code?: string | null;
     unit: string;
     description?: string;
     default_value?: string;
   };
-  value: number;
-  onChange: (code: string, value: number) => void;
+  form: UseFormReturn<ProjectFormValues>;
+  readOnly?: boolean;
 }
 
-export function ProjectAttributeValueInput({ attribute, value, onChange }: ProjectAttributeValueInputProps) {
-  const [inputValue, setInputValue] = useState(value.toString());
+export function ProjectAttributeValueInput({ 
+  attribute, 
+  form,
+  readOnly = false
+}: ProjectAttributeValueInputProps) {
   const code = attribute.code || attribute.id;
+  const value = form.getValues()[code];
+  const [inputValue, setInputValue] = useState(value?.toString() || '0');
 
   useEffect(() => {
-    setInputValue(value.toString());
-  }, [value]);
+    const subscription = form.watch((values) => {
+      const newValue = values[code];
+      if (newValue !== undefined) {
+        setInputValue(newValue.toString());
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, code]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -31,7 +45,9 @@ export function ProjectAttributeValueInput({ attribute, value, onChange }: Proje
     // Tentar converter para número
     const numericValue = parseFloat(newValue);
     if (!isNaN(numericValue)) {
-      onChange(code, numericValue);
+      form.setValue(code, numericValue);
+    } else {
+      form.setValue(code, newValue);
     }
   };
 
@@ -69,6 +85,8 @@ export function ProjectAttributeValueInput({ attribute, value, onChange }: Proje
         className="w-full"
         min="0"
         step="0.01"
+        disabled={readOnly}
+        readOnly={readOnly}
       />
       
       <div className="text-xs text-gray-400">
