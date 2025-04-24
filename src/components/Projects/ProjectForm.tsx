@@ -1,3 +1,4 @@
+
 import { Project, Task, Attribute } from "@/types/project";
 import { useProjectManagement } from "@/hooks/useProjectManagement";
 import { useProjectTasks } from "@/hooks/useProjectTasks";
@@ -13,6 +14,7 @@ import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
 import { format, addBusinessDays, setHours, setMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useEffect } from "react";
 
 interface ProjectFormProps {
   editingId?: string | null;
@@ -72,6 +74,14 @@ export function ProjectForm({
   });
 
   const { taskColumns, handleColumnsChange } = useProjectTasks([]);
+
+  // Inicializar os epics selecionados quando o componente é montado
+  useEffect(() => {
+    if (initialSelectedEpics && initialSelectedEpics.length > 0) {
+      console.log("Inicializando epics selecionados:", initialSelectedEpics);
+      handleEpicSelectionChange(initialSelectedEpics);
+    }
+  }, [initialSelectedEpics, handleEpicSelectionChange]);
 
   const handleStartDateChange = (startDate: string) => {
     if (startDate && selectedTasks.length > 0) {
@@ -238,7 +248,7 @@ export function ProjectForm({
           <h3 className="text-lg font-medium">Epics do Projeto</h3>
           <EpicSelector 
             availableEpics={availableEpics} 
-            selectedEpics={selectedEpics}
+            selectedEpics={initialSelectedEpics.length > 0 ? initialSelectedEpics : selectedEpics}
             onChange={handleEpicSelectionChange}
             readOnly={readOnly}
           />
@@ -257,7 +267,7 @@ export function ProjectForm({
           selectedTasks={selectedTasks}
           taskColumns={taskColumns}
           handleColumnsChange={handleColumnsChange}
-          attributeValues={{}}
+          attributeValues={initialValues?.attribute_values || {}}
           attributes={attributes}
           editingId={editingId}
           readOnly={readOnly}

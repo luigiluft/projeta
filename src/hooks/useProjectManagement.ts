@@ -10,15 +10,25 @@ export const useProjectManagement = (epicTasks: { [key: string]: Task[] }) => {
 
   useEffect(() => {
     const tasks: Task[] = [];
+    
+    console.log("useProjectManagement - epicTasks keys:", Object.keys(epicTasks));
+    console.log("useProjectManagement - selectedEpics:", selectedEpics);
+    
     selectedEpics.forEach(epic => {
       if (epicTasks[epic]) {
+        console.log(`Epic ${epic}: ${epicTasks[epic].length} tarefas encontradas`);
         tasks.push(...epicTasks[epic]);
+      } else {
+        console.log(`Epic ${epic}: Nenhuma tarefa encontrada`);
       }
     });
+    
+    console.log(`useProjectManagement - Total de tarefas selecionadas: ${tasks.length}`);
     setSelectedTasks(tasks);
   }, [selectedEpics, epicTasks]);
 
   const handleEpicSelectionChange = (epics: string[]) => {
+    console.log("useProjectManagement - Mudando epics selecionados para:", epics);
     setSelectedEpics(epics);
   };
 

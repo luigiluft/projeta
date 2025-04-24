@@ -7,21 +7,23 @@ interface ProjectAttributeValueInputProps {
   attribute: {
     id: string;
     name: string;
-    code: string | null;
-    unit: string;
+    code?: string | null;
+    unit?: string;
     description?: string;
-    default_value?: string;
+    default_value?: string | number;
   };
-  value: number;
+  value: string | number;
   onChange: (code: string, value: number) => void;
 }
 
 export function ProjectAttributeValueInput({ attribute, value, onChange }: ProjectAttributeValueInputProps) {
-  const [inputValue, setInputValue] = useState(value.toString());
+  // Certifique-se de que o valor inicial seja sempre uma string
+  const [inputValue, setInputValue] = useState(value === null || value === undefined ? '' : String(value));
   const code = attribute.code || attribute.id;
 
+  // Atualizar o inputValue quando o valor da prop mudar
   useEffect(() => {
-    setInputValue(value.toString());
+    setInputValue(value === null || value === undefined ? '' : String(value));
   }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -7,6 +7,7 @@ import { GanttTab } from "./TaskTabs/GanttTab";
 import { Attribute, Task } from "@/types/project";
 import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
+import { ScopeTab } from "./ScopeTab";
 
 interface ProjectContentProps {
   form: UseFormReturn<ProjectFormValues>;
@@ -29,6 +30,26 @@ export function ProjectContent({
   editingId,
   readOnly
 }: ProjectContentProps) {
+  // Extrair valores dos atributos do formulário e combinar com attributeValues
+  const formValues = form.getValues();
+  const combinedAttributes: Record<string, number> = {
+    ...attributeValues
+  };
+  
+  // Adicionar valores do formulário, convertendo para número quando possível
+  attributes.forEach(attr => {
+    const attrId = attr.id;
+    if (formValues[attrId] !== undefined) {
+      const value = Number(formValues[attrId]);
+      if (!isNaN(value)) {
+        combinedAttributes[attrId] = value;
+      }
+    }
+  });
+
+  console.log("ProjectContent - Valores combinados de atributos:", combinedAttributes);
+  console.log("ProjectContent - Tarefas selecionadas:", selectedTasks.length);
+
   return (
     <Tabs defaultValue="pricing" className="w-full">
       <TabsList className="w-full">
@@ -47,7 +68,7 @@ export function ProjectContent({
           tasks={selectedTasks} 
           columns={taskColumns}
           onColumnsChange={handleColumnsChange}
-          attributeValues={attributeValues}
+          attributeValues={combinedAttributes}
         />
       </TabsContent>
 
@@ -56,7 +77,7 @@ export function ProjectContent({
           tasks={selectedTasks} 
           columns={taskColumns}
           onColumnsChange={handleColumnsChange}
-          attributeValues={attributeValues}
+          attributeValues={combinedAttributes}
         />
       </TabsContent>
 
