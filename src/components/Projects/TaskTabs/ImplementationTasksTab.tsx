@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Column, Task } from "@/types/project";
 import { TaskList } from "@/components/TaskManagement/TaskList";
@@ -86,6 +87,12 @@ export function ImplementationTasksTab({
     }
     
     console.log("ImplementationTasksTab - Processando", tasks.length, "tarefas com atributos:", attributeValues);
+    console.log("ImplementationTasksTab - Tarefas recebidas:", tasks.map(t => ({
+      id: t.id,
+      name: t.task_name,
+      epic: t.epic,
+      phase: t.phase
+    })));
     
     const { implementation } = separateTasks(tasks);
     console.log("ImplementationTasksTab - Filtradas", implementation.length, "tarefas de implementação");

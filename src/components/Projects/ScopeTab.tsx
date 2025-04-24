@@ -22,23 +22,23 @@ export function ScopeTab({ tasks, columns, onColumnsChange, attributeValues }: S
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>(tasks);
   const [implementationTasks, setImplementationTasks] = useState<Task[]>([]);
   const [sustainmentTasks, setSustainmentTasks] = useState<Task[]>([]);
-  const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree'); // Alterado para iniciar com árvore
+  const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree');
 
   // Recalcular horas das tarefas e separá-las em implementação e sustentação
   useEffect(() => {
-    if (!tasks.length) return;
+    if (!tasks.length) {
+      console.log("ScopeTab: Nenhuma tarefa recebida para processar");
+      return;
+    }
 
-    console.log("Calculando horas com atributos:", attributeValues);
+    console.log(`ScopeTab: Processando ${tasks.length} tarefas com atributos:`, attributeValues);
     
     const processedTasks = processTasks(tasks, attributeValues);
     const { implementation, sustainment } = separateTasks(processedTasks);
     
-    console.log("Tarefas processadas:", processedTasks.map(t => ({
-      id: t.id,
-      name: t.task_name,
-      formula: t.hours_formula,
-      calculated: t.calculated_hours
-    })));
+    console.log("Tarefas processadas:", processedTasks.length);
+    console.log("Tarefas de implementação:", implementation.length);
+    console.log("Tarefas de sustentação:", sustainment.length);
     
     setCalculatedTasks(processedTasks);
     setImplementationTasks(implementation);
