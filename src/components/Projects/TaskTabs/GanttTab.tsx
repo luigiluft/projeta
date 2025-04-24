@@ -1,174 +1,98 @@
 
-import { useState, useEffect } from "react";
-import { Task, Column } from "@/types/project";
-import { EmptyTasks } from "./EmptyTasks";
-import { GanttPreviewAlert } from "./components/GanttPreviewAlert";
-import { processTasks } from "../utils/taskCalculations";
-import { calculateGanttData } from "./utils/ganttCalculations";
-import { GanttTooltip } from "./components/GanttTooltip";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { formatDate } from "@/utils/format";
+import { Task } from "@/types/project";
+import { useState } from "react";
+import { useLocation } from "react-router-dom";
+import { 
+  calculateEstimatedDates,
+  filterImplementationTasks,
+  findMinMaxDates,
+  prepareTaskChartData,
+  createDateRange,
+  formatXAxisTicks
+} from "./utils/ganttCalculations";
 import { TasksChart } from "./components/TasksChart";
-import { AllocationsChart } from "./components/AllocationsChart";
+import { GanttPreviewAlert } from "./components/GanttPreviewAlert";
+
+// Horas fixas por cargo de responsável
+const ROLE_HOURS_PER_DAY = {
+  "BK": 6,
+  "DS": 7,
+  "PMO": 5,
+  "PO": 6,
+  "CS": 7,
+  "FRJ": 7,
+  "FRP": 6,
+  "BKT": 5,
+  "ATS": 6,
+  // Valor padrão para cargos não definidos
+  "default": 6
+};
 
 interface GanttTabProps {
   tasks: Task[];
-  columns: Column[];
-  onColumnsChange: (columns: Column[]) => void;
-  attributeValues: Record<string, number>;
 }
 
-export function GanttTab({ tasks, attributeValues, columns, onColumnsChange }: GanttTabProps) {
-  const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
-  const [ganttData, setGanttData] = useState<any[]>([]);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
-  const [taskChartData, setTaskChartData] = useState<any[]>([]);
-  const [allocationChartData, setAllocationChartData] = useState<any[]>([]);
-  const [taskChartHeight, setTaskChartHeight] = useState(400);
-  const [allocationChartHeight, setAllocationChartHeight] = useState(300);
-  const [xAxisTicks, setXAxisTicks] = useState<number[]>([]);
-  const [minDate, setMinDate] = useState<Date>(new Date());
-  const [maxDate, setMaxDate] = useState<Date>(new Date());
-  const [isNewProject, setIsNewProject] = useState(false);
-  const [loadingAllocations, setLoadingAllocations] = useState(false);
+export function GanttTab({ tasks }: GanttTabProps) {
+  const location = useLocation();
+  
+  // Verificar se estamos na página de novo projeto
+  const isNewProject = location.pathname === "/projects/new";
 
-  useEffect(() => {
-    if (!tasks || tasks.length === 0) {
-      console.log("GanttTab: Nenhuma tarefa para processar");
-      return;
-    }
+  // Filtrar tarefas que são apenas de implementação
+  const implementationTasks = filterImplementationTasks(tasks);
 
-    console.log(`GanttTab: Processando ${tasks.length} tarefas com atributos:`, attributeValues);
-    
-    // Processar tarefas com os atributos numéricos
-    const processedTasks = processTasks(tasks, attributeValues);
-    setCalculatedTasks(processedTasks);
-    
-    // Calcular dados para o gráfico de Gantt
-    const ganttInfo = calculateGanttData(processedTasks);
-    setGanttData(ganttInfo);
-    
-    console.log("GanttTab: Dados calculados para o Gantt:", ganttInfo.length);
-    
-    // Preparar dados para o gráfico de tarefas
-    // Neste exemplo, usamos os mesmos dados do gantt, mas em um projeto real
-    // você poderia processar dados específicos para cada visualização
-    setTaskChartData(ganttInfo);
-    setTaskChartHeight(30 * Math.max(5, ganttInfo.length)); // altura dinâmica baseada no número de tarefas
-    
-    // Normalmente você buscaria dados de alocação do backend
-    setAllocationChartData([]);
-    setAllocationChartHeight(200);
-    
-    // Definir datas mínimas e máximas para os gráficos
-    if (ganttInfo.length > 0) {
-      let earliestDate = new Date();
-      let latestDate = new Date();
-      
-      ganttInfo.forEach(item => {
-        const startDate = new Date(item.start);
-        const endDate = new Date(item.end);
-        
-        if (startDate < earliestDate) earliestDate = startDate;
-        if (endDate > latestDate) latestDate = endDate;
-      });
-      
-      setMinDate(earliestDate);
-      setMaxDate(latestDate);
-      
-      // Criar ticks para o eixo X
-      const ticks: number[] = [];
-      const currentDate = new Date(earliestDate);
-      while (currentDate <= latestDate) {
-        ticks.push(new Date(currentDate).getTime());
-        currentDate.setDate(currentDate.getDate() + 7); // Ticks a cada 7 dias
-      }
-      setXAxisTicks(ticks);
-    }
-    
-    // Verificar se é um novo projeto (sem datas definidas nas tarefas)
-    const isNew = tasks.some(task => !task.start_date || !task.end_date);
-    setIsNewProject(isNew);
-    
-  }, [tasks, attributeValues]);
+  // Verificar se temos tarefas com datas definidas
+  const tasksWithDates = implementationTasks.filter(task => task.start_date && task.end_date);
+  const needsEstimation = tasksWithDates.length < implementationTasks.length || implementationTasks.length === 0;
+  
+  // Preparar tarefas para o gráfico, considerando se é um novo projeto ou não
+  let tasksForChart = implementationTasks;
+  
+  // Para novos projetos ou tarefas sem datas, calcular datas estimadas usando as horas fixas por cargo
+  if ((isNewProject || needsEstimation) && implementationTasks.length > 0) {
+    tasksForChart = calculateEstimatedDates(implementationTasks, ROLE_HOURS_PER_DAY);
+  }
 
-  // Resto do componente...
+  // Organizar tarefas por data de início
+  const sortedTasks = [...tasksForChart].sort((a, b) => {
+    const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
+    const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
+    return dateA - dateB;
+  });
+
+  // Encontrar data mais antiga e mais recente para definir o domínio do gráfico
+  const { minDate, maxDate } = findMinMaxDates(sortedTasks);
+
+  // Preparar dados para o gráfico de tarefas
+  const taskChartData = prepareTaskChartData(sortedTasks);
+
+  // Criar um array com todas as datas entre o início do projeto e o final
+  const dateRange = createDateRange(minDate, maxDate);
+
+  // Formatar o conjunto de dados para o eixo X
+  const xAxisTicks = formatXAxisTicks(dateRange);
+
+  // Calcular a altura necessária baseada no número de tarefas
+  const taskChartHeight = Math.max(500, taskChartData.length * 40);
 
   return (
-    <div className="space-y-6">
-      {calculatedTasks.length > 0 ? (
-        <>
-          <GanttPreviewAlert isNewProject={isNewProject} show={isNewProject} />
-          
-          {/* Gráficos de tarefas e alocações */}
-          <div className="space-y-6">
-            <TasksChart 
-              taskChartData={taskChartData} 
-              taskChartHeight={taskChartHeight}
-              xAxisTicks={xAxisTicks}
-              minDate={minDate}
-              maxDate={maxDate}
-              isNewProject={isNewProject}
-            />
-            <AllocationsChart 
-              allocationChartData={allocationChartData}
-              allocationChartHeight={allocationChartHeight}
-              xAxisTicks={xAxisTicks}
-              minDate={minDate}
-              maxDate={maxDate}
-              loadingAllocations={loadingAllocations}
-              isNewProject={isNewProject}
-            />
-          </div>
-          
-          {/* Visualização do Gantt */}
-          {ganttData.length > 0 ? (
-            <div className="border rounded-md p-4 bg-white">
-              <h3 className="text-sm font-medium mb-4">Cronograma de Tarefas (Preview)</h3>
-              <ResponsiveContainer width="100%" height={400}>
-                {/* Gráfico de barras horizontais para simulação de Gantt */}
-                <BarChart
-                  layout="vertical"
-                  data={ganttData}
-                  barSize={20}
-                  margin={{ top: 20, right: 30, left: 150, bottom: 10 }}
-                >
-                  <XAxis 
-                    type="number"
-                    domain={['auto', 'auto']}
-                    tickFormatter={(value) => formatDate(new Date(value))}
-                  />
-                  <YAxis 
-                    dataKey="name" 
-                    type="category" 
-                    width={130} 
-                  />
-                  <Tooltip content={<GanttTooltip />} />
-                  <Bar dataKey="duration" fill="#8884d8" background={{ fill: '#eee' }}>
-                    {ganttData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`}
-                        fill={
-                          entry.progress === 100 ? '#10b981' : 
-                          entry.progress >= 50 ? '#3b82f6' : 
-                          entry.status === 'in_progress' ? '#eab308' : 
-                          '#94a3b8'
-                        }
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="border rounded-md p-6 bg-gray-50 text-center">
-              <p className="text-muted-foreground">Não foi possível gerar o gráfico de Gantt com as tarefas selecionadas</p>
-            </div>
-          )}
-        </>
-      ) : (
-        <EmptyTasks message="Selecione pelo menos uma tarefa para visualizar o cronograma Gantt" />
-      )}
+    <div className="space-y-4 mt-4">
+      {/* Exibir alerta quando o cronograma for estimado */}
+      <GanttPreviewAlert 
+        isNewProject={isNewProject} 
+        show={isNewProject || needsEstimation} 
+      />
+      
+      <h3 className="text-lg font-medium mb-4">Cronograma de Tarefas</h3>
+      
+      <TasksChart 
+        taskChartData={taskChartData}
+        taskChartHeight={taskChartHeight}
+        xAxisTicks={xAxisTicks}
+        minDate={minDate}
+        maxDate={maxDate}
+        isNewProject={isNewProject}
+      />
     </div>
   );
 }

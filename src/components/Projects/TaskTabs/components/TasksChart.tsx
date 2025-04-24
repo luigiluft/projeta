@@ -75,7 +75,7 @@ export const TasksChart: React.FC<TasksChartProps> = ({
             
             {/* Barra representando a duração entre início e fim da tarefa */}
             <Bar
-              dataKey="duration"
+              dataKey="value"
               name="Período"
               minPointSize={3}
               barSize={20}

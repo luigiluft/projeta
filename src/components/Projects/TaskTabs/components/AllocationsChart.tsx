@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AllocationTooltip } from "./GanttTooltip";
+import { AllocationTooltip } from "./GanttTooltips";
 
 interface AllocationsChartProps {
   allocationChartData: any[];
@@ -89,7 +89,7 @@ export const AllocationsChart: React.FC<AllocationsChartProps> = ({
             
             {/* Barra representando a duração entre início e fim da alocação */}
             <Bar
-              dataKey="duration"
+              dataKey="value"
               name="Alocação"
               minPointSize={3}
               barSize={20}

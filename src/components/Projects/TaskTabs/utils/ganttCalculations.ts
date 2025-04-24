@@ -1,3 +1,4 @@
+
 import { Task } from "@/types/project";
 import { format, parseISO, isValid, addDays, differenceInDays, addBusinessDays, setHours, setMinutes, isBefore, isAfter } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -230,37 +231,4 @@ export const formatXAxisTicks = (dateRange: Date[]) => {
   }
   
   return dateRange.map(date => date.getTime());
-};
-
-// Adicionando a função calculateGanttData para exportação
-export const calculateGanttData = (tasks: Task[]) => {
-  if (!tasks || tasks.length === 0) {
-    return [];
-  }
-  
-  // Filtrar tarefas para aquelas que têm datas definidas
-  const tasksWithDates = tasks.filter(task => 
-    task.start_date && task.end_date
-  );
-  
-  if (tasksWithDates.length === 0) {
-    return [];
-  }
-  
-  return tasksWithDates.map(task => {
-    const startDate = new Date(task.start_date || '');
-    const endDate = new Date(task.end_date || '');
-    
-    return {
-      id: task.id,
-      name: task.task_name,
-      owner: task.owner,
-      start: startDate.getTime(),
-      end: endDate.getTime(),
-      duration: [startDate.getTime(), endDate.getTime()],
-      status: task.status,
-      progress: task.status === 'completed' ? 100 : 
-               task.status === 'in_progress' ? 50 : 0
-    };
-  });
 };

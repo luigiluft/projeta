@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Project, Attribute, Task } from "@/types/project";
+import { Project, Attribute } from "@/types/project";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectForm } from "@/components/Projects/ProjectForm";
 import { toast } from "sonner";
@@ -16,10 +15,9 @@ export default function ProjectDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [availableEpics, setAvailableEpics] = useState<string[]>([]);
-  const [epicTasks, setEpicTasks] = useState<{ [key: string]: Task[] }>({});
+  const [epicTasks, setEpicTasks] = useState<{ [key: string]: any }>({});
   const [selectedEpics, setSelectedEpics] = useState<string[]>([]);
   const [projectAttributes, setProjectAttributes] = useState<Attribute[]>([]);
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -68,10 +66,10 @@ export default function ProjectDetails() {
         }
 
         // Extrair e formatar as tarefas do projeto
-        let projectTasks: Task[] = [];
+        let allTasks = [];
         
         if (projectTasksData && projectTasksData.length > 0) {
-          projectTasks = projectTasksData.map((ptask, index) => {
+          allTasks = projectTasksData.map((ptask, index) => {
             const task = ptask.tasks as any;
             return {
               ...task,
@@ -86,50 +84,8 @@ export default function ProjectDetails() {
               project_task_id: ptask.id
             };
           });
-          
-          console.log("Tarefas carregadas do projeto:", projectTasks.length);
-        } else {
-          console.log("Nenhuma tarefa encontrada para o projeto no project_tasks. Buscando por epics...");
-          
-          // Caso não encontre tarefas na tabela de relacionamento, buscar pelas epics
-          if (projectData.epic) {
-            const epicList = projectData.epic.split(',').map(epic => epic.trim());
-            console.log("Epics do projeto:", epicList);
-            
-            // Buscar todas as tarefas relacionadas aos epics do projeto
-            for (const epic of epicList) {
-              const { data: epicTasksData, error: epicTasksError } = await supabase
-                .from('tasks')
-                .select('*')
-                .eq('epic', epic);
-              
-              if (epicTasksError) {
-                console.error(`Erro ao buscar tarefas do epic ${epic}:`, epicTasksError);
-                continue;
-              }
-              
-              if (epicTasksData && epicTasksData.length > 0) {
-                const formattedTasks = epicTasksData.map((task, idx) => ({
-                  ...task,
-                  order_number: projectTasks.length + idx + 1,
-                  is_active: task.is_active !== false,
-                  phase: task.phase || '',
-                  epic: task.epic || '',
-                  story: task.story || '',
-                  owner: task.owner || '',
-                  calculated_hours: task.fixed_hours || 0,
-                  status: (task.status as "pending" | "in_progress" | "completed") || "pending"
-                }));
-                
-                console.log(`Encontradas ${formattedTasks.length} tarefas para o epic ${epic}`);
-                projectTasks = [...projectTasks, ...formattedTasks];
-              }
-            }
-          }
         }
-        
-        setAllTasks(projectTasks);
-        
+
         // Buscar atributos de projeto do Supabase
         const { data: attributesData, error: attributesError } = await supabase
           .from('project_attributes')
@@ -198,32 +154,28 @@ export default function ProjectDetails() {
         });
 
         console.log("Valores dos atributos extraídos:", attributeValues);
+        console.log("Verificando ticket_medio:", attributeValues.ticket_medio);
 
-        // Criar objeto de projeto completo
         const fullProject = {
           ...projectData,
-          tasks: projectTasks,
+          tasks: allTasks,
           attribute_values: attributeValues
         } as Project;
 
+        // Extrair epics únicos das tarefas
+        const epics = [...new Set(allTasks.map(task => task.epic))].filter(Boolean);
+        setAvailableEpics(epics);
+
         // Organizar tarefas por epic
-        const tasksByEpic: { [key: string]: Task[] } = {};
-        const uniqueEpics = new Set<string>();
-        
-        // Processar tarefas e organizar por epic
-        projectTasks.forEach(task => {
+        const tasksByEpic: { [key: string]: any } = {};
+        allTasks.forEach(task => {
           if (task.epic) {
-            uniqueEpics.add(task.epic);
-            
             if (!tasksByEpic[task.epic]) {
               tasksByEpic[task.epic] = [];
             }
             tasksByEpic[task.epic].push(task);
           }
         });
-        
-        // Extrair epics únicos para o seletor
-        setAvailableEpics(Array.from(uniqueEpics));
         setEpicTasks(tasksByEpic);
 
         // Pré-selecionar todos os epics do projeto
@@ -316,12 +268,6 @@ export default function ProjectDetails() {
       </div>
     );
   }
-
-  console.log("Renderizando projeto com:", {
-    tasksCount: project.tasks?.length || 0,
-    epicTasksCount: Object.values(epicTasks).reduce((sum, tasks) => sum + tasks.length, 0),
-    epics: selectedEpics
-  });
 
   return (
     <div className="container mx-auto py-6">
