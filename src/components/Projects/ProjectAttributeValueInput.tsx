@@ -16,7 +16,7 @@ interface ProjectAttributeValueInputProps {
   };
   form?: UseFormReturn<ProjectFormValues>;
   readOnly?: boolean;
-  value?: number;
+  value?: number | string;  // Allow both types for external value
   onChange?: (code: string, value: number) => void;
 }
 
@@ -34,25 +34,25 @@ export function ProjectAttributeValueInput({
     form ? 
       (form.getValues()[code as keyof ProjectFormValues]?.toString() || '0') :
     externalValue !== undefined ? 
-      externalValue.toString() : '0';
+      String(externalValue) : '0';
   
   const [inputValue, setInputValue] = useState(initialValue);
 
-  // Efeito para sincronizar com o formulário se estiver presente
+  // Effect to synchronize with form or external value
   useEffect(() => {
     if (form) {
       const subscription = form.watch((values) => {
         const newValue = values[code as keyof ProjectFormValues];
         if (newValue !== undefined) {
           // Convert to string, handling both string and number cases
-          setInputValue(newValue.toString());
+          setInputValue(String(newValue));
         }
       });
       
       return () => subscription.unsubscribe();
     } else if (externalValue !== undefined) {
-      // Sincronizar com props quando não estiver usando formulário
-      setInputValue(externalValue.toString());
+      // Synchronize with props when not using form
+      setInputValue(String(externalValue));
     }
   }, [form, code, externalValue]);
 
@@ -60,12 +60,12 @@ export function ProjectAttributeValueInput({
     const newValue = e.target.value;
     setInputValue(newValue);
     
-    // Tentar converter para número
+    // Try to convert to number
     const numericValue = parseFloat(newValue);
     
     if (!isNaN(numericValue)) {
       if (form) {
-        // Se temos um formulário, usamos setValue
+        // If we have a form, use setValue
         form.setValue(code as keyof ProjectFormValues, numericValue);
       } else if (onChange) {
         // Caso contrário, usamos a função onChange
@@ -78,7 +78,7 @@ export function ProjectAttributeValueInput({
     }
   };
 
-  // Formatar a unidade para exibição
+  // Format the unit for display
   const formatUnit = (unit?: string) => {
     switch (unit) {
       case 'hours': return 'horas';
@@ -122,3 +122,4 @@ export function ProjectAttributeValueInput({
     </div>
   );
 }
+
