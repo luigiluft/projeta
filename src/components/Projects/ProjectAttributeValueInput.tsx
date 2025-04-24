@@ -12,7 +12,7 @@ interface ProjectAttributeValueInputProps {
     code?: string | null;
     unit: string;
     description?: string;
-    default_value?: string;
+    default_value?: string | number;  // Updated to accept both string and number
   };
   form?: UseFormReturn<ProjectFormValues>;
   readOnly?: boolean;
@@ -29,10 +29,12 @@ export function ProjectAttributeValueInput({
 }: ProjectAttributeValueInputProps) {
   const code = attribute.code || attribute.id;
   
-  // Inicializar o valor do input de acordo com a fonte (form ou props)
+  // Ensure initial value is always a string
   const initialValue = 
-    form ? (form.getValues()[code as keyof ProjectFormValues]?.toString() || '0') :
-    externalValue !== undefined ? externalValue.toString() : '0';
+    form ? 
+      (form.getValues()[code as keyof ProjectFormValues]?.toString() || '0') :
+    externalValue !== undefined ? 
+      externalValue.toString() : '0';
   
   const [inputValue, setInputValue] = useState(initialValue);
 
@@ -42,6 +44,7 @@ export function ProjectAttributeValueInput({
       const subscription = form.watch((values) => {
         const newValue = values[code as keyof ProjectFormValues];
         if (newValue !== undefined) {
+          // Convert to string, handling both string and number cases
           setInputValue(newValue.toString());
         }
       });
