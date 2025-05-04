@@ -8,6 +8,7 @@ import { Attribute, Task } from "@/types/project";
 import { UseFormReturn } from "react-hook-form";
 import { ProjectFormValues } from "@/utils/projectFormSchema";
 import { ScopeTab } from "./ScopeTab";
+import { useEffect } from "react";
 
 interface ProjectContentProps {
   form: UseFormReturn<ProjectFormValues>;
@@ -73,13 +74,46 @@ export function ProjectContent({
     selectedTasksCount: selectedTasks.length
   });
 
+  // Função para prevenir submissão acidental do formulário ao clicar nas tabs
+  const preventFormSubmission = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
   return (
     <Tabs defaultValue="pricing" className="w-full">
       <TabsList className="w-full">
-        <TabsTrigger value="pricing" className="flex-1">Precificação</TabsTrigger>
-        <TabsTrigger value="implementation" className="flex-1">Implementação</TabsTrigger>
-        <TabsTrigger value="sustainment" className="flex-1">Sustentação</TabsTrigger>
-        <TabsTrigger value="gantt" className="flex-1">Gantt</TabsTrigger>
+        <TabsTrigger 
+          value="pricing" 
+          className="flex-1" 
+          onClick={preventFormSubmission} 
+          type="button"
+        >
+          Precificação
+        </TabsTrigger>
+        <TabsTrigger 
+          value="implementation" 
+          className="flex-1" 
+          onClick={preventFormSubmission} 
+          type="button"
+        >
+          Implementação
+        </TabsTrigger>
+        <TabsTrigger 
+          value="sustainment" 
+          className="flex-1" 
+          onClick={preventFormSubmission} 
+          type="button"
+        >
+          Sustentação
+        </TabsTrigger>
+        <TabsTrigger 
+          value="gantt" 
+          className="flex-1" 
+          onClick={preventFormSubmission} 
+          type="button"
+        >
+          Gantt
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="pricing">

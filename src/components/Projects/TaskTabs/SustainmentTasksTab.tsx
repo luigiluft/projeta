@@ -29,8 +29,8 @@ export function SustainmentTasksTab({
   console.log("SustainmentTasksTab - Props recebidas:", {
     numTasks: tasks?.length || 0,
     attributeValues,
-    attributeKeys: Object.keys(attributeValues || {}),
-    attributeValuesStr: JSON.stringify(attributeValues).substring(0, 100) + "..."
+    attributeKeysCount: Object.keys(attributeValues || {}).length,
+    attributeValuesPreview: JSON.stringify(attributeValues).substring(0, 100) + "..."
   });
 
   useEffect(() => {
@@ -82,6 +82,7 @@ export function SustainmentTasksTab({
   }, [tasks, attributeValues]);
 
   const toggleViewMode = (mode: 'table' | 'tree') => {
+    // Evitar o comportamento padrão que pode estar causando o envio do formulário
     setViewMode(mode);
   };
 
@@ -100,7 +101,11 @@ export function SustainmentTasksTab({
                 variant={viewMode === 'table' ? "default" : "ghost"} 
                 size="sm" 
                 className="flex items-center gap-2 rounded-r-none"
-                onClick={() => toggleViewMode('table')}
+                onClick={(e) => {
+                  e.preventDefault(); // Impedir o envio de formulário
+                  toggleViewMode('table');
+                }}
+                type="button" // Explicitamente definir como button para evitar submit
               >
                 <Table className="h-4 w-4" />
                 Tabela
@@ -109,7 +114,11 @@ export function SustainmentTasksTab({
                 variant={viewMode === 'tree' ? "default" : "ghost"} 
                 size="sm" 
                 className="flex items-center gap-2 rounded-l-none"
-                onClick={() => toggleViewMode('tree')}
+                onClick={(e) => {
+                  e.preventDefault(); // Impedir o envio de formulário
+                  toggleViewMode('tree');
+                }}
+                type="button" // Explicitamente definir como button para evitar submit
               >
                 <ListTree className="h-4 w-4" />
                 Árvore
