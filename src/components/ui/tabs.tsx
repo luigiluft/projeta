@@ -34,8 +34,9 @@ const TabsTrigger = React.forwardRef<
     
     // Chama o manipulador onClick original se existir
     if (props.onClick) {
-      // Precisamos fazer um cast do tipo aqui para compatibilidade
-      props.onClick(e as unknown as React.MouseEvent<Element, MouseEvent>);
+      // Corrigir o tipo do evento usando type assertion mais específico
+      const originalEvent = props.onClick as (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+      originalEvent(e);
     }
   };
 
