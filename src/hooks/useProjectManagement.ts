@@ -42,7 +42,11 @@ export const useProjectManagement = (epicTasks: { [key: string]: Task[] }) => {
   };
 
   const calculateMetrics = (tasks: Task[], attributeValues: Record<string, number>) => {
-    console.log("calculateMetrics - Processando tarefas com atributos:", attributeValues);
+    console.log("calculateMetrics - Processando tarefas com atributos:", 
+      Object.keys(attributeValues || {}).length > 0 ? 
+      Object.entries(attributeValues).map(([k, v]) => `${k}: ${v}`).join(', ') : 
+      "Sem atributos");
+      
     const processedTasks = processTasks(tasks, attributeValues);
     const { sustainment, implementation } = separateTasks(processedTasks);
     const costs = calculateCosts(processedTasks);
@@ -51,8 +55,8 @@ export const useProjectManagement = (epicTasks: { [key: string]: Task[] }) => {
       totalTasks: processedTasks.length,
       sustainmentTasks: sustainment.length,
       implementationTasks: implementation.length,
-      totalHours: costs.totalHours,
-      totalCost: costs.totalCost
+      totalHours: costs.totalHours.toFixed(2),
+      totalCost: costs.totalCost.toFixed(2)
     });
 
     return {

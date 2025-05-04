@@ -1,3 +1,4 @@
+
 import { Task } from "@/types/project";
 import { isSustainmentTask } from "./taskUtils";
 import { calculateTaskHours, calculateTaskCost } from "./taskCalculator";
@@ -31,14 +32,26 @@ export const processTasks = (tasks: Task[], attributeValues: Record<string, numb
     return [];
   }
   
-  console.log(`Processando ${tasks.length} tarefas com ${Object.keys(attributeValues).length} atributos`);
+  console.log(`Processando ${tasks.length} tarefas com ${Object.keys(attributeValues || {}).length} atributos:`, 
+    Object.keys(attributeValues || {}).length > 0 ? 
+    Object.entries(attributeValues).map(([k, v]) => `${k}: ${v}`).join(', ') : 
+    "Sem atributos");
   
   return tasks.map(task => {
     const processedTask = { ...task };
+    
+    // Já possui horas calculadas?
+    if (processedTask.calculated_hours !== undefined && processedTask.calculated_hours !== null && 
+        processedTask.calculated_hours > 0) {
+      console.log(`Tarefa "${processedTask.task_name}" já possui horas calculadas: ${processedTask.calculated_hours}h`);
+      return processedTask;
+    }
+    
+    // Calcular horas com base na fórmula ou valor fixo
     const calculatedHours = calculateTaskHours(processedTask, attributeValues);
     processedTask.calculated_hours = calculatedHours;
     
-    console.log(`Horas calculadas para tarefa "${processedTask.task_name}": ${calculatedHours}h`);
+    console.log(`Horas calculadas para tarefa "${processedTask.task_name}": ${calculatedHours}h (${isSustainmentTask(processedTask) ? 'sustentação' : 'implementação'})`);
     
     return processedTask;
   });
@@ -58,7 +71,9 @@ export const calculateCosts = (tasks: Task[]) => {
     const hours = task.calculated_hours ?? task.fixed_hours ?? 0;
     const taskCost = calculateTaskCost(task, hours);
     
-    console.log(`Tarefa "${task.task_name}": ${hours}h x R$${taskCost/hours}/h = R$${taskCost}`);
+    if (acc.count < 5) { // Limitar log para as 5 primeiras tarefas
+      console.log(`Tarefa "${task.task_name}": ${hours}h x R$${taskCost/hours}/h = R$${taskCost.toFixed(2)}`);
+    }
     
     return {
       hours: acc.hours + hours,

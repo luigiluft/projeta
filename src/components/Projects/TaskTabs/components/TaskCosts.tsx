@@ -12,8 +12,8 @@ export function TaskCosts({ tasks, title }: TaskCostsProps) {
   const metrics = useTaskCalculations(tasks);
   
   console.log(`TaskCosts - ${title}:`, {
-    tasks: tasks.length,
-    tarefas: tasks.map(t => ({ 
+    tasksCount: tasks.length,
+    firstTasks: tasks.slice(0, 3).map(t => ({ 
       id: t.id, 
       nome: t.task_name, 
       phase: t.phase,

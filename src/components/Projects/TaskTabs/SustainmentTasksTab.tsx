@@ -29,6 +29,8 @@ export function SustainmentTasksTab({
   console.log("SustainmentTasksTab - Props recebidas:", {
     numTasks: tasks?.length || 0,
     attributeValues,
+    attributeKeys: Object.keys(attributeValues || {}),
+    attributeValues: JSON.stringify(attributeValues).substring(0, 100) + "...",
     firstTask: tasks && tasks.length > 0 ? {
       id: tasks[0].id,
       name: tasks[0].task_name,
@@ -44,11 +46,20 @@ export function SustainmentTasksTab({
       return;
     }
     
-    console.log("SustainmentTasksTab - Processando", tasks.length, "tarefas com atributos:", attributeValues);
+    console.log("SustainmentTasksTab - Processando", tasks.length, "tarefas com atributos:", 
+      Object.keys(attributeValues || {}).length > 0 ? 
+      Object.keys(attributeValues).map(k => `${k}: ${attributeValues[k]}`).join(', ') : 
+      "Nenhum atributo");
     
     // Filtrar apenas tarefas de sustentação
     const { sustainment } = separateTasks(tasks);
     console.log("SustainmentTasksTab - Filtradas", sustainment.length, "tarefas de sustentação");
+    
+    if (sustainment.length === 0) {
+      console.log("SustainmentTasksTab - Nenhuma tarefa de sustentação encontrada");
+      setCalculatedTasks([]);
+      return;
+    }
     
     // Adicionar log detalhado de cada tarefa de sustentação
     console.log("Detalhes das tarefas de sustentação:", sustainment.map(t => ({

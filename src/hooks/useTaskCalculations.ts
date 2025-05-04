@@ -20,7 +20,7 @@ export const useTaskCalculations = (tasks: Task[] = []) => {
     console.log(`useTaskCalculations: Calculando métricas para ${tasks.length} tarefas`);
     
     // Exibir detalhes de cada tarefa para debug
-    console.log("Tarefas para cálculo de métricas:", tasks.map(t => ({
+    console.log("Tarefas para cálculo de métricas:", tasks.slice(0, 5).map(t => ({
       id: t.id,
       nome: t.task_name,
       calculatedHours: t.calculated_hours, 
@@ -28,7 +28,7 @@ export const useTaskCalculations = (tasks: Task[] = []) => {
       owner: t.owner,
       epic: t.epic,
       phase: t.phase
-    })));
+    })) + (tasks.length > 5 ? ` e mais ${tasks.length - 5} tarefas...` : ''));
     
     // Reduzir as tarefas para calcular os totais
     const result = tasks.reduce((acc, task) => {
@@ -45,8 +45,10 @@ export const useTaskCalculations = (tasks: Task[] = []) => {
       // Calcular custo desta tarefa
       const taskCost = hourlyRate * hours;
       
-      // Registrar detalhes do cálculo
-      console.log(`Tarefa "${task.task_name}" (${task.id}): ${hours}h x R$${hourlyRate}/h = R$${taskCost.toFixed(2)}`);
+      // Registrar detalhes do cálculo para as primeiras 5 tarefas apenas (para não sobrecarregar o console)
+      if (acc.taskCount < 5) {
+        console.log(`Tarefa "${task.task_name}" (${task.id}): ${hours}h x R$${hourlyRate}/h = R$${taskCost.toFixed(2)}`);
+      }
       
       // Atualizar acumuladores
       return {
@@ -60,9 +62,9 @@ export const useTaskCalculations = (tasks: Task[] = []) => {
     const hourlyRate = result.hoursSum > 0 ? result.costSum / result.hoursSum : 0;
     
     console.log("Métricas calculadas:", {
-      horasTotal: result.hoursSum,
-      custoTotal: result.costSum,
-      taxaMedia: hourlyRate,
+      horasTotal: result.hoursSum.toFixed(2),
+      custoTotal: result.costSum.toFixed(2),
+      taxaMedia: hourlyRate.toFixed(2),
       numTarefas: result.taskCount
     });
     

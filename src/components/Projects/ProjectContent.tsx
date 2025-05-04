@@ -47,8 +47,13 @@ export function ProjectContent({
     }
   });
 
-  console.log("ProjectContent - Valores combinados de atributos:", combinedAttributes);
-  console.log("ProjectContent - Tarefas selecionadas:", selectedTasks.length);
+  console.log("ProjectContent - Valores combinados de atributos:", {
+    attrValuesKeys: Object.keys(attributeValues || {}),
+    formValuesKeys: Object.keys(formValues).filter(k => attributes.some(attr => attr.id === k)),
+    combinedKeys: Object.keys(combinedAttributes),
+    combinedValues: Object.entries(combinedAttributes).map(([k,v]) => `${k}: ${v}`).join(', '),
+    selectedTasksCount: selectedTasks.length
+  });
 
   return (
     <Tabs defaultValue="pricing" className="w-full">
