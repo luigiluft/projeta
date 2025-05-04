@@ -34,6 +34,9 @@ export function ProjectAttributeValueInput({ attribute, value, onChange }: Proje
     const numericValue = parseFloat(newValue);
     if (!isNaN(numericValue)) {
       onChange(code, numericValue);
+    } else if (newValue === '') {
+      // Para campos vazios, enviar 0 como valor padrão
+      onChange(code, 0);
     }
   };
 

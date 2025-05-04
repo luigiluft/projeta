@@ -31,12 +31,6 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
   console.log("Valores atuais no formulário:", form.getValues());
   console.log("Atributos recebidos:", attributes);
   
-  // Campos especiais para verificar com mais detalhes
-  const specialFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'];
-  specialFields.forEach(field => {
-    console.log(`Verificando campo especial ${field}:`, form.getValues(field));
-  });
-
   return (
     <div className="space-y-4 mt-4">
       {attributes.map((attribute) => (
@@ -49,37 +43,27 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
             console.log(`Campo ${attribute.id} valor:`, field.value);
             
             // Tratar valores inválidos (NaN, undefined) para exibição
-            const displayValue = (() => {
-              // Verificar se é um dos campos específicos
-              const isSpecialField = specialFields.includes(attribute.id);
-              
-              if (isSpecialField) {
-                console.log(`Campo especial ${attribute.id}:`, field.value);
-              }
-              
-              if (field.value === undefined || field.value === "") return "";
-              
+            let displayValue = "";
+            
+            if (field.value !== undefined && field.value !== "" && field.value !== null) {
               // Se for um objeto com _type definido (casos especiais)
-              if (field.value && typeof field.value === 'object' && '_type' in field.value && field.value._type === 'Number') {
-                return field.value.value === "NaN" ? "" : field.value.value;
-              }
-              
-              // Se for NaN, retornar string vazia
-              if (typeof field.value === 'number' && isNaN(field.value)) return "";
-
-              // Se for um objeto de outro tipo, tente convertê-lo para string ou número
-              if (field.value && typeof field.value === 'object') {
+              if (field.value && typeof field.value === 'object' && '_type' in field.value) {
+                displayValue = field.value.value === "NaN" ? "" : String(field.value.value);
+              } 
+              // Se for um objeto de outro tipo
+              else if (field.value && typeof field.value === 'object') {
                 if ('value' in field.value) {
-                  return field.value.value === "NaN" ? "" : field.value.value;
+                  displayValue = field.value.value === "NaN" ? "" : String(field.value.value);
                 }
-                return "";
+              } 
+              // Para valores primitivos
+              else {
+                displayValue = typeof field.value === 'number' && isNaN(field.value) ? "" : String(field.value);
               }
-              
-              return field.value;
-            })();
+            }
 
-            // Verificar se é um dos campos específicos que precisamos tratar com destaque
-            const isSpecialField = specialFields.includes(attribute.id);
+            // Verificar se é um campo especial
+            const isSpecialField = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio'].includes(attribute.id);
             
             // Destacar campo de ticket_medio com uma borda diferente
             const isTicketMedio = attribute.id === 'ticket_medio';
@@ -91,13 +75,19 @@ export function PricingTab({ form, attributes, readOnly = false }: PricingTabPro
                   <Input
                     type={attribute.type === "number" ? "number" : "text"}
                     placeholder={`Digite ${attribute.name.toLowerCase()}`}
-                    {...field}
                     value={displayValue}
                     onChange={(e) => {
                       if (!readOnly) {
-                        const value = attribute.type === "number"
-                          ? e.target.value === "" ? "" : Number(e.target.value)
-                          : e.target.value;
+                        const inputValue = e.target.value;
+                        let value: string | number = inputValue;
+                        
+                        // Converter para número se o campo for numérico
+                        if (attribute.type === "number" && inputValue !== "") {
+                          value = parseFloat(inputValue);
+                          if (isNaN(value)) {
+                            value = 0;
+                          }
+                        }
                         
                         // Log para debug ao alterar o valor
                         if (isSpecialField) {

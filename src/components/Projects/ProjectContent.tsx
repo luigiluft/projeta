@@ -39,11 +39,29 @@ export function ProjectContent({
   // Adicionar valores do formulário, convertendo para número quando possível
   attributes.forEach(attr => {
     const attrId = attr.id;
-    if (formValues[attrId] !== undefined) {
-      const value = Number(formValues[attrId]);
+    if (formValues[attrId] !== undefined && formValues[attrId] !== null && formValues[attrId] !== '') {
+      let value: number;
+      
+      if (typeof formValues[attrId] === 'object' && formValues[attrId] !== null && 'value' in formValues[attrId]) {
+        // Se for um objeto com uma propriedade value
+        value = Number(formValues[attrId].value);
+      } else {
+        // Se for um valor primitivo
+        value = Number(formValues[attrId]);
+      }
+      
       if (!isNaN(value)) {
         combinedAttributes[attrId] = value;
       }
+    }
+  });
+
+  // Garantir que campos especiais sempre estejam definidos
+  const specialFields = ['tempo_de_atendimento_por_cliente', 'pedidos_mes', 'ticket_medio', 'CUSTOMER_SERVICE_TIME', 'ORDERS_PER_MONTH', 'AVERAGE_TICKET'];
+  
+  specialFields.forEach(field => {
+    if (combinedAttributes[field] === undefined) {
+      combinedAttributes[field] = 0;
     }
   });
 
