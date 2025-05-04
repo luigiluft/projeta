@@ -30,13 +30,7 @@ export function SustainmentTasksTab({
     numTasks: tasks?.length || 0,
     attributeValues,
     attributeKeys: Object.keys(attributeValues || {}),
-    attributeValues: JSON.stringify(attributeValues).substring(0, 100) + "...",
-    firstTask: tasks && tasks.length > 0 ? {
-      id: tasks[0].id,
-      name: tasks[0].task_name,
-      phase: tasks[0].phase,
-      epic: tasks[0].epic
-    } : 'Nenhuma tarefa'
+    attributeValuesStr: JSON.stringify(attributeValues).substring(0, 100) + "..."
   });
 
   useEffect(() => {
