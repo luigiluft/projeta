@@ -25,6 +25,18 @@ export function SustainmentTasksTab({
   const [calculatedTasks, setCalculatedTasks] = useState<Task[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'tree'>('tree');
 
+  // Log para debug
+  console.log("SustainmentTasksTab - Props recebidas:", {
+    numTasks: tasks?.length || 0,
+    attributeValues,
+    firstTask: tasks && tasks.length > 0 ? {
+      id: tasks[0].id,
+      name: tasks[0].task_name,
+      phase: tasks[0].phase,
+      epic: tasks[0].epic
+    } : 'Nenhuma tarefa'
+  });
+
   useEffect(() => {
     if (!tasks || tasks.length === 0) {
       console.log("SustainmentTasksTab - Nenhuma tarefa para processar");
@@ -49,7 +61,7 @@ export function SustainmentTasksTab({
       fixedHours: t.fixed_hours
     })));
     
-    // Processar as horas apenas das tarefas de sustentação
+    // Processar as horas apenas das tarefas de sustentação com os atributos fornecidos
     const processedTasks = processTasks(sustainment, attributeValues);
     
     console.log("SustainmentTasksTab - Tarefas processadas:", processedTasks.length, processedTasks.map(t => ({
