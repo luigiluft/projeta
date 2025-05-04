@@ -26,7 +26,7 @@ const TabsTrigger = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & { type?: string }
 >(({ className, type = "button", ...props }, ref) => {
   // Adicionar prevenção padrão para submissão de formulário
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     // Se o botão está dentro de um formulário, precisamos prevenir o comportamento padrão
     if (e.currentTarget.closest('form')) {
       e.preventDefault();
@@ -34,7 +34,8 @@ const TabsTrigger = React.forwardRef<
     
     // Chama o manipulador onClick original se existir
     if (props.onClick) {
-      props.onClick(e);
+      // Precisamos fazer um cast do tipo aqui para compatibilidade
+      props.onClick(e as unknown as React.MouseEvent<Element, MouseEvent>);
     }
   };
 
